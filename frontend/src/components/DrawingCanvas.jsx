@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import './DrawingCanvas.css';
 
 const DrawingCanvas = () => {
   const canvasRef = useRef(null);
@@ -135,12 +136,12 @@ const DrawingCanvas = () => {
   const colors = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem', maxWidth: '800px', margin: '0 auto' }}>
+    <div className="drawable-canvas-container">
       {/* Toolbar */}
-      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+      <div className="toolbar">
         {/* Color Palette */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <span style={{ fontSize: '14px', fontWeight: '500' }}>Color:</span>
+        <div className="color-palette">
+          <span className="color-palette-label">Color:</span>
           {colors.map(color => (
             <button
               key={color}
@@ -148,72 +149,55 @@ const DrawingCanvas = () => {
                 setStrokeColor(color);
                 setEraseMode(false);
               }}
-              style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: color,
-                border: strokeColor === color && !eraseMode ? '3px solid #333' : '1px solid #ccc',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'transform 0.1s',
-              }}
-              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.9)'}
-              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              className={`color-button ${strokeColor === color && !eraseMode ? 'active' : ''}`}
+              style={{ backgroundColor: color }}
             />
           ))}
         </div>
 
         {/* Stroke Width */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <label style={{ fontSize: '14px', fontWeight: '500' }}>Size:</label>
+        <div className="stroke-width-control">
+          <label className="stroke-width-label">Size:</label>
           <input
             type="range"
             min="1"
             max="20"
             value={strokeWidth}
             onChange={(e) => setStrokeWidth(Number(e.target.value))}
-            style={{ width: '100px' }}
+            className="stroke-width-slider"
           />
-          <span style={{ fontSize: '14px', width: '30px' }}>{strokeWidth}px</span>
+          <span className="stroke-width-value">{strokeWidth}px</span>
         </div>
 
         {/* Tools */}
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="tools">
           <button
             onClick={() => setEraseMode(!eraseMode)}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: eraseMode ? '#ff6b6b' : '#fff',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-            }}
+            className={`tool-button eraser ${eraseMode ? 'active' : ''}`}
           >
-            {eraseMode ? '✓ Eraser' : 'Eraser'}
+            {eraseMode ? 'Eraser' : 'Eraser'}
           </button>
           <button 
             onClick={handleUndo} 
             disabled={historyStep <= 0}
-            style={{ ...buttonStyle, opacity: historyStep <= 0 ? 0.5 : 1 }}
+            className="tool-button"
           >
             Undo
           </button>
           <button 
             onClick={handleRedo} 
             disabled={historyStep >= history.length - 1}
-            style={{ ...buttonStyle, opacity: historyStep >= history.length - 1 ? 0.5 : 1 }}
+            className="tool-button"
           >
             Redo
           </button>
-          <button onClick={handleClear} style={{ ...buttonStyle, backgroundColor: '#ff6b6b', color: 'white', border: 'none' }}>Clear</button>
-          <button onClick={handleExportPNG} style={{ ...buttonStyle, backgroundColor: '#4CAF50', color: 'white', border: 'none' }}>Export PNG</button>
+          <button onClick={handleClear} className="tool-button clear">Clear</button>
+          <button onClick={handleExportPNG} className="tool-button export">Export PNG</button>
         </div>
       </div>
 
       {/* Canvas */}
-      <div style={{ border: '2px solid #ddd', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'white' }}>
+      <div className="canvas-wrapper">
         <canvas
           ref={canvasRef}
           onMouseDown={startDrawing}
@@ -223,27 +207,11 @@ const DrawingCanvas = () => {
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          style={{
-            display: 'block',
-            width: '100%',
-            height: '600px',
-            touchAction: 'none',
-            cursor: eraseMode ? 'crosshair' : 'crosshair',
-          }}
+          className="drawing-canvas"
         />
       </div>
     </div>
   );
-};
-
-const buttonStyle = {
-  padding: '8px 16px',
-  backgroundColor: '#fff',
-  border: '1px solid #ccc',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  fontSize: '14px',
-  fontWeight: '500',
 };
 
 export default DrawingCanvas;
