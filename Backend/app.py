@@ -25,7 +25,7 @@ CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 API_KEY = os.getenv('GEMINI_API') 
 
-BATTLE_INTREVAL=300 # 5 minutes in seconds
+BATTLE_TIMER=300 # 5 minutes in seconds
 
 #data paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))       #current directory
@@ -39,7 +39,6 @@ NEXT_MATCH = None                                           #holds the [char1, c
 #           GEMINI API           #
 ##################################
 
-#FIXME Update move types.
 SYSTEM_PROMPT = """
 You are the "Doodle Brawl" Game Engine. Your goal is to simulate a turn-based battle between two characters to 0 HP.
 
@@ -98,7 +97,7 @@ generation_config = types.GenerateContentConfig(
     top_p=0.95,                            #boilerplate(?)
     top_k=64,                              #boilerplate(?)
     max_output_tokens=10240,               #arbitrary number (2^)
-    responses_mime_type="application/json" #return your response as a legal JSON format
+    response_mime_type="application/json", #return your response as a legal JSON format
     system_instruction=SYSTEM_PROMPT
 )
 
@@ -141,12 +140,11 @@ def save_characters():
 @socketio.on('submit_character')
 def accept_new_character(data):
     if not data:
-        print(f"!-- NO DATA RECEIVED {data} --!")
+        print(f"!-- NO IMAGE RECEIVED {data} --!")
 
-    if 'id' not in data:
-        data['id'] = str(len(characters) + 1)
 
-    c = Character(data)
+    newImage = ""
+    c = Character(fileRef=newFile)
     #Assumed order of the submitted character data dictionary
     #1.Image File Ref 2.Stats 3.Wins 4.Losses 5.Character Name
     characters[c.id] = c
@@ -165,7 +163,7 @@ def schedule_next_match():
     #send match 'card' to frontend
     socketio.emit('match_scheduled', {
         'fighters': [c.to_dict() for c in NEXT_MATCH],
-        'starts_in': BATTLE_INTERVAL
+        'starts_in': BATTLE_TIMER
     })
     print(f"$-- MATCH SCHEDULED: {NEXT_MATCH[0].name} vs {NEXT_MATCH[1].name} --$")
 
@@ -201,7 +199,7 @@ def run_scheduled_battle():
     try:
         #send API call to gemini
         response = client.models.generate_content(
-            model='gemini-2.0-flash', 
+            model='gemini-2.0-flash', #NOTE - This model should suffice
             contents=request_content,
             config=generation_config
         )
@@ -235,8 +233,6 @@ def run_scheduled_battle():
 
     except Exception as e:
         print(f"!-- ERROR DURING BATTLE GENERATION --!\nError: {e}")
-    
-    #clear the match
     NEXT_MATCH = None
 
 ##################################
@@ -248,7 +244,7 @@ def index():
     return render_template('index.html')
 
 def battle_loop():
-    timer = BATTLE_INTERVAL
+    timer = BATTLE_TIMER
     with app.app_context():
         schedule_next_match()
 
@@ -266,7 +262,7 @@ def battle_loop():
             with app.app_context():
                 run_scheduled_battle() #run the match
                 schedule_next_match()  #schedule the next match
-            timer = BATTLE_INTERVAL
+            timer = BATTLE_TIMER
 
 if __name__ == '__main__':
     load_characters()
