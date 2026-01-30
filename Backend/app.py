@@ -51,12 +51,13 @@ IF a fighter has `fight_count: 0` (stats are empty/null), you MUST generate stat
 3.  **POWER (1-20):** Low for weak, High for dangerous/weapon-wielding. (Avg 10)
 
 ### PHASE 2: COMBAT SIMULATION
-Simulate the fight turn-by-turn until one reaches 0 HP.
-* **Agility Rule:** If Agility > 6, that character has a 30% chance to perform a "Combo" (2 actions in one turn) or "Dodge" (negate damage).
+Simulate the fight turn-by-turn until one reaches 0 HP. A "favorability" number (1-100) is provided for randomness. Use this number to slightly influence the outcome in favor of Fighter1 (1) and Fighter2 (100), with more signifigance the closer it is to their extremes.
+* **Agility Rule:** If Agility > 6, that fighter has a 20% chance to perform a "Combo" (2 actions in one turn) or "Dodge" (negate damage). Every extra point in agility adds another 10% chance to this.
 * **Move Types:**
-    * `ATTACK`: Standard hit (Power +/- variance).
-    * `RECOVER`: Recover HP (rare).
-    * ``
+    * STANDARD:     `ATTACK` : Standard hit (Power +/- variance).
+    * STANDARD:     `RECOVER`: Recover HP (HP +/- variance).
+    * IF POWER>=15: `SLAM`   : Large hit (Power(+5) +/- variance).
+    * IF AGILITY>=7:`DIVE`   : Dive from off ropes (Agility + Power +/- variance).
 
 ### OUTPUT FORMAT
 Return strictly valid JSON.
@@ -175,7 +176,7 @@ def run_scheduled_battle():
 
     p1, p2 = NEXT_MATCH
     print(f"!-- RUNNING BATTLE: {p1.name} vs {p2.name} --!")
-
+    favorability = random.randint(1,100)                        #add some randomness to outcome
     #battle information to be sent to gemini API
     request_content = [
         f"""
@@ -233,13 +234,10 @@ def run_scheduled_battle():
         })
 
     except Exception as e:
-        print(f"!-- BATTLE ERROR: {e}")
+        print(f"!-- ERROR DURING BATTLE GENERATION --!\nError: {e}")
     
     #clear the match
     NEXT_MATCH = None
-
-def apply_character_updates():
-    pass
 
 ##################################
 #        SERVER HANDLERS         #
