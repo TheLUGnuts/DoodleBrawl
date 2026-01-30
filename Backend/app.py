@@ -141,10 +141,13 @@ def save_characters():
 def accept_new_character(data):
     if not data:
         print(f"!-- NO IMAGE RECEIVED {data} --!")
+    if id not in data:
+        print(f"!-- ID NOT FOUND IN DATA: {data} --!")
+    if imageBase not in data:
+        print(f"!-- IMAGE NOT FOUND IN DATA: {data} --!")
 
-
-    newImage = ""
-    c = Character(fileRef=newFile)
+    c = Character(data['id'], data['imageBase'])
+    
     #Assumed order of the submitted character data dictionary
     #1.Image File Ref 2.Stats 3.Wins 4.Losses 5.Character Name
     characters[c.id] = c

@@ -11,10 +11,10 @@ class Character():
     @param losses: The number of losses.
     @param total_battles: 
     @param name: The name of the character"""
-    def __init__(self, image_ref: str = "", data = None):
+    def __init__(self, id, image_ref: str = "", data = None):
         # Assumes data contains image_file, stats, wins, losses and name
         #randomly generated ID to distinguish the world
-        self.id = ""
+        self.id = id
         self.image_file: str = image_ref
         self.stats: dict = dict()
         self.wins: int = 0
