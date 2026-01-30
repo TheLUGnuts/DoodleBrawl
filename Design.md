@@ -5,12 +5,16 @@
 
 ## Backend
 
-For our backend server we'll be using Python/Flask
+For our backend server we'll be using Python/Flask hooked up to the Gemini API
+
+- Flask
+- Gemini
 
 ## Frontend
 
 - Vite (https://vite.dev/)
 - React (https://react.dev/)
+- Chakra (https://www.chakra-ui.com/)
 - PixiJS (https://pixijs.com/showcase)
 - GSAP (https://gsap.com/)
 
