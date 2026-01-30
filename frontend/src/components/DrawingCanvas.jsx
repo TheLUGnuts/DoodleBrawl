@@ -123,7 +123,8 @@ const DrawingCanvas = () => {
     img.src = imageData;
   };
 
-  const handleExportPNG = () => {
+  const handleDownloadPNG = () => {
+    // Downloads directly to user's computer
     const canvas = canvasRef.current;
     const image = canvas.toDataURL('image/png');
     
@@ -132,6 +133,18 @@ const DrawingCanvas = () => {
     link.download = `drawing-${Date.now()}.png`;
     link.click();
   };
+
+  const getImageBase64 = () => {
+    // Returns a base64 string of the canvas image
+    // This is used for sending the image over the sockets.
+    const canvas = canvasRef.current;
+    const dataURL = canvas.toDataURL('image/png'); // "data:image/png;base64,..."
+    
+    // Remove the "data:image/png;base64," prefix to get just the Base64 string
+    const base64String = dataURL.split(',')[1];
+    
+    return base64String; // Send this via socket
+  }
 
   const colors = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
 
@@ -192,7 +205,7 @@ const DrawingCanvas = () => {
             Redo
           </button>
           <button onClick={handleClear} className="tool-button clear">Clear</button>
-          <button onClick={handleExportPNG} className="tool-button export">Export PNG</button>
+          <button onClick={handleDownloadPNG} className="tool-button export">Export PNG</button>
         </div>
       </div>
 
