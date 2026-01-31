@@ -140,17 +140,18 @@ def save_characters():
 @socketio.on('submit_character')
 def accept_new_character(data):
     if not data:
-        print(f"!-- NO IMAGE RECEIVED {data} --!")
+        print(f"!-- NO DATA RECEIVED {data} --!")
     if id not in data:
         print(f"!-- ID NOT FOUND IN DATA: {data} --!")
     if imageBase not in data:
         print(f"!-- IMAGE NOT FOUND IN DATA: {data} --!")
 
     c = Character(data['id'], data['imageBase'])
-    
+
     #Assumed order of the submitted character data dictionary
     #1.Image File Ref 2.Stats 3.Wins 4.Losses 5.Character Name
     characters[c.id] = c
+    print(f"$-- NEW CHARACTER ADDED {data['id']} --$")
     save_characters()
     emit('character_added', {'status': 'success', 'character': c.to_dict()})
 
