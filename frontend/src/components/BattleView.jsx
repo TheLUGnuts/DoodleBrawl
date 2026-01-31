@@ -106,15 +106,24 @@ export default function BattleView() {
             {battleState && <ImageViewer base64={battleState.fighters[0].image_file} />} 
           </div>
           <div class='stats'>
+            <p>Fighter Description: {battleState.fighters[0].description}</p>
             <p>Wins: {battleState.fighters[0].wins}</p>
-            <p>Loses: {battleState.fighters[0].wins}</p>
+            <p>Loses: {battleState.fighters[0].losses}</p>
           </div>
         </div>
 
         <div class='column'>
-          <p class='fighter-name fighter-2'>Fighter 2</p>
-          {battleState && <ImageViewer base64={battleState.fighters[1].image_file} />} 
+          <p class='fighter-name fighter-2'>{battleState.fighters[1].name}</p>
+          <div class='fighter-img'>
+            {battleState && <ImageViewer base64={battleState.fighters[1].image_file} />} 
+          </div>
+          <div class='stats'>
+            <p>Fighter Description: {battleState.fighters[1].description}</p>
+            <p>Wins: {battleState.fighters[1].wins}</p>
+            <p>Loses: {battleState.fighters[1].losses}</p>
+          </div>
         </div>
+
       </div>
     </div>
   );
