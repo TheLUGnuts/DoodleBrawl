@@ -80,17 +80,23 @@ Return strictly valid JSON.
 }
 """
 
-#loads image from disk to be sent to gemini API
-def get_character_image_part(filename):
-    path = os.path.join(IMAGE_DIR, filename)
-    if not os.path.exists(path):
+#converts a base64 string into Gemini API parts (necessary for API generation)
+def get_image_part_from_base64(base64_string):
+    if not base64_string:
         return None
+
+    #strip data uri header, if it exists
+    if "base64," in base64_string:
+        base64_string = base64_string.split("base64,")[1]
     
-    with open(path, "rb") as f:
-        image_data = f.read()
-    
-    #return it in the png format the api needs
-    return types.Part.from_bytes(data=image_data, mime_type="image/png")
+    try:
+        #turn into bytes
+        image_bytes = base64.b64decode(base64_string)
+        #return this as a part object for gemini
+        return types.Part.from_bytes(data=image_bytes, mime_type="image/png")
+    except Exception as e:
+        print(f"!-- ERROR DECODING BASE64 IMAGE: {e} --!")
+        return None
 
 generation_config = types.GenerateContentConfig(
     temperature=1,                         #boilerplate
@@ -188,7 +194,7 @@ def run_scheduled_battle():
         Current Stats: {p1.stats} (If empty, generate them based on attached image)
         Fight Count: {p1.wins + p1.losses}
         """,
-        get_character_image_part(p1.image_file), #fighter 1 drawing
+        get_image_part_from_base64(p1.image_file), #fighter 1 drawing
         
         f"""
         FIGHTER 2:
@@ -197,7 +203,7 @@ def run_scheduled_battle():
         Current Stats: {p2.stats} (If empty, generate them based on attached image)
         Fight Count: {p2.wins + p2.losses}
         """,
-        get_character_image_part(p2.image_file)  #fighter 2 drawing
+        get_image_part_from_base64(p2.image_file)  #fighter 2 drawing
     ]
 
     try:
@@ -229,7 +235,7 @@ def run_scheduled_battle():
         save_characters()
 
         #emit to clients
-        socketio.emit('battle_result', {
+        socketio.emit('match_result', {
             'fighters': [p1.to_dict(), p2.to_dict()],
             'log': result['battle_log'],
             'winner': winner_id
