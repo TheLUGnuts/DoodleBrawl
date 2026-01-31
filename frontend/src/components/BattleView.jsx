@@ -115,6 +115,7 @@ export default function BattleView() {
 
   return (
     <div class='root'>
+      <h2>Next match in: {timer}</h2>
       <div class='row'>
 
         <div class='column'>

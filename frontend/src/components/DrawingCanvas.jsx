@@ -161,6 +161,10 @@ const DrawingCanvas = () => {
       imageBase: getImageBase64(),
       name: drawingName}
     );
+
+    // Clear drawing
+    setDrawingName("")
+    handleClear();
   }
 
 
