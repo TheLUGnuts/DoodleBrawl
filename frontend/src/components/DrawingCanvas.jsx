@@ -155,6 +155,9 @@ const DrawingCanvas = () => {
   }
 
   const sendImageOverSocket = () => {
+    if (drawingName === "") {
+      setDrawingName("Joe Mystery");
+    }
     // Sends current Canvas image to server
     socket.emit('submit_character', {
       id: uuidv4(),
