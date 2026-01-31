@@ -278,14 +278,15 @@ def run_scheduled_battle():
 @app.route('/card')
 def return_current_card():
     global NEXT_MATCH
-    if NEXT_MATCH is None:
+    current_match = NEXT_MATCH
+    if current_match is None:
         return jsonify({
             'fighters': [],
             'starts_in': 0,
             'status': 'waiting'
         })
     try:
-        fighters_data = [c.to_dict() for c in NEXT_MATCH]
+        fighters_data = [c.to_dict() for c in current_match]
         
         return jsonify({
             'fighters': fighters_data,
@@ -321,7 +322,7 @@ def battle_loop():
         if timer <= 0:
             with app.app_context():
                 run_scheduled_battle() #run the match
-                timer.sleep(120)
+                socketio.sleep(120)
                 schedule_next_match()  #schedule the next match
             timer = BATTLE_TIMER
 
