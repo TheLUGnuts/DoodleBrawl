@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { socket } from '../socket.js';
 import './DrawingCanvas.css';
 
@@ -149,7 +150,10 @@ const DrawingCanvas = () => {
 
   const sendImageOverSocket = () => {
     // Sends current Canvas image to server
-    socket.emit('submit_character', { id: 69, imageBase: getImageBase64()});
+    socket.emit('submit_character', {
+      id: uuidv4(),
+      imageBase: getImageBase64()}
+    );
   }
 
   const colors = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];

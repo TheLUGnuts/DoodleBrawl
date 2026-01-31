@@ -8,7 +8,7 @@ import DrawingCanvas from './components/DrawingCanvas'
 function App() {
   const [count, setCount] = useState(0)
   const [isConnected, setIsConnected] = useState(socket.connected);
-  const [connectionStatus, setConnectionStatus] = useState("n/a");
+  const [connectionStatus, setConnectionStatus] = useState("Never Connected");
   const [fooEvents, setFooEvents] = useState([]);
 
   useEffect(() => {
