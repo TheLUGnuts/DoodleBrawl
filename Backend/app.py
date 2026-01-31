@@ -328,10 +328,4 @@ print("!-- STARTING BATTLE LOOP... --!")
 socketio.start_background_task(battle_loop)
 
 if __name__ == '__main__':
-    load_characters()
-    #start battle loop
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        socketio.start_background_task(battle_loop)
     socketio.run(app, debug=True, port=5000)
-
-
