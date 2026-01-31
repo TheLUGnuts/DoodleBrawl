@@ -66,7 +66,15 @@ export default function BattleView() {
 
   const handleTimerUpdate = (data) => {
     console.log("TIMER UPDATE ------")
-    if (data.time_left) setTimer(data.time_left);
+    if (data.time_left > 0) {
+      setTimer(data.time_left);
+    } 
+    else if (data.time_left == 0) {
+      setTimer("Battle commencing!")
+    }
+    else {
+      setTimer("Bookie is working on the next match...")
+    }
     console.log(data);
   }
 
@@ -142,8 +150,7 @@ export default function BattleView() {
           </div>
         </div>
 
-        <hr/>
-
+      </div>
         <div class='logs'>
           <ul>
             {logState.map((log, index) => (
@@ -155,8 +162,6 @@ export default function BattleView() {
 
           <p class='summary'>{summaryState}</p>
         </div>
-
-      </div>
     </div>
   );
 }

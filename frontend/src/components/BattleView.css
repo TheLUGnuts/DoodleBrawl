@@ -8,6 +8,8 @@
   padding: 5px;
 }
 
+.row {
+}
 /* Clear floats after image containers */
 .row::after {
   content: "";
