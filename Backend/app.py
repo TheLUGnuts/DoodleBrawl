@@ -315,7 +315,9 @@ def battle_loop():
         
         if timer <= 0:
             with app.app_context():
+                timer = 0
                 run_scheduled_battle() #run the match
+                timer = -1
                 socketio.sleep(120)
                 schedule_next_match()  #schedule the next match
             timer = BATTLE_TIMER

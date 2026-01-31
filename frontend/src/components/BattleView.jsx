@@ -78,7 +78,7 @@ export default function BattleView() {
     socket.on('timer_update', handleTimerUpdate);
 
     // Get initial fighter info from scheduled battle
-    fetch('/card')
+    fetch('http://localhost:5000/card')
       .then(response => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
