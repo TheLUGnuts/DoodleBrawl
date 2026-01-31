@@ -1,0 +1,39 @@
+/* Define the keyframe animation */
+@keyframes pulse-gradient {
+    0% {
+        /* Starting gradient colors and position */
+        background-position: 0% 50%;
+    }
+    50% {
+        /* Middle gradient colors/position (the "pulse" peak) */
+        background-position: 100% 50%;
+    }
+    100% {
+        /* Return to the start for a smooth loop */
+        background-position: 0% 50%;
+    }
+}
+
+/* Apply the styles to the target class */
+.action {
+    /* Define the initial gradient */
+    background: linear-gradient(90deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c1, #ff0000);
+    
+    /* Set a larger background size so it can move */
+    background-size: 200% 200%;
+    
+    /* Apply the animation */
+    animation: pulse-gradient 5s ease infinite; /* Name Duration Timing-Function Iteration-Count */
+
+    /* Basic styling for the element itself */
+    padding: 20px;
+    color: white;
+    text-align: center;
+    border-radius: 10px;
+    width: 300px;
+    margin: 50px auto;
+    font-family: sans-serif;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+
