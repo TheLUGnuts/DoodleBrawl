@@ -27,16 +27,30 @@
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
 .card {
   padding: 2em;
 }
 
 .status {
   color: #888;
+}
+
+h1 {
+  color: #000;
+}
+
+h2 {
+  color: #000;
+  font-size: 1.5em;
+}
+
+hr {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  border-color: #000;
+}
+
+.tutorial p {
+  color: black;
+  text-align: center;
 }

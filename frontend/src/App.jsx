@@ -6,20 +6,15 @@ import './App.css'
 import DrawingCanvas from './components/DrawingCanvas'
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [isConnected, setIsConnected] = useState(socket.connected);
   const [connectionStatus, setConnectionStatus] = useState("Never Connected");
-  const [fooEvents, setFooEvents] = useState([]);
 
   useEffect(() => {
     function onConnect() {
-      setIsConnected(true);
       setConnectionStatus("Connected!");
       console.log("Connected to socket.");
     }
 
     function onDisconnect() {
-      setIsConnected(false);
       setConnectionStatus("Disconnected...");
       console.log("Disconnected from socket.");
     }
@@ -35,10 +30,37 @@ function App() {
 
   return (
     <>
-      <h1>Doodle Brawl!</h1>
-      <div>
-        <DrawingCanvas />
+      <div class='header'>
+        <h1>Doodle Brawl!</h1>
+        <hr/>
       </div>
+      
+      <div class='battle'>
+        <h2>Battle Grounds</h2>
+        <hr/>
+      </div>
+
+      <div class='drawing'>
+        <h2>Draw your fighter!</h2>
+        <DrawingCanvas />
+        <hr/>
+      </div>
+
+      <div class='tutorial'>
+        <h2>How to Play</h2>
+        <p>
+          At the bottom, draw a character to be entered into the pool of fighters. Draw anything!
+          When ready, hit the "Submit for Battle!" button to enter your fighter into the fray.
+          AI will evaluate your character and give it hidden fighting characteristics.
+        </p>
+        <p>
+          In the battle grounds, two characters will be selected from the pool of fighters.
+          AI will take the character statistics and simulate a battle between them.
+          The match will play out in front of your eyes, and you will see who wins!
+        </p>
+        <hr/>
+      </div>
+
       <div class='status'>
         <p>Connection Status: { connectionStatus }</p>
         <p>Made with love by Connor Fair, Jon Rutan, and Trevor Corcoran for VCU's 2026 Hackathon</p>

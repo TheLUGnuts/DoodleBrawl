@@ -12,7 +12,7 @@ const DrawingCanvas = () => {
   const [eraseMode, setEraseMode] = useState(false);
   const [history, setHistory] = useState([]);
   const [historyStep, setHistoryStep] = useState(-1);
-  const [drawingName, setDrawingName] = useState("Name");
+  const [drawingName, setDrawingName] = useState("");
 
   // Initialize canvas
   useEffect(() => {
@@ -231,8 +231,8 @@ const DrawingCanvas = () => {
             Redo
           </button>
           <button onClick={handleClear} className="tool-button clear">Clear</button>
-          <button onClick={handleDownloadPNG} className="tool-button export">Export PNG</button>
-          <button onClick={sendImageOverSocket} className="tool-button submit">Submit to Server</button>
+          <button onClick={handleDownloadPNG} className="tool-button export">Download</button>
+          <button onClick={sendImageOverSocket} className="tool-button submit">Submit for Battle!</button>
         </div>
       </div>
 
