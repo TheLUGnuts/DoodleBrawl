@@ -255,7 +255,11 @@ def run_scheduled_battle():
         save_characters()
 
         #emit to clients
-        socketio.emit('match_result', {'fighters': [p1.to_dict(), p2.to_dict()],'log': result['battle_log'],'winner': winner_id})
+        socketio.emit('match_result', {
+            'fighters': [p1.to_light_dict(), p2.to_light_dict()], # <--- CHANGED
+            'log': result['battle_log'],
+            'winner': winner_id
+        })
         print(f"$-- MATCH FINISHED - WINNER {winner_id} --$")
     except Exception as e:
         print(f"!-- ERROR DURING BATTLE GENERATION --!\nError: {e}")
