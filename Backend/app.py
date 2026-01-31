@@ -159,7 +159,7 @@ def accept_new_character(data):
     #Assumed order of the submitted character data dictionary
     #1.Image File Ref 2.Stats 3.Wins 4.Losses 5.Character Name
     characters[c.id] = c
-    print(f"$-- NEW CHARACTER ADDED {data['id']} --$")
+    print(f"$-- NEW CHARACTER ADDED {data['id']} with name {data['name']} --$")
     save_characters()
     emit('character_added', {'status': 'success', 'character': c.to_dict()})
 
