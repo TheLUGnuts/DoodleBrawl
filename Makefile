@@ -8,7 +8,7 @@ update-code:
 	git pull
 build-frontend:
 	@echo "Building React/Vite frontend..."
-	cd client && npm install && npm run build
+	cd frontend && npm install && npm run build
 restart-backend:
 	@echo "Restarting Gunicorn System Service..."
 	sudo systemctl restart doodle
