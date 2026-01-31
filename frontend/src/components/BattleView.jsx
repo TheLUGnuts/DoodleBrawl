@@ -3,11 +3,19 @@ import { socket } from '../socket.js';
 import './BattleView.css';
 
 export default function BattleView() {
+  const [battleState, setBattleState] = useState({});
+  const [fighterLImg, setFighterLImg] = useState(null);
+  const [fighterRImg, setFighterRImg] = useState(null);
   
   function ImageViewer({ base64 }) {
-    const src = `data:image/png;base64,${base64}`;
-    return <img src={src} alt="From socket" />;
+    return (
+      <img
+        src={`data:image/png;base64,${base64}`}
+        alt="Fighter Image"
+      />
+    );
   }
+
 
   const handleSchedule = (data) => {
     console.log("SCHEDULE ------")
@@ -15,8 +23,13 @@ export default function BattleView() {
   }
 
   const handleResult = (data) => {
+    // Takes data from a fight and places it in the correct places
     console.log("RESULT ------")
     console.log(data);
+
+    // Fighter images
+    setFighterLImg(data.fighters[0].image_file);
+    setFighterRImg(data.fighters[1].image_file);
   }
 
   const handleTimerUpdate = (data) => {
@@ -41,7 +54,8 @@ export default function BattleView() {
 
   return (
     <div class='root'>
-      <p>hehe</p>
+      {fighterLImg && <ImageViewer base64={fighterLImg} />} 
+      {fighterRImg && <ImageViewer base64={fighterRImg} />} 
     </div>
   );
 }
