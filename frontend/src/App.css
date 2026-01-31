@@ -35,6 +35,11 @@
   color: #888;
 }
 
+.status-link {
+  color: #888;
+  text-decoration: underline dotted;
+}
+
 h1 {
   color: #000;
 }

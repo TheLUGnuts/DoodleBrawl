@@ -65,7 +65,7 @@ function App() {
 
       <div class='status'>
         <p>Connection Status: { connectionStatus }</p>
-        <p>Made with love by Connor Fair, Jon Rutan, and Trevor Corcoran for VCU's 2026 Hackathon</p>
+        <p>Made with love by <a class='status-link' href='https://www.linkedin.com/in/connor-fair36/'>Connor Fair</a>, <a class='status-link' href='https://www.linkedin.com/in/jonathanrutan/'>Jon Rutan</a>, and <a class='status-link' href='https://www.linkedin.com/in/trevorcorc/'>Trevor Corcoran</a> for VCU's 2026 Hackathon</p>
       </div>
     </>
   )
