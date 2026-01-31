@@ -1,7 +1,7 @@
 #jfr, cwf, tjc
 
 import json, os, random, time, base64
-from components import character
+from components.character import Character
 from google import genai
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -28,12 +28,12 @@ API_KEY = os.getenv('GEMINI_API')
 BATTLE_TIMER=300 # 5 minutes in seconds
 
 #data paths
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))       #current directory
-DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')            #file ref where data is stored
-IMAGE_DIR = os.path.join(BASE_DIR, 'assets/Images')         #file ref where images are located
-CHARACTER_FILE = os.path.join(DATA_DIR, 'characters.json')  #JSON file reference of character objects
-characters = {}                                             #dict of character objects
-NEXT_MATCH = None                                           #holds the [char1, char2] for upcoming fight.
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))       #current directory
+DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                             #file ref where data is stored
+IMAGE_DIR = os.path.join(BASE_DIR, 'assets/Images')                          #file ref where images are located
+CHARACTER_FILE = os.path.join(DATA_DIR, 'characters.json')                   #JSON file reference of character objects
+characters = {}                                                              #dict of character objects
+NEXT_MATCH = None                                                             #holds the [char1, char2] for upcoming fight.
 
 ##################################
 #           GEMINI API           #
@@ -141,9 +141,9 @@ def save_characters():
 def accept_new_character(data):
     if not data:
         print(f"!-- NO DATA RECEIVED {data} --!")
-    if id not in data:
+    if not data['id']:
         print(f"!-- ID NOT FOUND IN DATA: {data} --!")
-    if imageBase not in data:
+    if not data['id']:
         print(f"!-- IMAGE NOT FOUND IN DATA: {data} --!")
 
     c = Character(data['id'], data['imageBase'])
