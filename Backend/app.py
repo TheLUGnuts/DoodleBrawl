@@ -86,7 +86,7 @@ Return strictly valid JSON. In the provided action descriptions, wrap key action
             "action": "ATTACK", 
             "target": "Name", 
             "damage": 12, 
-            "description": "Threw a wild <span style="color: #f39930" class="action-red">punch</span>!",
+            "description": "Threw a wild <span class="action-red">punch</span>!",
             "remaining_hp": 88
         },
         ...
