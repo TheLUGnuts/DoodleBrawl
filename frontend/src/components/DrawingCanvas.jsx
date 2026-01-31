@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { socket } from '../socket.js';
 import './DrawingCanvas.css';
 
 const DrawingCanvas = () => {
@@ -146,6 +147,11 @@ const DrawingCanvas = () => {
     return base64String; // Send this via socket
   }
 
+  const sendImageOverSocket = () => {
+    // Sends current Canvas image to server
+    socket.emit('submit_character', { id: 69, imageBase: getImageBase64()});
+  }
+
   const colors = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
 
   return (
@@ -206,6 +212,7 @@ const DrawingCanvas = () => {
           </button>
           <button onClick={handleClear} className="tool-button clear">Clear</button>
           <button onClick={handleDownloadPNG} className="tool-button export">Export PNG</button>
+          <button onClick={sendImageOverSocket} className="tool-button submit">Submit to Server</button>
         </div>
       </div>
 

@@ -105,6 +105,12 @@
 }
 
 .tool-button.export {
+  background-color: #44aaaa;
+  color: white;
+  border: none;
+}
+
+.tool-button.submit {
   background-color: #4CAF50;
   color: white;
   border: none;

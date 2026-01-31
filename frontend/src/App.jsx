@@ -15,11 +15,13 @@ function App() {
     function onConnect() {
       setIsConnected(true);
       setConnectionStatus("Connected!");
+      console.log("Connected to socket.");
     }
 
     function onDisconnect() {
       setIsConnected(false);
       setConnectionStatus("Disconnected...");
+      console.log("Disconnected from socket.");
     }
 
     function onFooEvent(value) {
