@@ -1,4 +1,4 @@
-# cwf
+# cwf, jfr, tjc
 import random
 import string
 
@@ -11,15 +11,14 @@ class Character():
     @param losses: The number of losses.
     @param total_battles: 
     @param name: The name of the character"""
-    def __init__(self, id, image_ref: str = "", data = None):
+    def __init__(self, id, image_ref: str = "", name="", data = None):
         # Assumes data contains image_file, stats, wins, losses and name
-        #randomly generated ID to distinguish the world
         self.id = id
         self.image_file: str = image_ref
         self.stats: dict = dict()
         self.wins: int = 0
         self.losses: int = 0
-        self.name: str = ""
+        self.name = name
         # self.creator = ""
         if data:
             # if the character already has an id and it's passed into the class, don't replace it

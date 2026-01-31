@@ -149,10 +149,12 @@ def accept_new_character(data):
         print(f"!-- NO DATA RECEIVED {data} --!")
     if not data['id']:
         print(f"!-- ID NOT FOUND IN DATA: {data} --!")
-    if not data['id']:
+    if not data['imageBase']:
         print(f"!-- IMAGE NOT FOUND IN DATA: {data} --!")
+    if not data['name']:
+        print(f"!-- NAME NOT FOUND IN DATA: {data} --!")
 
-    c = Character(data['id'], data['imageBase'])
+    c = Character(data['id'], data['imageBase'], data['name'])
 
     #Assumed order of the submitted character data dictionary
     #1.Image File Ref 2.Stats 3.Wins 4.Losses 5.Character Name
