@@ -306,12 +306,6 @@ def battle_loop():
     with app.app_context():
         schedule_next_match()
 
-    time.sleep(10)
-    print("!-- DEBUG: RUNNING IMMEDIATE STARTUP BATTLE --!")
-    with app.app_context():
-        run_scheduled_battle()
-        schedule_next_match()
-
     while True:
         socketio.sleep(1)
         timer -= 1
