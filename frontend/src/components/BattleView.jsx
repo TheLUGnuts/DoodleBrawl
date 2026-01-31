@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { socket } from '../socket.js';
 import './BattleView.css';
+import '../text_decor.css';
 
 export default function BattleView() {
   const defaultBattleState = {
