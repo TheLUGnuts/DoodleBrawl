@@ -35,7 +35,7 @@ IMAGE_DIR = os.path.join(BASE_DIR, 'assets/Images')                          #fi
 CHARACTER_FILE = os.path.join(DATA_DIR, 'characters.json')                   #JSON file reference of character objects
 OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                        #last generated response for debugging.
 characters = {}                                                              #dict of character objects
-NEXT_MATCH = None                                                             #holds the [char1, char2] for upcoming fight.
+NEXT_MATCH = None                                                            #holds the [char1, char2] for upcoming fight.
 
 ##################################
 #           GEMINI API           #
