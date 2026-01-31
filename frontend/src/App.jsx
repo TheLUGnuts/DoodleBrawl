@@ -43,8 +43,11 @@ function App() {
     <>
       <h1>Doodle Brawl!</h1>
       <div>
-        <p>Connection Status: { connectionStatus }</p>
         <DrawingCanvas />
+      </div>
+      <div class='status'>
+        <p>Connection Status: { connectionStatus }</p>
+        <p>Made with love by Connor Fair, Jon Rutan, and Trevor Corcoran for VCU's 2026 Hackathon</p>
       </div>
     </>
   )
