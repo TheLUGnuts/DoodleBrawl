@@ -26,6 +26,11 @@ CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 API_KEY = os.getenv('GEMINI_API') 
 
+print("!-- SERVER STARTING UP: LOADING CHARACTERS... --!")
+load_characters()
+print("!-- STARTING BATTLE LOOP... --!")
+socketio.start_background_task(battle_loop)
+
 BATTLE_TIMER=300 # 5 minutes in seconds
 
 #data paths
