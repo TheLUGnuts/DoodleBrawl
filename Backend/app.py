@@ -1,13 +1,14 @@
 #jfr, cwf, tjc
+#Created for the 2026 VCU 24HR Hackathon
 
 import json, os, random, time, base64
-from components.character import Character
-from google import genai
-from flask_cors import CORS
-from dotenv import load_dotenv
-from google.genai import types, errors
-from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit
+from components.character           import Character
+from google                             import genai
+from flask_cors                          import CORS
+from dotenv                       import load_dotenv
+from google.genai               import types, errors
+from flask    import Flask, render_template, request
+from flask_socketio            import SocketIO, emit
 
 #################################
 #          DOODLE BRAWL         #
@@ -32,6 +33,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))       #cu
 DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                             #file ref where data is stored
 IMAGE_DIR = os.path.join(BASE_DIR, 'assets/Images')                          #file ref where images are located
 CHARACTER_FILE = os.path.join(DATA_DIR, 'characters.json')                   #JSON file reference of character objects
+OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                        #last generated response for debugging.
 characters = {}                                                              #dict of character objects
 NEXT_MATCH = None                                                             #holds the [char1, char2] for upcoming fight.
 
@@ -189,6 +191,7 @@ def run_scheduled_battle():
     favorability = random.randint(1,100)                        #add some randomness to outcome
     #battle information to be sent to gemini API
     request_content = [
+        f"FAVORABILITY: {favorability}",
         f"""
         FIGHTER 1:
         ID: {p1.id}
@@ -216,6 +219,8 @@ def run_scheduled_battle():
             config=generation_config
         )
         
+        with open(OUTPUT_FILE, 'w') as file:
+            json.dump(response, file, indent=2)
         result = json.loads(response.text)
         
         # if new stats were provided, update the character with them
@@ -278,6 +283,7 @@ def battle_loop():
 
 if __name__ == '__main__':
     load_characters()
+    TEST_NAME = "JOE"
     #start battle loop
     socketio.start_background_task(battle_loop)
     socketio.run(app, debug=True, port=5000)
