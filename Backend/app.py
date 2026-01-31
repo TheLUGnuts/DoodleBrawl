@@ -50,6 +50,7 @@ IF a fighter has `fight_count: 0` (stats are empty/null), you MUST generate stat
 1.  **HP (50-200):** Low for small/fragile, High for big/armored. (Avg 100)
 2.  **AGILITY (1-10):** Low for heavy/clunky, High for sleek/athletic. (Avg 5)
 3.  **POWER (1-20):** Low for weak, High for dangerous/weapon-wielding. (Avg 10)
+4.  **DESCRIPTION:** A one-sentence combat-sport introduction (e.g. "The heavy-hitting titan from the void" or "A scrappy brawler with explosive speed").
 
 ### PHASE 2: COMBAT SIMULATION
 Simulate the fight turn-by-turn until one reaches 0 HP. A "favorability" number (1-100) is provided for randomness. Use this number to slightly influence the outcome in favor of Fighter1 (1) and Fighter2 (100), with more signifigance the closer it is to their extremes.
@@ -68,8 +69,12 @@ Return strictly valid JSON. In the provided action descriptions, wrap key action
             "fighter_2_description": "A small, round blob with angry eyebrows and no arms."
         },
     "new_stats": {
-        "ID_OF_CHAR": { "hp": 120, "agility": 3, "power": 15 } 
-        // Only include keys for characters that needed NEW stats generated.
+        "ID_OF_CHAR": { 
+            "hp": 120, 
+            "agility": 3, 
+            "power": 15,
+            "description": "A tall, muscular stick figure holding a red sword."
+        } 
     },
     "battle_log": [
         { 
@@ -229,12 +234,16 @@ def run_scheduled_battle():
         
         # if new stats were provided, update the character with them
         if 'new_stats' in result and result['new_stats']:
-            for char_id, new_stats in result['new_stats'].items():
+            for char_id, stats_data in result['new_stats'].items():
                 if char_id in characters:
-                    characters[char_id].stats = new_stats
-                    print(f"Updated stats for {characters[char_id].name}: {new_stats}")
+                    target = characters[char_id]
+                    if 'description' in stats_data:
+                        target.description = stats_data.pop('description') 
+                        print(f"Updated description for {target.name}")
+                    target.stats = stats_data
+                    print(f"Updated stats for {target.name}: {target.stats}")
+            
             save_characters()
-
         #updates players win/loss
         winner_id = result.get('winner_id')
         if winner_id == p1.id:
@@ -246,12 +255,8 @@ def run_scheduled_battle():
         save_characters()
 
         #emit to clients
-        socketio.emit('match_result', {
-            'fighters': [p1.to_dict(), p2.to_dict()],
-            'log': result['battle_log'],
-            'winner': winner_id
-        })
-
+        socketio.emit('match_result', {'fighters': [p1.to_dict(), p2.to_dict()],'log': result['battle_log'],'winner': winner_id})
+        print(f"$-- MATCH FINISHED - WINNER {winner_id} --$")
     except Exception as e:
         print(f"!-- ERROR DURING BATTLE GENERATION --!\nError: {e}")
     NEXT_MATCH = None
@@ -268,7 +273,7 @@ def battle_loop():
     timer = BATTLE_TIMER
     with app.app_context():
         schedule_next_match()
-
+    time.sleep(10)
     #print("!-- DEBUG: RUNNING IMMEDIATE STARTUP BATTLE --!")
     #with app.app_context():
     #    schedule_next_match()
@@ -280,10 +285,7 @@ def battle_loop():
         timer -= 1
         
         #emit the timer for clients
-        socketio.emit('timer_update', {
-            'time_left': timer,
-            'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None
-        })
+        socketio.emit('timer_update', {'time_left': timer,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
         
         if timer <= 0:
             with app.app_context():

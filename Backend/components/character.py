@@ -23,6 +23,7 @@ class Character():
         self.wins: int = 0
         self.losses: int = 0
         self.name = name
+        self.description: str = "Mysterious Challenger!"
         # If data dict is present, overwrite defaults
         if data:
             self.id = data.get("id", self.id)
@@ -31,6 +32,7 @@ class Character():
             self.wins = data.get("wins", self.wins)
             self.losses = data.get("losses", self.losses)
             self.name = data.get("name", self.name)
+            self.description = data.get("description", self.description)
         self.total_battles = self.wins + self.losses
 
     
@@ -42,7 +44,19 @@ class Character():
             "stats": self.stats,
             "wins": self.wins,
             "losses": self.losses,
-            "name": self.name
+            "name": self.name,
+            "description": self.description
+        }
+
+    def to_light_dict(self) -> dict:
+        """Returns character info WITHOUT the base64 string"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "stats": self.stats,
+            "wins": self.wins,
+            "losses": self.losses,
+            "description": self.description
         }
     
     def update_values(self, new_stats: dict) -> None:
@@ -53,6 +67,7 @@ class Character():
         self.wins = new_stats["wins"] if new_stats.get("wins", False) else self.wins
         self.losses = new_stats["losses"] if new_stats.get("losses", False) else self.losses
         self.name = new_stats["name"] if new_stats.get("name", False) else self.name
+        self.description = new_stats.get("description", self.description)
 
     #Representation of character object
     def __repr__(self):

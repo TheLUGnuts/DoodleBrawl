@@ -1,5 +1,6 @@
 .env 
 *.json
+!.env.sample
 !package.json
 #Node gitignore template
 # Logs
