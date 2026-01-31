@@ -275,6 +275,15 @@ def run_scheduled_battle():
 #        SERVER HANDLERS         #
 ##################################
 
+@app.route('/card')
+def return_current_card():
+    data = {
+        'fighters': [c.to_dict() for c in NEXT_MATCH],
+        'starts_in': BATTLE_TIMER
+        }
+    json_string = json.dumps(data)
+    return json_string
+
 @app.route('/')
 def index():
     return render_template('index.html')
