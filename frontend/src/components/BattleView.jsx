@@ -17,9 +17,11 @@ export default function BattleView() {
         wins: 0,
         losses: 0,
       }
-    ]
+    ],
   }
   const [battleState, setBattleState] = useState(defaultBattleState);
+  const [logState, setLogState] = useState([{description: "No fight logs."}]);
+  const [summaryState, setSummaryState] = useState("No Summary");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -34,14 +36,20 @@ export default function BattleView() {
 
   function processFightData(data) {
     // Processes fighting data
+    console.log(data);
 
     // Fighter images
     setBattleState(data);
   }
 
+  function processFightLogs(data) {
+    // Processes only the logs
+    setLogState(data.log);
+    setSummaryState(data.summary);
+  }
+
   const handleSchedule = (data) => {
     console.log("SCHEDULE ------")
-    console.log(data);
 
     processFightData(data);
   }
@@ -49,9 +57,9 @@ export default function BattleView() {
   const handleResult = (data) => {
     // Takes data from a fight and places it in the correct places
     console.log("RESULT ------")
-    console.log(data);
 
     processFightData(data);
+    processFightLogs(data);
   }
 
   const handleTimerUpdate = (data) => {
@@ -73,7 +81,7 @@ export default function BattleView() {
         return response.json();
       })
       .then(json => {
-        console.log("Got data-----------------")
+        console.log("Got Fresh Fighter Data");
         processFightData(json);
         setLoading(false);
       })
@@ -92,8 +100,8 @@ export default function BattleView() {
   }, []);
 
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (loading) return <div class='net-loading'>Loading...</div>;
+  if (error) return <div class='net-error'>Error: {error}</div>;
   if (!battleState) return null;
 
   return (
@@ -122,6 +130,20 @@ export default function BattleView() {
             <p>Wins: {battleState.fighters[1].wins}</p>
             <p>Loses: {battleState.fighters[1].losses}</p>
           </div>
+        </div>
+
+        <hr/>
+
+        <div class='logs'>
+          <ul>
+            {logState.map((log, index) => (
+              <li key={index}>
+                <div dangerouslySetInnerHTML={{ __html: log.description }} />
+              </li>
+            ))}
+          </ul>
+
+          <p class='summary'>{summaryState}</p>
         </div>
 
       </div>

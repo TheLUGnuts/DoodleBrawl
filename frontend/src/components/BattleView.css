@@ -34,3 +34,20 @@
 .fighter-img {
   border: outset;
 }
+
+.summary {
+  margin-top: 10px;
+  font-size: 1.2em;
+}
+
+.logs {
+  margin-top: 10px;
+}
+
+.net-error {
+  color: #a80000;
+}
+
+.net-loading {
+  color: #aaaa00;
+}
