@@ -61,7 +61,7 @@ Simulate the fight turn-by-turn until one reaches 0 HP. A "favorability" number 
     * IF AGILITY>=7:`DIVE`   : Dive from off ropes (Agility + Power +/- variance).
 
 ### OUTPUT FORMAT
-Return strictly valid JSON.
+Return strictly valid JSON. In the provided action descriptions, wrap key action words (e.g. punch, kick, slice) with a <span class="action">action </span>. 
 {
     "visual_analysis": {
             "fighter_1_description": "A tall, muscular stick figure holding a red sword.",
@@ -77,7 +77,7 @@ Return strictly valid JSON.
             "action": "ATTACK", 
             "target": "Name", 
             "damage": 12, 
-            "description": "Threw a wild punch!",
+            "description": "Threw a wild <span class="action">punch</span>!",
             "remaining_hp": 88
         },
         ...
