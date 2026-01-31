@@ -7,7 +7,7 @@ from google                             import genai
 from flask_cors                          import CORS
 from dotenv                       import load_dotenv
 from google.genai               import types, errors
-from flask    import Flask, render_template, request
+from flask    import Flask, render_template, request, jsonify
 from flask_socketio            import SocketIO, emit
 
 #################################
@@ -277,12 +277,24 @@ def run_scheduled_battle():
 
 @app.route('/card')
 def return_current_card():
-    data = {
-        'fighters': [c.to_dict() for c in NEXT_MATCH],
-        'starts_in': BATTLE_TIMER
-        }
-    json_string = json.dumps(data)
-    return json_string
+    global NEXT_MATCH
+    if NEXT_MATCH is None:
+        return jsonify({
+            'fighters': [],
+            'starts_in': 0,
+            'status': 'waiting'
+        })
+    try:
+        fighters_data = [c.to_dict() for c in NEXT_MATCH]
+        
+        return jsonify({
+            'fighters': fighters_data,
+            'starts_in': BATTLE_TIMER,
+            'status': 'scheduled'
+        })
+    except Exception as e:
+        print(f"!-- ERROR SERVING CARD: {e} --!")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/')
 def index():
