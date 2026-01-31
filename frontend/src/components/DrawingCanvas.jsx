@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { Input } from '@chakra-ui/react';
 import { socket } from '../socket.js';
 import './DrawingCanvas.css';
 
@@ -11,6 +12,7 @@ const DrawingCanvas = () => {
   const [eraseMode, setEraseMode] = useState(false);
   const [history, setHistory] = useState([]);
   const [historyStep, setHistoryStep] = useState(-1);
+  const [drawingName, setDrawingName] = useState("Name");
 
   // Initialize canvas
   useEffect(() => {
@@ -148,18 +150,32 @@ const DrawingCanvas = () => {
     return base64String; // Send this via socket
   }
 
+  const updateDrawingName = (change) => {
+    setDrawingName(change.target.value);    
+  }
+
   const sendImageOverSocket = () => {
     // Sends current Canvas image to server
     socket.emit('submit_character', {
       id: uuidv4(),
-      imageBase: getImageBase64()}
+      imageBase: getImageBase64(),
+      name: drawingName}
     );
   }
+
 
   const colors = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
 
   return (
     <div className="drawable-canvas-container">
+      <div class="name">
+        <Input
+          value={drawingName}
+          onChange={updateDrawingName}
+          placeholder="Give it a name!"
+          borderColor="gray.900"
+        />
+      </div>
       {/* Toolbar */}
       <div className="toolbar">
         {/* Color Palette */}

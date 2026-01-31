@@ -131,3 +131,8 @@
   touch-action: none;
   cursor: crosshair;
 }
+
+.name {
+  color: black;
+}
+
