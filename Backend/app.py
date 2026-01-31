@@ -309,6 +309,7 @@ def battle_loop():
         if timer <= 0:
             with app.app_context():
                 run_scheduled_battle() #run the match
+                timer.sleep(120)
                 schedule_next_match()  #schedule the next match
             timer = BATTLE_TIMER
 

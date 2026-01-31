@@ -29,6 +29,7 @@ dependencies = [
     "googleapis-common-protos==1.72.0",
     "grpcio==1.76.0",
     "grpcio-status==1.71.2",
+    "gunicorn>=24.1.1",
     "h11==0.16.0",
     "httpcore==1.0.9",
     "httplib2==0.31.0",
