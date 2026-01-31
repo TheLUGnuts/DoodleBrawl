@@ -256,9 +256,10 @@ def run_scheduled_battle():
 
         #emit to clients
         socketio.emit('match_result', {
-            'fighters': [p1.to_light_dict(), p2.to_light_dict()],
+            'fighters': [c.to_dict() for c in NEXT_MATCH],
             'log': result['battle_log'],
-            'winner': winner_id
+            'winner': winner_id,
+
         })
         print(f"$-- MATCH FINISHED - WINNER {winner_id} --$")
     except Exception as e:
