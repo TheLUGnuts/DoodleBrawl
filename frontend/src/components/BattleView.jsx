@@ -25,6 +25,7 @@ export default function BattleView() {
   const [summaryState, setSummaryState] = useState("No Summary");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [timer, setTimer] = useState(null);
   
   function ImageViewer({ base64 }) {
     return (
@@ -65,6 +66,7 @@ export default function BattleView() {
 
   const handleTimerUpdate = (data) => {
     console.log("TIMER UPDATE ------")
+    if (data.time_left) setTimer(data.time_left);
     console.log(data);
   }
 
@@ -103,7 +105,13 @@ export default function BattleView() {
 
   if (loading) return <div class='net-loading'>Loading...</div>;
   if (error) return <div class='net-error'>Error: {error}</div>;
-  if (!battleState) return null;
+  if (!battleState || !battleState.fighters || battleState.fighters.length < 2) { return (
+        <div className='root waiting-screen'>
+            <h1>Waiting for Next Match...</h1>
+            {timer && <h2>Next Match in: {timer}s</h2>}
+        </div>
+      );
+    }
 
   return (
     <div class='root'>
