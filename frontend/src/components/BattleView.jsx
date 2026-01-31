@@ -154,8 +154,11 @@ export default function BattleView() {
         <div class='logs'>
           <ul>
             {logState.map((log, index) => (
-              <li key={index}>
-                <div dangerouslySetInnerHTML={{ __html: log.description }} />
+              <li class='one-log' key={index}>
+                <span class='log-name'>
+                  {log.actor}
+                </span>
+                  <div dangerouslySetInnerHTML={{ __html: log.description }} />
               </li>
             ))}
           </ul>

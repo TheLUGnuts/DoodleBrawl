@@ -8,8 +8,6 @@
   padding: 5px;
 }
 
-.row {
-}
 /* Clear floats after image containers */
 .row::after {
   content: "";
@@ -44,6 +42,14 @@
 
 .logs {
   margin-top: 10px;
+}
+
+.one-log {
+  margin-bottom: 20px;
+}
+
+.log-name {
+  font-weight: bold;
 }
 
 .net-error {
