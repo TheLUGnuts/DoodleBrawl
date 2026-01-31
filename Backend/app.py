@@ -62,7 +62,7 @@ Simulate the fight turn-by-turn until one reaches 0 HP. A "favorability" number 
     * IF AGILITY>=7:`DIVE`   : Dive from off ropes (Agility + Power +/- variance).
 
 ### OUTPUT FORMAT
-Return strictly valid JSON. In the provided action descriptions, wrap key action words (e.g. punch, kick, slice) with a <span class="action">action </span>. 
+Return strictly valid JSON. In the provided action descriptions, wrap key action words (e.g. punch, kick, slice) with a <span class="action-(color)">action </span>. You can choose the action-(color) as the following ONLY: action-red, action-blue, action-rainbow, or action-green.
 {
     "visual_analysis": {
             "fighter_1_description": "A tall, muscular stick figure holding a red sword.",
@@ -82,7 +82,7 @@ Return strictly valid JSON. In the provided action descriptions, wrap key action
             "action": "ATTACK", 
             "target": "Name", 
             "damage": 12, 
-            "description": "Threw a wild <span class="action">punch</span>!",
+            "description": "Threw a wild <span style="color: #f39930" class="action-red">punch</span>!",
             "remaining_hp": 88
         },
         ...
@@ -256,7 +256,7 @@ def run_scheduled_battle():
 
         #emit to clients
         socketio.emit('match_result', {
-            'fighters': [p1.to_light_dict(), p2.to_light_dict()], # <--- CHANGED
+            'fighters': [p1.to_light_dict(), p2.to_light_dict()],
             'log': result['battle_log'],
             'winner': winner_id
         })
