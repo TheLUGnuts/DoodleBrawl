@@ -43,6 +43,7 @@ NEXT_MATCH = None                                                             #h
 client = genai.Client(api_key=API_KEY)
 SYSTEM_PROMPT = """
 You are the "Doodle Brawl" Game Engine. Your goal is to simulate a turn-based battle between two characters to 0 HP.
+You'll also need to act as the color commentator of the matches, giving vivid and exciting descripitions of fighters, moves, and the match summary.
 
 ### PHASE 1: STAT GENERATION
 Analyze the provided images for both fighters.
@@ -60,6 +61,9 @@ Simulate the fight turn-by-turn until one reaches 0 HP. A "favorability" number 
     * STANDARD:     `RECOVER`: Recover HP (HP +/- variance).
     * IF POWER>=15: `SLAM`   : Large hit (Power(+5) +/- variance).
     * IF AGILITY>=7:`DIVE`   : Dive from off ropes (Agility + Power +/- variance).
+
+### PHASE 3: MATCH SUMMARY AND WINNER
+You'll end off by declaring the winner, and providing an exciting, but brief, breakdown of the match.
 
 ### OUTPUT FORMAT
 Return strictly valid JSON. In the provided action descriptions, wrap key action words (e.g. punch, kick, slice) with a <span class="action-(color)">action </span>. You can choose the action-(color) as the following ONLY: action-red, action-blue, action-rainbow, or action-green.
@@ -87,7 +91,8 @@ Return strictly valid JSON. In the provided action descriptions, wrap key action
         },
         ...
     ],
-    "winner_id": "ID_OF_WINNER"
+    "winner_id": "ID_OF_WINNER",
+    "summary": "A complete knockout match! A very close call but with a narrow victory for Jonesy!"
 }
 """
 
@@ -259,7 +264,7 @@ def run_scheduled_battle():
             'fighters': [c.to_dict() for c in NEXT_MATCH],
             'log': result['battle_log'],
             'winner': winner_id,
-
+            'summary': result['summary']
         })
         print(f"$-- MATCH FINISHED - WINNER {winner_id} --$")
     except Exception as e:
@@ -278,12 +283,12 @@ def battle_loop():
     timer = BATTLE_TIMER
     with app.app_context():
         schedule_next_match()
+
     time.sleep(10)
-    #print("!-- DEBUG: RUNNING IMMEDIATE STARTUP BATTLE --!")
-    #with app.app_context():
-    #    schedule_next_match()
-    #    run_scheduled_battle()
-    #    schedule_next_match()
+    print("!-- DEBUG: RUNNING IMMEDIATE STARTUP BATTLE --!")
+    with app.app_context():
+        run_scheduled_battle()
+        schedule_next_match()
 
     while True:
         socketio.sleep(1)
