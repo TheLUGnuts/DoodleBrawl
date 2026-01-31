@@ -8,15 +8,18 @@ import DrawingCanvas from './components/DrawingCanvas'
 function App() {
   const [count, setCount] = useState(0)
   const [isConnected, setIsConnected] = useState(socket.connected);
+  const [connectionStatus, setConnectionStatus] = useState("n/a");
   const [fooEvents, setFooEvents] = useState([]);
 
   useEffect(() => {
     function onConnect() {
       setIsConnected(true);
+      setConnectionStatus("Connected!");
     }
 
     function onDisconnect() {
       setIsConnected(false);
+      setConnectionStatus("Disconnected...");
     }
 
     function onFooEvent(value) {
@@ -38,7 +41,7 @@ function App() {
     <>
       <h1>Doodle Brawl!</h1>
       <div>
-        <p>Is Connected: { isConnected }</p>
+        <p>Connection Status: { connectionStatus }</p>
         <DrawingCanvas />
       </div>
     </>
