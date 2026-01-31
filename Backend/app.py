@@ -26,7 +26,7 @@ CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 API_KEY = os.getenv('GEMINI_API') 
 
-BATTLE_TIMER=300 # 5 minutes in seconds
+BATTLE_TIMER=180 # 5 minutes in seconds
 
 #data paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))       #current directory
