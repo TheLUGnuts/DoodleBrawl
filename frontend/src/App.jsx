@@ -3,7 +3,8 @@ import { socket } from './socket';
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import DrawingCanvas from './components/DrawingCanvas'
+import DrawingCanvas from './components/DrawingCanvas';
+import BattleView from './components/BattleView';
 
 function App() {
   const [connectionStatus, setConnectionStatus] = useState("Never Connected");
@@ -37,6 +38,7 @@ function App() {
       
       <div class='battle'>
         <h2>Battle Grounds</h2>
+        <BattleView />
         <hr/>
       </div>
 
