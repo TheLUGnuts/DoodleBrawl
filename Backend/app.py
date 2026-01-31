@@ -40,7 +40,7 @@ NEXT_MATCH = None                                                             #h
 ##################################
 #           GEMINI API           #
 ##################################
-
+client = genai.Client(api_key=API_KEY)
 SYSTEM_PROMPT = """
 You are the "Doodle Brawl" Game Engine. Your goal is to simulate a turn-based battle between two characters to 0 HP.
 
@@ -63,6 +63,10 @@ Simulate the fight turn-by-turn until one reaches 0 HP. A "favorability" number 
 ### OUTPUT FORMAT
 Return strictly valid JSON.
 {
+    "visual_analysis": {
+            "fighter_1_description": "A tall, muscular stick figure holding a red sword.",
+            "fighter_2_description": "A small, round blob with angry eyebrows and no arms."
+        },
     "new_stats": {
         "ID_OF_CHAR": { "hp": 120, "agility": 3, "power": 15 } 
         // Only include keys for characters that needed NEW stats generated.
@@ -124,7 +128,7 @@ def load_characters():
             data = json.load(file)
             #create the character objects in memory form the file.
             for char_id, char_data in data.items():
-                characters[char_id] = Character(char_data)
+                characters[char_id] = Character(id_or_data=char_id, data=char_data)
         print(f"$-- LOADED {len(characters)} CHARACTERS --$")
     except Exception as e:
         print(f"!-- ERROR LOADING CHARACTERS --!\n ERROR: {e}")
@@ -173,7 +177,7 @@ def schedule_next_match():
         return
     #select 2 random characters from the characters list to fight.
     NEXT_MATCH = random.sample(list(characters.values()), 2)
-    
+    print(f"{NEXT_MATCH}")
     #send match 'card' to frontend
     socketio.emit('match_scheduled', {
         'fighters': [c.to_dict() for c in NEXT_MATCH],
@@ -214,13 +218,13 @@ def run_scheduled_battle():
     try:
         #send API call to gemini
         response = client.models.generate_content(
-            model='gemini-2.0-flash', #NOTE - This model should suffice
+            model='gemini-2.5-flash-lite', #NOTE - This model should suffice
             contents=request_content,
             config=generation_config
         )
         
         with open(OUTPUT_FILE, 'w') as file:
-            json.dump(response, file, indent=2)
+            json.dump(response.text, file, indent=2)
         result = json.loads(response.text)
         
         # if new stats were provided, update the character with them
@@ -265,6 +269,12 @@ def battle_loop():
     with app.app_context():
         schedule_next_match()
 
+    #print("!-- DEBUG: RUNNING IMMEDIATE STARTUP BATTLE --!")
+    #with app.app_context():
+    #    schedule_next_match()
+    #    run_scheduled_battle()
+    #    schedule_next_match()
+
     while True:
         socketio.sleep(1)
         timer -= 1
@@ -281,11 +291,12 @@ def battle_loop():
                 schedule_next_match()  #schedule the next match
             timer = BATTLE_TIMER
 
+
 if __name__ == '__main__':
     load_characters()
-    TEST_NAME = "JOE"
     #start battle loop
-    socketio.start_background_task(battle_loop)
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        socketio.start_background_task(battle_loop)
     socketio.run(app, debug=True, port=5000)
 
 

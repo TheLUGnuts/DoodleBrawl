@@ -11,23 +11,26 @@ class Character():
     @param losses: The number of losses.
     @param total_battles: 
     @param name: The name of the character"""
-    def __init__(self, id, image_ref: str = "", name="", data = None):
-        # Assumes data contains image_file, stats, wins, losses and name
-        self.id = id
+    def __init__(self, id_or_data, image_ref: str = "", name="", data = None):
+        if isinstance(id_or_data, dict):
+            data = id_or_data
+            self.id = data.get("id", "UNKNOWN_ID")
+        else:
+            self.id = id_or_data
+        #defaults
         self.image_file: str = image_ref
         self.stats: dict = dict()
         self.wins: int = 0
         self.losses: int = 0
         self.name = name
-        # self.creator = ""
+        # If data dict is present, overwrite defaults
         if data:
-            # if the character already has an id and it's passed into the class, don't replace it
-            self.id = data["id"] if data.get("id", False) else self.id
-            self.image_file = data["image_file"]
-            self.stats = data["stats"]
-            self.wins = data["wins"]
-            self.losses = data["losses"]
-            self.name = data["name"]
+            self.id = data.get("id", self.id)
+            self.image_file = data.get("image_file", self.image_file)
+            self.stats = data.get("stats", self.stats)
+            self.wins = data.get("wins", self.wins)
+            self.losses = data.get("losses", self.losses)
+            self.name = data.get("name", self.name)
         self.total_battles = self.wins + self.losses
 
     
@@ -51,6 +54,9 @@ class Character():
         self.losses = new_stats["losses"] if new_stats.get("losses", False) else self.losses
         self.name = new_stats["name"] if new_stats.get("name", False) else self.name
 
+    #Representation of character object
+    def __repr__(self):
+        return f"<Fighter: {self.name} (ID: {self.id})>"
 
 
 
