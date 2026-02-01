@@ -47,6 +47,11 @@
   transform: scale(0.9);
 }
 
+.custom-color {
+  height: 32px;
+  width: 28px;
+}
+
 .stroke-width-control {
   display: flex;
   gap: 0.5rem;
@@ -97,6 +102,25 @@
   background-color: #ff6b6b;
   color: #fff
 }
+
+.tool-button.brush {
+  background-color: #fff;
+}
+
+.tool-button.brush.active {
+  background-color: #7fb98e;
+  color: #fff
+}
+
+.tool-button.bucket {
+  background-color: #fff;
+}
+
+.tool-button.bucket.active {
+  background-color: #9dad0e;
+  color: #fff
+}
+
 
 .tool-button.clear {
   background-color: #ff6b6b;
