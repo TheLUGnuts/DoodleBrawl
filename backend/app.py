@@ -250,7 +250,7 @@ def run_scheduled_battle():
     try:
         #send API call to gemini
         response = client.models.generate_content(
-            model='gemini-2.5-flash-lite', #NOTE - This model should suffice
+            model='gemini-2.0-flash-lite-001', #NOTE - This model should suffice
             contents=request_content,
             config=generation_config
         )
@@ -352,4 +352,4 @@ print("!-- STARTING BATTLE LOOP... --!")
 socketio.start_background_task(battle_loop)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=5000)
+    socketio.run(app, debug=True, port=5000, use_reloader=False)
