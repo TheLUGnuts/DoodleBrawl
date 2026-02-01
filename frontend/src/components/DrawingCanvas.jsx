@@ -9,7 +9,7 @@ const DrawingCanvas = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [strokeColor, setStrokeColor] = useState('#000000');
   const [strokeWidth, setStrokeWidth] = useState(4);
-  const [eraseMode, setEraseMode] = useState(false);
+  const [activeTool, setActiveTool] = useState("brush") //this will replace "eraseMode" and "fillMode" with just an active tool const
   const [history, setHistory] = useState([]);
   const [historyStep, setHistoryStep] = useState(-1);
   const [drawingName, setDrawingName] = useState("");
@@ -60,12 +60,19 @@ const DrawingCanvas = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const { x, y } = getCoordinates(e);
+    
+    //handle bucket tool selection
+    if (activeTool === 'bucket') {
+      paintFill(Math.floor(x), Math.floor(y), strokeColor);
+      return;
+    }
 
+    //handle brush and eraser
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.lineWidth = strokeWidth;
-    ctx.strokeStyle = eraseMode ? 'white' : strokeColor;
-
+    //eraser is just a white brush? clever.
+    ctx.strokeStyle = activeTool === 'eraser' ? 'white' : strokeColor;
     ctx.beginPath();
     ctx.moveTo(x, y);
     setIsDrawing(true);
@@ -150,6 +157,65 @@ const DrawingCanvas = () => {
     return base64String; // Send this via socket
   }
 
+  //change hex decimals to RGB
+  //ai :]
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16),
+      a: 255
+    } : null;
+  };
+
+  // paint bucket logic
+  const paintFill = (startX, startY, fillColorHex) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    const getPixelPos = (x, y) => (y * width + x) * 4;
+    const startPos = getPixelPos(startX, startY);
+    const startR = data[startPos];
+    const startG = data[startPos + 1];
+    const startB = data[startPos + 2];
+    const startA = data[startPos + 3];
+    const fillRgb = hexToRgb(fillColorHex);
+    if (!fillRgb) return;
+
+    //if trying to fill a color with the same color, do nothing
+    if (startR === fillRgb.r && startG === fillRgb.g && startB === fillRgb.b && startA === fillRgb.a) return;
+
+    //use a stack to go over all nearby pixels in omnidirection from the starting pixel
+    const stack = [[startX, startY]];
+    while (stack.length) {
+      const [x, y] = stack.pop();
+      const pos = getPixelPos(x, y);
+      //if the pixel matches the first selected pixel:
+      if (x >= 0 && x < width && y >= 0 && y < height &&
+          data[pos] === startR && data[pos + 1] === startG && 
+          data[pos + 2] === startB && data[pos + 3] === startA) {
+        //change it's color
+        data[pos] = fillRgb.r;
+        data[pos + 1] = fillRgb.g;
+        data[pos + 2] = fillRgb.b;
+        data[pos + 3] = 255; //full alpha
+
+        //adds the pixels neighbors to the stack to be checked
+        stack.push([x + 1, y]);
+        stack.push([x - 1, y]);
+        stack.push([x, y + 1]);
+        stack.push([x, y - 1]);
+      }
+    }
+    //push data and save it to edit history
+    ctx.putImageData(imageData, 0, 0);
+    saveToHistory();
+  };
+
   const updateDrawingName = (change) => {
     setDrawingName(change.target.value);    
   }
@@ -188,14 +254,22 @@ const DrawingCanvas = () => {
         {/* Color Palette */}
         <div className="color-palette">
           <span className="color-palette-label">Color:</span>
+          {/* custom color picker for the pallette*/}
+          <input class="custom-color"
+            type="color" 
+            value={strokeColor} 
+            onChange={(e) => {
+                setStrokeColor(e.target.value);
+            }}
+            title="Custom Color"
+          />
           {colors.map(color => (
             <button
               key={color}
               onClick={() => {
                 setStrokeColor(color);
-                setEraseMode(false);
               }}
-              className={`color-button ${strokeColor === color && !eraseMode ? 'active' : ''}`}
+              className={`color-button ${strokeColor === color && activeTool !== 'eraser' ? 'active' : ''}`}
               style={{ backgroundColor: color }}
             />
           ))}
@@ -218,10 +292,22 @@ const DrawingCanvas = () => {
         {/* Tools */}
         <div className="tools">
           <button
-            onClick={() => setEraseMode(!eraseMode)}
-            className={`tool-button eraser ${eraseMode ? 'active' : ''}`}
+            onClick={() => setActiveTool('brush')}
+            className={`tool-button brush ${activeTool === 'brush' ? 'active' : ''}`}
           >
-            {eraseMode ? 'Eraser' : 'Eraser'}
+            Brush
+          </button>
+          <button
+            onClick={() => setActiveTool('bucket')}
+            className={`tool-button bucket ${activeTool === 'bucket' ? 'active' : ''}`}
+          >
+            Bucket
+          </button>
+          <button
+            onClick={() => setActiveTool('eraser')}
+            className={`tool-button eraser ${activeTool === 'eraser' ? 'active' : ''}`}
+          >
+            Eraser
           </button>
           <button 
             onClick={handleUndo} 

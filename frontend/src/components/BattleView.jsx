@@ -21,7 +21,7 @@ export default function BattleView() {
     ],
   }
   const [battleState, setBattleState] = useState(defaultBattleState);
-  const [logState, setLogState] = useState([{description: "No fight logs."}]);
+  const [logState, setLogState] = useState([{description: "The match will begin soon!"}]);
   const [summaryState, setSummaryState] = useState("No Summary");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -52,7 +52,7 @@ export default function BattleView() {
 
   const handleSchedule = (data) => {
     console.log("SCHEDULE ------")
-
+    setLogState([{description: "The match will begin soon!"}])
     processFightData(data);
   }
 
