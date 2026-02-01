@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { socket } from '../socket.js';
+import { socket, useLocalhost } from '../socket.js';
 import './BattleView.css';
 import '../text_decor.css';
 
@@ -86,7 +86,7 @@ export default function BattleView() {
     socket.on('timer_update', handleTimerUpdate);
 
     // Get initial fighter info from scheduled battle
-    fetch('/card')
+    fetch(useLocalhost ? 'http://localhost:5000/card' : '/card')
       .then(response => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
