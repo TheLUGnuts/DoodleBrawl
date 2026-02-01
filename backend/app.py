@@ -26,7 +26,7 @@ CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 API_KEY = os.getenv('GEMINI_API') 
 
-BATTLE_TIMER=180 # 5 minutes in seconds
+BATTLE_TIMER=180 # 3 minutes in seconds
 
 #data paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))       #current directory
@@ -46,21 +46,29 @@ You are the "Doodle Brawl" Game Engine. Your goal is to simulate a turn-based ba
 You'll also need to act as the color commentator of the matches, giving vivid and exciting descripitions of fighters, moves, and the match summary.
 
 ### PHASE 1: STAT GENERATION
-Analyze the provided images for both fighters.
-IF a fighter has `fight_count: 0` (stats are empty/null), you MUST generate stats based on their visual appearance:
-1.  **HP (50-200):** Low for small/fragile, High for big/armored. (Avg 100)
-2.  **AGILITY (1-10):** Low for heavy/clunky, High for sleek/athletic. (Avg 5)
-3.  **POWER (1-20):** Low for weak, High for dangerous/weapon-wielding. (Avg 10)
-4.  **DESCRIPTION:** A one-sentence combat-sport introduction (e.g. "The heavy-hitting titan from the void" or "A scrappy brawler with explosive speed").
+Check the "Current Stats" provided for each fighter.
+
+1. **IF stats are EMPTY (or Fight Count is 0):**
+   - Analyze the image to determine their attributes.
+   - Generate **HP** (50-200), **AGILITY** (1-10), **POWER** (1-20).
+   - Generate a **DESCRIPTION**: A brief combat-sport introduction (e.g. "The heavy-hitting titan from the void." or "A scrappy brawler with explosive speed").
+   - You MUST include these in the `new_stats` object in the JSON output.
+
+2. **IF stats are PROVIDED (Fight Count > 0):**
+   - Use the provided stats for the simulation.
+   - **DO NOT** generate new stats.
+   - **DO NOT** generate a new description.
+   - **DO NOT** include this fighter in the `new_stats` JSON output.
 
 ### PHASE 2: COMBAT SIMULATION
 Simulate the fight turn-by-turn until one reaches 0 HP. A "favorability" number (1-100) is provided for randomness. Use this number to slightly influence the outcome in favor of Fighter1 (1) and Fighter2 (100), with more signifigance the closer it is to their extremes.
-* **Agility Rule:** If Agility > 6, that fighter has a 20% chance to perform a "Combo" (2 actions in one turn) or "Dodge" (negate damage). Every extra point in agility adds another 10% chance to this.
+* **Agility Rule:** If Agility > 6, that fighter has a 20% chance to perform a "Combo" (2 actions in one turn) or "Dodge" (negate damage). Every extra point in agility adds another 10% chance to this. ULTIMATE abilities should be rare, but very impactful.
 * **Move Types:**
     * STANDARD:     `ATTACK` : Standard hit (Power +/- variance).
     * STANDARD:     `RECOVER`: Recover HP (HP +/- variance).
-    * IF POWER>=15: `SLAM`   : Large hit (Power(+5) +/- variance).
-    * IF AGILITY>=7:`DIVE`   : Dive from off ropes (Agility + Power +/- variance).
+    * IF POWER>=15: `POWER`   : Large powerful hit (Power(+5) +/- variance).
+    * IF AGILITY>=7:`ACROBATIC`   : Skillful, acrobatic move(Agility + Power +/- variance).
+    * STANDARD: 'ULTIMATE' : RARE SUPER MOVE (Power * Agility +/- variance).
 
 ### PHASE 3: MATCH SUMMARY AND WINNER
 You'll end off by declaring the winner, and providing an exciting, but brief, breakdown of the match.
@@ -68,10 +76,6 @@ You'll end off by declaring the winner, and providing an exciting, but brief, br
 ### OUTPUT FORMAT
 Return strictly valid JSON. In the provided action descriptions, wrap key action words (e.g. punch, kick, slice) with a <span class="action-(color)">action </span>. You can choose the action-(color) as the following ONLY: action-red, action-blue, action-rainbow, or action-green.
 {
-    "visual_analysis": {
-            "fighter_1_description": "A tall, muscular stick figure holding a red sword.",
-            "fighter_2_description": "A small, round blob with angry eyebrows and no arms."
-        },
     "new_stats": {
         "ID_OF_CHAR": { 
             "hp": 120, 
@@ -89,11 +93,28 @@ Return strictly valid JSON. In the provided action descriptions, wrap key action
             "description": "Threw a wild <span class="action-red">punch</span>!",
             "remaining_hp": 88
         },
+        {
+            "actor": "Name", 
+            "action": "ACROBATIC", 
+            "target": "Name", 
+            "damage": 17, 
+            "description": "Backflipped into a <span class="action-blue">moonsault</span> off the ropes!",
+            "remaining_hp": 88
+        },
+        {
+            "actor": "Name", 
+            "action": "ULTIMATE", 
+            "target": "Name", 
+            "damage": 30, 
+            "description": "Hit their finisher, the <span class="action-rainbow">supernova slam</span> causing a <span class="action-red">massive impact</span>!",
+            "remaining_hp": 88
+        },
         ...
     ],
     "winner_id": "ID_OF_WINNER",
     "summary": "A complete knockout match! A very close call but with a narrow victory for Jonesy!"
 }
+**IMPORTANT:** The `new_stats` key should be EMPTY or omitted if both fighters already have stats. Only populate it for new fighters.
 """
 
 #converts a base64 string into Gemini API parts (necessary for API generation)
@@ -191,7 +212,8 @@ def schedule_next_match():
     #send match 'card' to frontend
     socketio.emit('match_scheduled', {
         'fighters': [c.to_dict() for c in NEXT_MATCH],
-        'starts_in': BATTLE_TIMER
+        'starts_in': BATTLE_TIMER,
+
     })
     print(f"$-- MATCH SCHEDULED: {NEXT_MATCH[0].name} vs {NEXT_MATCH[1].name} --$")
 
@@ -316,13 +338,13 @@ def battle_loop():
         if timer <= 0:
             with app.app_context():
                 timer = 0
+                socketio.emit('timer_update', {'time_left': timer,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
                 run_scheduled_battle() #run the match
                 timer = -1
+                socketio.emit('timer_update', {'time_left': timer,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
                 socketio.sleep(120)
                 schedule_next_match()  #schedule the next match
             timer = BATTLE_TIMER
-
-
 
 print("!-- SERVER STARTING UP: LOADING CHARACTERS... --!")
 load_characters()
