@@ -16,7 +16,7 @@ function App() {
     }
 
     function onDisconnect() {
-      setConnectionStatus("Disconnected...");
+      setConnectionStatus("Lost Connection...");
       console.log("Disconnected from socket.");
     }
 
@@ -64,8 +64,9 @@ function App() {
       </div>
 
       <div class='status'>
-        <p>Connection Status: { connectionStatus }</p>
+        <p>Server Status: { connectionStatus }</p>
         <p>Made with love by <a class='status-link' href='https://www.linkedin.com/in/connor-fair36/'>Connor Fair</a>, <a class='status-link' href='https://www.linkedin.com/in/jonathanrutan/'>Jon Rutan</a>, and <a class='status-link' href='https://www.linkedin.com/in/trevorcorc/'>Trevor Corcoran</a> for VCU's 2026 Hackathon</p>
+        <a class='status-link' href='https://github.com/TheLUGnuts/DoodleBrawl'>View on GitHub</a>
       </div>
     </>
   )
