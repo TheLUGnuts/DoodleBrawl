@@ -13,29 +13,29 @@ from flask             import Flask, render_template, jsonify
 #          DOODLE BRAWL         #
 #################################
 
-load_dotenv()
-
-app = Flask(__name__,
+load_dotenv()                                                           #load the env variables
+app = Flask(__name__,                                                   #launch the flask app
     static_folder="../Frontend/dist/assets",
     template_folder="../Frontend/dist",
     static_url_path="/assets")
-#Cross Origin Resource Sharing prevention
-app.config['SECRET_KEYS'] = os.getenv('SECRET_KEY')
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+app.config['SECRET_KEYS'] = os.getenv('SECRET_KEY')                     #secret key for CORS prevention, taken from .env file
+CORS(app)                                                               #Apply the CORS prevention onto the flask app
+socketio = SocketIO(app, cors_allowed_origins="*")                      #begin sockets for listening and sending out info
 
 #Global variables
-BATTLE_TIMER=180 # 3 minutes in seconds
-CHARACTERS = {}                                                              #dict of character objects
-NEXT_MATCH = None                                                            #holds the [char1, char2] for upcoming fight.
-CLIENT = Genclient(os.getenv('GEMINI_API'))                                  #genclient class for API calling
-
-#data paths
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))       #current directory
-DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                             #file ref where data is stored
-IMAGE_DIR = os.path.join(BASE_DIR, 'assets/Images')                          #file ref where images are located
-CHARACTER_FILE = os.path.join(DATA_DIR, 'characters.json')                   #JSON file reference of character objects
-OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                        #last generated response for debugging.
+BATTLE_TIMER=180                                                        #3 minutes in seconds
+CHARACTERS = {}                                                         #dict of character objects
+APPROVAL_QUEUE = {}                                                     #dict of submitted characters to be approved
+NEXT_MATCH = None                                                       #holds the [char1, char2] for upcoming fight.
+CLIENT = Genclient(os.getenv('GEMINI_API'))                             #genclient class for API calling
+#Data paths
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  #current directory
+DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                        #file ref where data is stored
+IMAGE_DIR = os.path.join(BASE_DIR, 'assets/Images')                     #file ref where images are located
+CHARACTER_FILE = os.path.join(DATA_DIR, 'characters.json')              #JSON file reference of character objects
+QUEUE_FILE = os.path.join(DATA_DIR, 'queue.json')                       #approval queue of characters
+OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                   #last generated response for debugging.
+REJECTED_FILE = os.path.join(DATA_DIR, 'rejected.json')                 #file containing rejected images, their ID, and reason for rejection
 
 ##################################
 #          DATA HANDLERS         #
@@ -57,6 +57,22 @@ def load_characters():
     except Exception as e:
         print(f"!-- ERROR LOADING CHARACTERS --!\n ERROR: {e}")
 
+#load the approval queue from the queue.json file
+def load_queue():
+    global APPROVAL_QUEUE 
+    if not os.path.exists(QUEUE_FILE):
+        print(f"!--- QUEUE FILE WASN'T FOUND AT {QUEUE_FILE}---!")
+        return
+    try:
+        with open(QUEUE_FILE, 'r') as file:
+            data = json.load(file)
+            #create the character objects in memory form the file.
+            for char_id, char_data in data.items():
+                APPROVAL_QUEUE[char_id] = Character(id_or_data=char_id, data=char_data)
+        print(f"$-- LOADED {len(QUEUE_FILE)} CHARACTERS FOR APPROVAL QUEUE --$")
+    except Exception as e:
+        print(f"!-- ERROR LOADING APPROVAL QUEUE --!\n ERROR: {e}")
+
 #save all characters to the characters.json file
 def save_characters():
     try:
@@ -66,6 +82,68 @@ def save_characters():
         print(f"$-- CHARACTERS SAVED TO characters.json --$")
     except Exception as e:
         print(f"!-- ERROR SAVING CHARACTERS --!\n ERROR: {e}")
+
+#save queued characters to queue.json
+def save_queue():
+    try:
+        data = {c_id: c.to_dict() for c_id, c in APPROVAL_QUEUE.items()}
+        with open(QUEUE_FILE, 'w') as file:
+            json.dump(data, file, indent=2)
+        print(f"$-- QUEUE SAVED TO queue.json --$")
+    except Exception as e:
+        print(f"!-- ERROR SAVING QUEUE --!\n ERROR: {e}")
+
+#submit the current approval queue to the API for inappropriate content
+def submit_queue_for_approval():
+    global APPROVAL_QUEUE, CHARACTERS
+    #only run the approval submission if theres at least 3 to add.
+    if len(APPROVAL_QUEUE) < 3:
+        return
+    #submit the approval queue for AI approval
+    results = CLIENT.submit_for_approval(APPROVAL_QUEUE)
+    if not results:
+        return
+    ids_to_remove = []
+    for char_id, decision in results.items():
+        if char_id in APPROVAL_QUEUE:
+            if decision.get('approved'):
+                #Move to main game roster
+                character = APPROVAL_QUEUE[char_id]
+                CHARACTERS[char_id] = character
+                print(f"$-- APPROVED: {char_id} --$")
+            else:
+                #Rejected, log it
+                reason = decision.get('reason', 'Unknown')
+                print(f"!-- REJECTED: {char_id} - Reason: {reason} --!")
+                log_rejection(char_id, APPROVAL_QUEUE[char_id], reason)
+            ids_to_remove.append(char_id)
+    for char_id in ids_to_remove:
+        del APPROVAL_QUEUE[char_id]
+    save_characters()
+    save_queue()
+
+#log rejections
+def log_rejection(char_id, char_obj, reason):
+    rejected_data = {}
+    if os.path.exists(REJECTED_FILE):
+        try:
+            with open(REJECTED_FILE, 'r') as f:
+                rejected_data = json.load(f)
+        except:
+            rejected_data = {}
+    #add the new rejection
+    rejected_data[char_id] = {
+        "id": char_id,
+        "name": char_obj.name,
+        "reason": reason,
+        "image": char_obj.image_file # save the base64 string image
+    }
+    try:
+        with open(REJECTED_FILE, 'w') as f:
+            json.dump(rejected_data, f, indent=2)
+        print(f"!-- LOGGED REJECTION FOR {char_id} --!")
+    except Exception as e:
+        print(f"!-- ERROR SAVING REJECTION: {e} --!")
 
 ##################################
 #        FRONTEND HANDLERS       #
@@ -85,12 +163,10 @@ def accept_new_character(data):
         char_name = "???"
 
     c = Character(data['id'], data['imageBase'], char_name)
-
     #Assumed order of the submitted character data dictionary
     #1.Image File Ref 2.Stats 3.Wins 4.Losses 5.Character Name
-    CHARACTERS[c.id] = c
-    print(f"$-- NEW CHARACTER ADDED {data['id']} with name {data['name']} --$")
-    save_characters()
+    APPROVAL_QUEUE[c.id] = c
+    print(f"$-- NEW CHARACTER ADDED TO APPROVAL QUEUE {data['id']} --$")
     emit('character_added', {'status': 'success', 'character': c.to_dict()})
 
 #chooses two random characters for the next match and schedules them to fight
@@ -106,10 +182,10 @@ def schedule_next_match():
     socketio.emit('match_scheduled', {
         'fighters': [c.to_dict() for c in NEXT_MATCH],
         'starts_in': BATTLE_TIMER,
-
     })
     print(f"$-- MATCH SCHEDULED: {NEXT_MATCH[0].name} vs {NEXT_MATCH[1].name} --$")
 
+#conduct the battle between the selected fighters. Uses the genclient for the api call
 def run_scheduled_battle():
     global NEXT_MATCH
     if not NEXT_MATCH:
@@ -121,7 +197,7 @@ def run_scheduled_battle():
         for char_id, stats_data in result['new_stats'].items():
             if char_id in CHARACTERS:
                 target = CHARACTERS[char_id]
-                new_name = stats_data.pop('name', None) or stats_data.pop('Name', None) #Error with AI capping the variable? Just being sure.
+                new_name = stats_data.pop('name', None) or stats_data.pop('Name', None) #Error with AI capitalizing the variable? Just being sure.
                 if new_name:
                     target.name = new_name
                     print(f"Name added: {target.name} onto {target.id}")
@@ -135,10 +211,10 @@ def run_scheduled_battle():
 
     #updates players win/loss
     winner_id = result.get('winner_id')
-    if winner_id == NEXT_MATCH[0]:
+    if winner_id == NEXT_MATCH[0].id:
         NEXT_MATCH[0].wins += 1
         NEXT_MATCH[1].losses += 1
-    elif winner_id == NEXT_MATCH[1]:
+    elif winner_id == NEXT_MATCH[1].id:
         NEXT_MATCH[1].wins += 1
         NEXT_MATCH[0].losses += 1
 
@@ -159,6 +235,7 @@ def run_scheduled_battle():
 #        SERVER HANDLERS         #
 ##################################
 
+#Grabs the current card info
 @app.route('/api/card')
 def return_current_card():
     global NEXT_MATCH
@@ -171,7 +248,6 @@ def return_current_card():
         })
     try:
         fighters_data = [c.to_dict() for c in current_match]
-        
         return jsonify({
             'fighters': fighters_data,
             'starts_in': BATTLE_TIMER,
@@ -181,42 +257,40 @@ def return_current_card():
         print(f"!-- ERROR SERVING CARD: {e} --!")
         return jsonify({'error': str(e)}), 500
 
+#Creates a leaderboard by sorting the top three fighters
 @app.route('/api/leaderboard')
 def return_top_fighters():
-    """
-    Returns the top fighters from characters.json
-    """
-    
     # Number of fighters to feature on the leaderboard
     NUM_FIGHTERS = 3
-
     # Top fighters
-    char_list = [c.to_light_dict() for c in characters.values()]
+    char_list = [c.to_light_dict() for c in CHARACTERS.values()]
     char_list = sorted(char_list, key=lambda x: x['wins'])
     char_list = char_list[-(NUM_FIGHTERS + 1):-1]
-
     return jsonify(char_list)
 
-
+#Default app route
 @app.route('/')
 def index():
     return render_template('index.html')
 
-def battle_loop():
+#Main server loop. Timer counts down, when it hits zero
+def server_loop():
     timer = BATTLE_TIMER
     with app.app_context():
         schedule_next_match()
-    
+
+    #When running as main, do an intial shorter match for faster testing
     if TEST:
         timer = 10
 
     while True:
         socketio.sleep(1)
+        if len(APPROVAL_QUEUE) >= 3:
+            with app.app_context():
+                submit_queue_for_approval()
         timer -= 1
-        
         #emit the timer for clients
         socketio.emit('timer_update', {'time_left': timer,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
-        
         if timer <= 0:
             with app.app_context():
                 timer = 0
@@ -228,10 +302,13 @@ def battle_loop():
                 schedule_next_match()  #schedule the next match
             timer = BATTLE_TIMER
 
+
+#Starting up server, loading players and approval queue
 print("!-- SERVER STARTING UP: LOADING CHARACTERS... --!")
 load_characters()
+load_queue()
 print("!-- STARTING BATTLE LOOP... --!")
-socketio.start_background_task(battle_loop)
+socketio.start_background_task(server_loop)
 
 if __name__ == '__main__':
     TEST = True

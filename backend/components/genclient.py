@@ -8,7 +8,26 @@ from google.genai                        import types, errors
 #           GEMINI API           #
 ##################################
 
-SYSTEM_PROMPT = """
+APPROVAL_SYSTEM_PROMPT="""
+You are a Content Safety Moderator for a "Doodle Brawl" game. 
+Your job is to analyze the provided images and flag them for safety.
+You must strictly reject any image containing:
+1. Sexual content, nudity, or sexually suggestive poses/anatomy.
+2. Hate symbols, racism, or discriminatory imagery.
+3. Excessive gore or disturbing violence (cartoon violence is okay, realistic/gory is not).
+4. Offensive text or slurs.
+
+Output strictly valid JSON in the following format:
+{
+    "results": {
+        "CHAR_ID_1": { "approved": true },
+        "CHAR_ID_2": { "approved": false, "reason": "Contains nudity" }
+    }
+}
+If an image is safe/ambiguous but leans towards cartoonish/silly, approve it.
+"""
+
+BATTLE_SYSTEM_PROMPT = """
 You are the "Doodle Brawl" Game Engine. Your goal is to simulate a turn-based battle between two characters to 0 HP.
 You'll also need to act as the color commentator of the matches, giving vivid and exciting descripitions of fighters, moves, and the match summary.
 
@@ -109,19 +128,57 @@ def get_image_part_from_base64(base64_string):
 class Genclient():
     def __init__(self, api_key):
         self.client = genai.Client(api_key=api_key)
-        self.generation_config = types.GenerateContentConfig(
+        self.battle_generation_config = types.GenerateContentConfig(
             temperature=1,                         #boilerplate
             top_p=0.95,                            #boilerplate(?)
             top_k=64,                              #boilerplate(?)
             max_output_tokens=10240,               #arbitrary number (2^)
             response_mime_type="application/json", #return your response as a legal JSON format
-            system_instruction=SYSTEM_PROMPT
+            system_instruction=BATTLE_SYSTEM_PROMPT
+        )
+        self.approval_generation_config = types.GenerateContentConfig(
+            temperature=1,                         #boilerplate
+            top_p=0.95,                            #boilerplate(?)
+            top_k=64,                              #boilerplate(?)
+            max_output_tokens=10240,               #arbitrary number (2^)
+            response_mime_type="application/json", #return your response as a legal JSON format
+            system_instruction=APPROVAL_SYSTEM_PROMPT
         )
 
+    #submit a queue of character images for approval.
+    def submit_for_approval(self, queue):
+        if not queue:
+            print("!-- QUEUE EMPTY, NOTHING FOR APPROVAL PROCESS --!")
+            return {}
+        print(f"!-- SUBMITTING {len(queue)} IMAGES FOR APPROVAL --!")
+        #create request content, interleaving ID and image (base64)
+        request_content = ["Analyze these images based on the ID provided above them:"]
+        for char_id, char_obj in queue.items():
+            #add ID
+            request_content.append(f"ID: {char_id}")
+            #add image
+            img_part = get_image_part_from_base64(char_obj.image_file)
+            if img_part:
+                request_content.append(img_part)
+            else:
+                request_content.append("[IMAGE DATA MALFORMED - REJECT]")
+        try:
+            response = self.client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=request_content,
+                config=self.approval_generation_config
+            )
+            result = json.loads(response.text)
+            return result.get('results', {})
+        except Exception as e:
+            print(f"!-- ERROR DURING APPROVAL PROCESS: {e} --!")
+            return {}
+
+    #run the match by setting up the api submission content
     def run_match(self, matchup):
         p1, p2 = matchup
         print(f"!-- RUNNING BATTLE: {p1.name} vs {p2.name} --!")
-        favorability = random.randint(1,100)                        #add some randomness to outcome
+        favorability = random.randint(1,100) #add some randomness to outcome
         #battle information to be sent to gemini API
         request_content = [
             f"FAVORABILITY: {favorability}",
@@ -145,12 +202,11 @@ class Genclient():
             """,
             get_image_part_from_base64(p2.image_file)  #fighter 2 drawing
         ]
-
         try:
             response = self.client.models.generate_content(
                 model='gemini-2.0-flash', #NOTE - This model should suffice
                 contents=request_content,
-                config=self.generation_config
+                config=self.battle_generation_config
             )
             result = json.loads(response.text)
             return result
