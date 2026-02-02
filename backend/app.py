@@ -170,13 +170,29 @@ def accept_new_character(data):
     emit('character_added', {'status': 'success', 'character': c.to_dict()})
 
 #chooses two random characters for the next match and schedules them to fight
+#prioritizes new characters
 def schedule_next_match():
     global NEXT_MATCH
     if len(CHARACTERS) < 2:
         print("!-- NOT ENOUGH FIGHTERS --!")
         return
-    #select 2 random characters from the characters list to fight.
-    NEXT_MATCH = random.sample(list(CHARACTERS.values()), 2)
+    all_chars = list(CHARACTERS.values())
+    #find new characters
+    fresh_meat = [c for c in all_chars if (c.wins + c.losses) == 0]
+    #prioritize new characters
+    if len(fresh_meat) >= 2:
+        print(f"!-- PRIORITY MATCH: FOUND {len(fresh_meat)} NEW FIGHTERS --!")
+        NEXT_MATCH = random.sample(fresh_meat, 2)
+    elif len(fresh_meat) == 1:
+        print("!-- PRIORITY MATCH: 1 NEW FIGHTER FOUND --!")
+        p1 = fresh_meat[0]
+        #select a random other opponent
+        veterans = [c for c in all_chars if c.id != p1.id]
+        p2 = random.choice(veterans)
+        NEXT_MATCH = [p1, p2]
+    #select two random fighters
+    else:
+        NEXT_MATCH = random.sample(all_chars, 2)
     print(f"{NEXT_MATCH}")
     #send match 'card' to frontend
     socketio.emit('match_scheduled', {
