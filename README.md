@@ -31,7 +31,7 @@ Please consider hosting your own instance with the instructions below.</sub>
 * Step 1: Obtain your Google Gemini API key
     * [Follow these instructions](https://ai.google.dev/gemini-api/docs/quickstart) to obtain your API key.
     It is free for personal use, with a modest daily limit (at the time of writing).
-    * Copy `./env-example.txt` and name it `.env`. Then paste your API key into this file.
+    * Copy `env-example.txt` and name it `.env`. Then paste your API key into this file.
 
 * Step 2: Start frontend
     * Requires [Node.js](https://nodejs.org) (tested on v22)
@@ -41,9 +41,9 @@ Please consider hosting your own instance with the instructions below.</sub>
 
 * Step 3: Start backend
     * Requires [Python](https://www.python.org/) (tested on v3.14) and [uv](https://docs.astral.sh/uv/)
-    * Run `uv sync` inside of the `./Backend/` directory
-    * Inside of `./Backend`, run `source .venv/bin/activate`
-    * Inside of `./Backend`, run `python app.py`, this will open a local web server.
+    * Run `uv sync` inside of the `./backend/` directory
+    * Inside of `./backend`, run `source .venv/bin/activate`
+    * Inside of `./backend`, run `python app.py`, this will open a local web server.
 
 Steps 2 and 3 can be done in either order, the browser client will continually try to connect to the server until it is successful.
 
