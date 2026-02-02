@@ -50,7 +50,8 @@ Check the "Current Stats" provided for each fighter.
 
 1. **IF stats are EMPTY (or Fight Count is 0):**
    - Analyze the image to determine their attributes.
-   - Generate **HP** (50-200), **AGILITY** (1-10), **POWER** (1-20).
+   - Generate a *NAME*: This will be a stylistic ring name, capturing the fighters essence. (e.g. Drawing of a bulky man with massive arms "The Super Strangler")
+   - Generate **HP** (50-200), **AGILITY** (1-100), **POWER** (1-100).
    - Generate a **DESCRIPTION**: A brief combat-sport introduction (e.g. "The heavy-hitting titan from the void." or "A scrappy brawler with explosive speed").
    - You MUST include these in the `new_stats` object in the JSON output.
 
@@ -62,14 +63,16 @@ Check the "Current Stats" provided for each fighter.
 
 ### PHASE 2: COMBAT SIMULATION
 Simulate the fight turn-by-turn until one reaches 0 HP. A "favorability" number (1-100) is provided for randomness. Use this number to slightly influence the outcome in favor of Fighter1 (1) and Fighter2 (100), with more signifigance the closer it is to their extremes.
-* **Agility Rule:** If Agility > 6, that fighter has a 20% chance to perform a "Combo" (2 actions in one turn) or "Dodge" (negate damage). Every extra point in agility adds another 10% chance to this. ULTIMATE abilities should be rare, but very impactful.
+* **Agility Rule:** If Agility > 60, that fighter has a 20% chance to perform a "Combo" (2 actions in one turn) or "Dodge" (negate damage). Every extra point in agility adds another 10% chance to this. ULTIMATE abilities should be rare, but very impactful.
 * **Move Types:**
-    * STANDARD:     `ATTACK` : Standard hit (Power +/- variance).
-    * STANDARD:     `RECOVER`: Recover HP (HP +/- variance).
-    * IF POWER>=15: `POWER`   : Large powerful hit (Power(+5) +/- variance).
-    * IF AGILITY>=7:`ACROBATIC`   : Skillful, acrobatic move(Agility + Power +/- variance).
-    * STANDARD: 'ULTIMATE' : RARE SUPER MOVE (Power * Agility +/- variance).
-
+    * STANDARD:     `ATTACK` : Standard hit
+    * STANDARD:     `RECOVER`: Recover HP
+    * IF POWER>=70: `POWER`   : Large powerful hit
+    * IF AGILITY>=70:`ACROBATIC`   : Skillful, acrobatic move.
+    * STANDARD: 'ULTIMATE' : RARE SUPER MOVE
+REMEMBER: Despite the move types you should stick too, be creative in what the characters are doing in ring! Make sure their in-ring behaviors match their description and appearance based on their image, and **VARIETY**, without variety in their moves it will become boring.
+Your NUMBER ONE PRIORITY is to generate an interesting match, so **be creative**!
+    
 ### PHASE 3: MATCH SUMMARY AND WINNER
 You'll end off by declaring the winner, and providing an exciting, but brief, breakdown of the match.
 
@@ -78,10 +81,11 @@ Return strictly valid JSON. In the provided action descriptions, wrap key action
 {
     "new_stats": {
         "ID_OF_CHAR": { 
+            "name": "Rat Ray Johnson",
             "hp": 120, 
-            "agility": 3, 
-            "power": 15,
-            "description": "A tall, muscular stick figure holding a red sword."
+            "agility": 30, 
+            "power": 75,
+            "description": "A tall, muscular rat holding a red sword."
         } 
     },
     "battle_log": [
@@ -189,9 +193,10 @@ def accept_new_character(data):
     if not data['imageBase']:
         print(f"!-- IMAGE NOT FOUND IN DATA: {data} --!")
     if not data['name']:
+        char_name = "???"
         print(f"!-- NAME NOT FOUND IN DATA: {data} --!")
 
-    c = Character(data['id'], data['imageBase'], data['name'])
+    c = Character(data['id'], data['imageBase'], char_name)
 
     #Assumed order of the submitted character data dictionary
     #1.Image File Ref 2.Stats 3.Wins 4.Losses 5.Character Name
@@ -232,6 +237,7 @@ def run_scheduled_battle():
         FIGHTER 1:
         ID: {p1.id}
         Name: {p1.name}
+        Description: {p1.description}
         Current Stats: {p1.stats} (If empty, generate them based on attached image)
         Fight Count: {p1.wins + p1.losses}
         """,
@@ -241,6 +247,7 @@ def run_scheduled_battle():
         FIGHTER 2:
         ID: {p2.id}
         Name: {p2.name}
+        Description: {p2.description}
         Current Stats: {p2.stats} (If empty, generate them based on attached image)
         Fight Count: {p2.wins + p2.losses}
         """,
@@ -250,7 +257,7 @@ def run_scheduled_battle():
     try:
         #send API call to gemini
         response = client.models.generate_content(
-            model='gemini-2.0-flash-lite-001', #NOTE - This model should suffice
+            model='gemini-2.0-flash', #NOTE - This model should suffice
             contents=request_content,
             config=generation_config
         )
@@ -264,6 +271,10 @@ def run_scheduled_battle():
             for char_id, stats_data in result['new_stats'].items():
                 if char_id in characters:
                     target = characters[char_id]
+                    new_name = stats_data.pop('name', None) or stats_data.pop('Name', None) #Error with AI capping the variable? Just being sure.
+                    if new_name:
+                        target.name = new_name
+                        print(f"Name added: {target.name} onto {target.id}")
                     if 'description' in stats_data:
                         target.description = stats_data.pop('description') 
                         print(f"Updated description for {target.name}")
@@ -285,10 +296,10 @@ def run_scheduled_battle():
         socketio.emit('match_result', {
             'fighters': [c.to_dict() for c in NEXT_MATCH],
             'log': result['battle_log'],
-            'winner': winner_id,
+            'winner': characters[winner_id].name,
             'summary': result['summary']
         })
-        print(f"$-- MATCH FINISHED - WINNER {winner_id} --$")
+        print(f"$-- MATCH FINISHED - WINNER {characters[winner_id].name} --$")
     except Exception as e:
         print(f"!-- ERROR DURING BATTLE GENERATION --!\nError: {e}")
     NEXT_MATCH = None
