@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { socket, useLocalhost } from '../socket.js';
 import './BattleView.css';
 import '../text_decor.css';
@@ -27,10 +27,12 @@ export default function BattleView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [timer, setTimer] = useState(null);
+  const timeouts = useRef([]);
   
-  function ImageViewer({ base64 }) {
+  function ImageViewer({ base64, isWinner }) {
     return (
       <img
+        className={isWinner ? 'winner-img' : ''}
         src={`data:image/png;base64,${base64}`}
         alt="Fighter Image"
       />
@@ -47,12 +49,31 @@ export default function BattleView() {
 
   function processFightLogs(data) {
     // Processes only the logs
-    setLogState(data.log);
-    setSummaryState(data.summary);
+    setLogState([]);
+    const LOG_DELAY = 1500 // 1.5 seconds between message
+    data.log.forEach((log, index) => {
+      const t = setTimeout(() => {
+        setLogState(prev => [...prev, log]);
+        const logContainer = document.querySelector('.logs');
+        if (logContainer) logContainer.scrollTop = logContainer.scrollHeight;
+      }, (index + 1) * LOG_DELAY);
+      timeouts.current.push(t);
+    });
+    //totalTime is how long to wait before the winner text and summary is displayed. Calculated by the amount of logs times the log delay
+    const totalTime = (data.log.length + 1) * LOG_DELAY;
+    const tWinner = setTimeout(() => {
+      setLastWinner(data.winner);
+      setSummaryState(data.summary);
+      setBattleState(data);
+    }, totalTime);
+    timeouts.current.push(tWinner);
   }
 
   const handleSchedule = (data) => {
     console.log("SCHEDULE ------");
+    timeouts.current.forEach(clearTimeout);
+    timeouts.current = [];
+
     setLogState([{description: "The match will begin soon!"}]);
     setLastWinner("");
     setSummaryState("");
@@ -62,8 +83,6 @@ export default function BattleView() {
   const handleResult = (data) => {
     // Takes data from a fight and places it in the correct places
     console.log("RESULT ------")
-    setLastWinner(data.winner)
-    processFightData(data);
     processFightLogs(data);
   }
 
@@ -132,7 +151,7 @@ export default function BattleView() {
         <div class='column'>
           <p class='fighter-name fighter-1'>{battleState.fighters[0].name}</p>
           <div class='fighter-img'>
-            {battleState && <ImageViewer base64={battleState.fighters[0].image_file} />} 
+            {battleState && <ImageViewer base64={battleState.fighters[0].image_file} isWinner={lastWinner && lastWinner === battleState.fighters[0].name}/>} 
           </div>
           <div class='stats'>
             <p>Fighter Description: {battleState.fighters[0].description}</p>
@@ -144,7 +163,7 @@ export default function BattleView() {
         <div class='column'>
           <p class='fighter-name fighter-2'>{battleState.fighters[1].name}</p>
           <div class='fighter-img'>
-            {battleState && <ImageViewer base64={battleState.fighters[1].image_file} />} 
+            {battleState && <ImageViewer base64={battleState.fighters[1].image_file} isWinner={lastWinner && lastWinner === battleState.fighters[1].name}/>} 
           </div>
           <div class='stats'>
             <p>Fighter Description: {battleState.fighters[1].description}</p>

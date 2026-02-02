@@ -59,3 +59,24 @@
 .net-loading {
   color: #aaaa00;
 }
+
+@keyframes winner-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+    border-color: gold;
+  }
+  70% {
+    box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0);
+    border-color: gold;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+    border-color: gold;
+  }
+}
+
+.winner-img {
+  animation: winner-pulse 2s infinite;
+  border: 5px solid gold !important;
+  transform: scale(1.05);
+}
