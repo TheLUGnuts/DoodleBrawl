@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, CloseButton, Dialog, Portal, Text } from "@chakra-ui/react"
+import { IconButton } from "@chakra-ui/react"
+import { MdLeaderboard } from "react-icons/md";
 
 import { socket } from './socket';
 import './App.css'
@@ -71,9 +72,13 @@ function App() {
         <a class='status-link' href='https://github.com/TheLUGnuts/DoodleBrawl'>View on GitHub</a>
       </div>
 
-      <Button variant="outline" size="sm" onClick={() => setOpenLeaderboard(true)}>
-        Open Dialog
-      </Button>
+      <IconButton variant="outline" rounded="full" colorScheme="blue"
+        onClick={() => setOpenLeaderboard(true)}
+        icon={<MdLeaderboard />}
+        position="fixed" bottom="20px" right="20px"
+        shadow="lg"
+        zIndex="1000"
+        aria-label="Leaderboard" />
       <LeaderboardModal isOpen={openLeaderboard} setIsOpen={setOpenLeaderboard} />
 
     </>
