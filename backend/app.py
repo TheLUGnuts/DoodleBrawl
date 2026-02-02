@@ -168,6 +168,7 @@ def accept_new_character(data):
     APPROVAL_QUEUE[c.id] = c
     print(f"$-- NEW CHARACTER ADDED TO APPROVAL QUEUE {data['id']} --$")
     emit('character_added', {'status': 'success', 'character': c.to_dict()})
+    save_queue()
 
 #chooses two random characters for the next match and schedules them to fight
 #prioritizes new characters
