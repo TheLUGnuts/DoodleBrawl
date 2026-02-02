@@ -21,8 +21,9 @@ export default function BattleView() {
     ],
   }
   const [battleState, setBattleState] = useState(defaultBattleState);
+  const [lastWinner, setLastWinner] = useState("")
   const [logState, setLogState] = useState([{description: "The match will begin soon!"}]);
-  const [summaryState, setSummaryState] = useState("No Summary");
+  const [summaryState, setSummaryState] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [timer, setTimer] = useState(null);
@@ -51,15 +52,17 @@ export default function BattleView() {
   }
 
   const handleSchedule = (data) => {
-    console.log("SCHEDULE ------")
-    setLogState([{description: "The match will begin soon!"}])
+    console.log("SCHEDULE ------");
+    setLogState([{description: "The match will begin soon!"}]);
+    setLastWinner("");
+    setSummaryState("");
     processFightData(data);
   }
 
   const handleResult = (data) => {
     // Takes data from a fight and places it in the correct places
     console.log("RESULT ------")
-
+    setLastWinner(data.winner)
     processFightData(data);
     processFightLogs(data);
   }
@@ -162,7 +165,9 @@ export default function BattleView() {
               </li>
             ))}
           </ul>
-
+          {lastWinner && (
+            <h2><span class="action-green">WINNER</span>: {lastWinner}</h2>
+          )}
           <p class='summary'>{summaryState}</p>
         </div>
     </div>

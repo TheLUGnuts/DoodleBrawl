@@ -241,14 +241,6 @@ const DrawingCanvas = () => {
 
   return (
     <div className="drawable-canvas-container">
-      <div class="name">
-        <Input
-          value={drawingName}
-          onChange={updateDrawingName}
-          placeholder="Give it a name!"
-          borderColor="gray.900"
-        />
-      </div>
       {/* Toolbar */}
       <div className="toolbar">
         {/* Color Palette */}
