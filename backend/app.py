@@ -26,7 +26,7 @@ CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 API_KEY = os.getenv('GEMINI_API') 
 
-BATTLE_TIMER=180 # 3 minutes in seconds
+BATTLE_TIMER=1800 # 3 minutes in seconds
 
 #data paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))       #current directory
@@ -308,7 +308,7 @@ def run_scheduled_battle():
 #        SERVER HANDLERS         #
 ##################################
 
-@app.route('/card')
+@app.route('/api/card')
 def return_current_card():
     global NEXT_MATCH
     current_match = NEXT_MATCH
@@ -329,6 +329,23 @@ def return_current_card():
     except Exception as e:
         print(f"!-- ERROR SERVING CARD: {e} --!")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/leaderboard')
+def return_top_fighters():
+    """
+    Returns the top fighters from characters.json
+    """
+    
+    # Number of fighters to feature on the leaderboard
+    NUM_FIGHTERS = 3
+
+    # Top fighters
+    char_list = [c.to_light_dict() for c in characters.values()]
+    char_list = sorted(char_list, key=lambda x: x['wins'])
+    char_list = char_list[-(NUM_FIGHTERS + 1):-1]
+
+    return jsonify(char_list)
+
 
 @app.route('/')
 def index():
