@@ -72,13 +72,14 @@ function App() {
         <a class='status-link' href='https://github.com/TheLUGnuts/DoodleBrawl'>View on GitHub</a>
       </div>
 
-      <IconButton variant="outline" rounded="full" colorScheme="blue"
+      <IconButton rounded="full" color="cyan.200" bg="grey.100"
         onClick={() => setOpenLeaderboard(true)}
-        icon={<MdLeaderboard />}
         position="fixed" bottom="20px" right="20px"
         shadow="lg"
         zIndex="1000"
-        aria-label="Leaderboard" />
+        aria-label="Leaderboard">
+          <MdLeaderboard />
+        </IconButton>
       <LeaderboardModal isOpen={openLeaderboard} setIsOpen={setOpenLeaderboard} />
 
     </>

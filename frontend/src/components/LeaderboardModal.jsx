@@ -20,7 +20,7 @@ export default function LeaderboardModal({ isOpen, setIsOpen }) {
           <Dialog.Positioner>
             <Dialog.Content>
               <Dialog.CloseTrigger asChild>
-                <CloseButton color="bg" />
+                <CloseButton variant="subtle" />
               </Dialog.CloseTrigger>
               <Dialog.Header>
                 <Dialog.Title>Leaderboard</Dialog.Title>
