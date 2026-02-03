@@ -1,8 +1,8 @@
 #jfr, cwf, tjc
 
 import json, random, base64
-from google                                      import genai
-from google.genai                        import types, errors
+from google                 import genai
+from google.genai           import types
 
 ##################################
 #           GEMINI API           #
@@ -16,6 +16,7 @@ You must strictly reject any image containing:
 2. Hate symbols, racism, or discriminatory imagery.
 3. Excessive gore or disturbing violence (cartoon violence is okay, realistic/gory is not).
 4. Offensive text or slurs.
+5. Images that are excessively lazy, not particularly of poor quality, but clearly lacking in effort. This includes empty/blank submissions.
 
 Output strictly valid JSON in the following format:
 {
@@ -51,11 +52,11 @@ Check the "Current Stats" provided for each fighter.
 Simulate the fight turn-by-turn until one reaches 0 HP. A "favorability" number (1-100) is provided for randomness. Use this number to slightly influence the outcome in favor of Fighter1 (1) and Fighter2 (100), with more signifigance the closer it is to their extremes.
 * **Agility Rule:** If Agility > 60, that fighter has a 20% chance to perform a "Combo" (2 actions in one turn) or "Dodge" (negate damage). Every extra point in agility adds another 10% chance to this. ULTIMATE abilities should be rare, but very impactful.
 * **Move Types:**
-    * STANDARD:     `ATTACK` : Standard hit
-    * STANDARD:     `RECOVER`: Recover HP
-    * IF POWER>=70: `POWER`   : Large powerful hit
-    * IF AGILITY>=70:`ACROBATIC`   : Skillful, acrobatic move.
-    * STANDARD: 'ULTIMATE' : RARE SUPER MOVE
+    * STANDARD:     `ATTACK`     : Standard hit
+    * STANDARD:     `RECOVER`    : Recover HP
+    * IF POWER>=70: `POWER`      : Large powerful hit
+    * IF AGILITY>=70:`ACROBATIC` : Skillful, acrobatic move.
+    * STANDARD: 'ULTIMATE'       : RARE SUPER MOVE
 REMEMBER: Despite the move types you should stick too, be creative in what the characters are doing in ring! Make sure their in-ring behaviors match their description and appearance based on their image, and **VARIETY**, without variety in their moves it will become boring.
 Your NUMBER ONE PRIORITY is to generate an interesting match, so **be creative**!
     
@@ -132,7 +133,7 @@ class Genclient():
             temperature=1,                         #boilerplate
             top_p=0.95,                            #boilerplate(?)
             top_k=64,                              #boilerplate(?)
-            max_output_tokens=10240,               #arbitrary number (2^)
+            max_output_tokens=10240,               #arbitrary number
             response_mime_type="application/json", #return your response as a legal JSON format
             system_instruction=BATTLE_SYSTEM_PROMPT
         )
@@ -140,7 +141,7 @@ class Genclient():
             temperature=1,                         #boilerplate
             top_p=0.95,                            #boilerplate(?)
             top_k=64,                              #boilerplate(?)
-            max_output_tokens=10240,               #arbitrary number (2^)
+            max_output_tokens=10240,               #arbitrary number
             response_mime_type="application/json", #return your response as a legal JSON format
             system_instruction=APPROVAL_SYSTEM_PROMPT
         )
