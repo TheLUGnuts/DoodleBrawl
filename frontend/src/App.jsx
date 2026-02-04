@@ -78,8 +78,8 @@ function App() {
         shadow="lg"
         zIndex="1000"
         aria-label="Leaderboard">
-          <MdLeaderboard />
-        </IconButton>
+        <MdLeaderboard />
+      </IconButton>
       <LeaderboardModal isOpen={openLeaderboard} setIsOpen={setOpenLeaderboard} />
 
     </>

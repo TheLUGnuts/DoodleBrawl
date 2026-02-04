@@ -279,10 +279,12 @@ def return_current_card():
 def return_top_fighters():
     # Number of fighters to feature on the leaderboard
     NUM_FIGHTERS = 3
-    # Top fighters
-    char_list = [c.to_light_dict() for c in CHARACTERS.values()]
-    char_list = sorted(char_list, key=lambda x: x['wins'])
-    char_list = char_list[-(NUM_FIGHTERS + 1):-1]
+
+    # Find top fighters
+    char_list = [c.to_dict() for c in CHARACTERS.values()]  # Get fighter data into list
+    char_list = sorted(char_list, key=lambda x: x['wins'], reverse=True)  # Sort by wins
+    char_list = char_list[0:NUM_FIGHTERS]  # Pull out top fighters
+
     return jsonify(char_list)
 
 #Default app route
