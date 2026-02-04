@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Input } from '@chakra-ui/react';
 import { socket } from '../socket.js';
 import './DrawingCanvas.css';
 

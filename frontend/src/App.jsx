@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { IconButton } from "@chakra-ui/react"
+import { MdLeaderboard } from "react-icons/md";
+
 import { socket } from './socket';
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import DrawingCanvas from './components/DrawingCanvas';
 import BattleView from './components/BattleView';
+import LeaderboardModal from './components/LeaderboardModal';
 
 function App() {
   const [connectionStatus, setConnectionStatus] = useState("Never Connected");
+  const [openLeaderboard, setOpenLeaderboard] = useState(false);
 
   useEffect(() => {
     function onConnect() {
@@ -68,6 +71,17 @@ function App() {
         <p>Made with love by <a class='status-link' href='https://www.linkedin.com/in/connor-fair36/'>Connor Fair</a>, <a class='status-link' href='https://www.linkedin.com/in/jonathanrutan/'>Jon Rutan</a>, and <a class='status-link' href='https://www.linkedin.com/in/trevorcorc/'>Trevor Corcoran</a> for VCU's 2026 Hackathon</p>
         <a class='status-link' href='https://github.com/TheLUGnuts/DoodleBrawl'>View on GitHub</a>
       </div>
+
+      <IconButton rounded="full" color="cyan.200" bg="grey.100"
+        onClick={() => setOpenLeaderboard(true)}
+        position="fixed" bottom="20px" right="20px"
+        shadow="lg"
+        zIndex="1000"
+        aria-label="Leaderboard">
+        <MdLeaderboard />
+      </IconButton>
+      <LeaderboardModal isOpen={openLeaderboard} setIsOpen={setOpenLeaderboard} />
+
     </>
   )
 }
