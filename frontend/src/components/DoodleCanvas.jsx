@@ -1,9 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { socket } from '../socket.js';
-import './DrawingCanvas.css';
+import './DoodleCanvas.css';
 
-const DrawingCanvas = () => {
+const DoodleCanvas = () => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [strokeColor, setStrokeColor] = useState('#000000');
@@ -340,4 +340,4 @@ const DrawingCanvas = () => {
   );
 };
 
-export default DrawingCanvas;
+export default DoodleCanvas;
