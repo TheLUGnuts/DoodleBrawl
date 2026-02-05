@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
 // --------------------------------------------------------
 
 const socket = io(
-    API_URL ? 'http://localhost:5000' : undefined,
+    API_URL,
     {
         transports: ['websocket', 'polling']
     }
