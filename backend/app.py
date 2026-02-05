@@ -20,7 +20,7 @@ app = Flask(__name__,                                                   #launch 
     static_url_path="/assets")
 app.config['SECRET_KEYS'] = os.getenv('SECRET_KEY')                     #secret key for CORS prevention, taken from .env file
 CORS(app)                                                               #Apply the CORS prevention onto the flask app
-socketio = SocketIO(app, cors_allowed_origins="*")                      #begin sockets for listening and sending out info
+socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", "https://doodle.jfelix.space"]) #begin sockets for listening and sending out info
 
 #Global variables
 BATTLE_TIMER=180                                                        #3 minutes in seconds
