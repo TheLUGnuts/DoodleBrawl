@@ -176,7 +176,7 @@ export default function BattleView() {
             />} 
           </div>
           <div class='stats'>
-            <p>Fighter Description: {battleState.fighters[0].description}</p>
+            <p>Fighter Profile: <span dangerouslySetInnerHTML={{ __html: battleState.fighters[0].description }} /></p>
             <p>Wins: {battleState.fighters[0].wins}</p>
             <p>Losses: {battleState.fighters[0].losses}</p>
           </div>
@@ -192,7 +192,7 @@ export default function BattleView() {
             />} 
           </div>
           <div class='stats'>
-            <p>Fighter Description: {battleState.fighters[1].description}</p>
+            <p>Fighter Profile: <span dangerouslySetInnerHTML={{ __html: battleState.fighters[1].description }} /></p>
             <p>Wins: {battleState.fighters[1].wins}</p>
             <p>Losses: {battleState.fighters[1].losses}</p>
           </div>
@@ -213,7 +213,7 @@ export default function BattleView() {
           {lastWinner && (
             <h2><span class="action-green">WINNER</span>: {lastWinner}</h2>
           )}
-          <p class='summary'>{summaryState}</p>
+          <p class='summary' dangerouslySetInnerHTML={{ __html: summaryState }} />
         </div>
     </div>
   );
