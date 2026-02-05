@@ -1,2 +1,3 @@
 GEMINI_API="<insert api key inside quotes>"
 SECRET_KEY="<write anything in here>"
+VITE_SOCKET_URL=http://localhost:5000
