@@ -1,7 +1,7 @@
 /* This component shows the top few fighters, including their stats and images. */
 
 import { useState, useEffect, useRef } from 'react';
-import { socket, useLocalhost } from '../socket.js';
+import { socket, API_URL } from '../socket.js';
 import { Button, CloseButton, Dialog, Portal, Text } from "@chakra-ui/react"
 import './RosterView.css'
 

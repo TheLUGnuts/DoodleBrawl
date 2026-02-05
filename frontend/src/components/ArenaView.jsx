@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { socket, useLocalhost } from '../socket.js';
+import { socket, API_URL } from '../socket.js';
 import './ArenaView.css';
 import '../text_decor.css';
 
