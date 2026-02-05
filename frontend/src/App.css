@@ -20,6 +20,7 @@
 
 h1 {
   color: #000;
+  margin-bottom: 15px;
 }
 
 h2 {
@@ -28,7 +29,6 @@ h2 {
 }
 
 hr {
-  margin-top: 15px;
   margin-bottom: 15px;
   border-color: #000;
 }
@@ -38,3 +38,24 @@ hr {
   text-align: center;
 }
 
+.tabs {
+  display: flex;
+}
+
+.tab-button {
+  padding: 8px 8px;
+  margin-left: -1px;
+  background-color: #fff;
+  border-left: 1px solid #000000;
+  border-right: 1px solid #000000;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #727272;
+}
+
+.tab-button.active {
+  color: #000000;
+  text-decoration: underline;
+  background-color: #ffffff;
+}

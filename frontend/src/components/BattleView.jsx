@@ -29,10 +29,13 @@ export default function BattleView() {
   const [timer, setTimer] = useState(null);
   const timeouts = useRef([]);
   
-  function ImageViewer({ base64, isWinner }) {
+  function ImageViewer({ base64, isWinner, isLoser }) {
+    let className = '';
+    if (isWinner) className = 'winner-img';
+    if (isLoser) className = 'loser-img';
     return (
       <img
-        className={isWinner ? 'winner-img' : ''}
+        className={className}
         src={`data:image/png;base64,${base64}`}
         alt="Fighter Image"
       />
@@ -83,6 +86,21 @@ export default function BattleView() {
   const handleResult = (data) => {
     // Takes data from a fight and places it in the correct places
     console.log("RESULT ------")
+    //in order to preview the new character name and description we used a mixed battle state
+    //the mixed battle state retains all the information of the previous battle state but includes the new name and description
+    //this is only used temporarily, until the complete battle state will overwrite this inside of processFightLogs
+    setBattleState(prev => {
+      const mixedState = {...data, fighters: [...data.fighters]};
+      mixedState.fighters = data.fighters.map((newFighter, index) => {
+        const oldFighter = prev.fighters[index];
+        return {
+          ...newFighter,
+          wins: oldFighter ? oldFighter.wins : newFighter.wins,
+          losses: oldFighter ? oldFighter.losses : newFighter.losses
+        };
+      });
+      return mixedState;
+    });
     processFightLogs(data);
   }
 
@@ -151,24 +169,32 @@ export default function BattleView() {
         <div class='column'>
           <p class='fighter-name fighter-1'>{battleState.fighters[0].name}</p>
           <div class='fighter-img'>
-            {battleState && <ImageViewer base64={battleState.fighters[0].image_file} isWinner={lastWinner && lastWinner === battleState.fighters[0].name}/>} 
+            {battleState && 
+            <ImageViewer base64={battleState.fighters[0].image_file} 
+              isWinner={lastWinner && lastWinner === battleState.fighters[0].name}
+              isLoser={lastWinner && lastWinner !== battleState.fighters[0].name}
+            />} 
           </div>
           <div class='stats'>
-            <p>Fighter Description: {battleState.fighters[0].description}</p>
+            <p>Fighter Profile: <span dangerouslySetInnerHTML={{ __html: battleState.fighters[0].description }} /></p>
             <p>Wins: {battleState.fighters[0].wins}</p>
-            <p>Loses: {battleState.fighters[0].losses}</p>
+            <p>Losses: {battleState.fighters[0].losses}</p>
           </div>
         </div>
 
         <div class='column'>
           <p class='fighter-name fighter-2'>{battleState.fighters[1].name}</p>
           <div class='fighter-img'>
-            {battleState && <ImageViewer base64={battleState.fighters[1].image_file} isWinner={lastWinner && lastWinner === battleState.fighters[1].name}/>} 
+            {battleState && 
+            <ImageViewer base64={battleState.fighters[1].image_file} 
+              isWinner={lastWinner && lastWinner === battleState.fighters[1].name}
+              isLoser={lastWinner && lastWinner !== battleState.fighters[1].name}
+            />} 
           </div>
           <div class='stats'>
-            <p>Fighter Description: {battleState.fighters[1].description}</p>
+            <p>Fighter Profile: <span dangerouslySetInnerHTML={{ __html: battleState.fighters[1].description }} /></p>
             <p>Wins: {battleState.fighters[1].wins}</p>
-            <p>Loses: {battleState.fighters[1].losses}</p>
+            <p>Losses: {battleState.fighters[1].losses}</p>
           </div>
         </div>
 
@@ -187,7 +213,7 @@ export default function BattleView() {
           {lastWinner && (
             <h2><span class="action-green">WINNER</span>: {lastWinner}</h2>
           )}
-          <p class='summary'>{summaryState}</p>
+          <p class='summary' dangerouslySetInnerHTML={{ __html: summaryState }} />
         </div>
     </div>
   );

@@ -7,6 +7,8 @@
   width: 800px;
   margin: 0 auto;
   background-color: #f5f5f5;
+  border-width: 5px;
+  border-color: #5e5e5e;
 }
 
 .toolbar {
@@ -46,6 +48,7 @@
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 .color-button:focus,
 .color-button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -132,7 +135,6 @@
   background-color: #9dad0e;
   color: #fff
 }
-
 
 .tool-button.clear {
   background-color: #ff6b6b;
