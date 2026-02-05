@@ -1,6 +1,6 @@
 # Doodle Brawl
 
-**[Play it here!](https://doodle.jfelix.space)**  
+**[Play it here!](https://doodlebrawl.com)**  
 
 Made for the VCU 24 hour Hackathon - January 30th-31st 2026  
 <sub>Due to Gemini API costs, the server will not usually be up.
