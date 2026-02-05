@@ -33,7 +33,7 @@ export default function RosterView() {
     setLoading(true);
     setError(null);
     
-    fetch(useLocalhost ? 'http://localhost:5000/api/leaderboard' : 'api/leaderboard')
+    fetch(`${API_URL}/api/card`)
       .then(response => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();

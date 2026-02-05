@@ -126,7 +126,7 @@ export default function ArenaView() {
     socket.on('timer_update', handleTimerUpdate);
 
     // Get initial fighter info from scheduled battle
-    fetch(useLocalhost ? 'http://localhost:5000/api/card' : 'api/card')
+    fetch(`${API_URL}/api/card`)
       .then(response => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();

@@ -3,14 +3,14 @@
 import { io } from 'socket.io-client';
 
 // EDIT THIS TO CHANGE BETWEEN SERVER DEPLOYMENT AND LOCAL DEV ENVIRONMENT
-const useLocalhost = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
 // --------------------------------------------------------
 
 const socket = io(
-    useLocalhost ? 'http://localhost:5000' : undefined,
+    API_URL ? 'http://localhost:5000' : undefined,
     {
         transports: ['websocket', 'polling']
     }
 );
 
-export { socket, useLocalhost };
+export { socket, API_URL };
