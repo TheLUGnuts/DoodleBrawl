@@ -178,8 +178,8 @@ class Genclient():
     #run the match by setting up the api submission content
     def run_match(self, matchup):
         p1, p2 = matchup
-        print(f"!-- RUNNING BATTLE: {p1.name} vs {p2.name} --!")
         favorability = random.randint(1,100) #add some randomness to outcome
+        print(f"!-- RUNNING BATTLE: {p1.name} vs {p2.name} WITH FAVORABILITY: {favorability} --!")
         #battle information to be sent to gemini API
         request_content = [
             f"FAVORABILITY: {favorability}",

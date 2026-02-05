@@ -75,8 +75,13 @@
   }
 }
 
+
 .winner-img {
   animation: winner-pulse 2s infinite;
   border: 5px solid gold !important;
-  transform: scale(1.05);
+}
+
+.loser-img {
+  filter: brightness(0.6);
+  border: 5px solid rgb(39, 39, 28);
 }

@@ -231,7 +231,9 @@ const DrawingCanvas = () => {
     );
 
     // Clear drawing
-    setDrawingName("")
+    setDrawingName("");
+    history.length = 0;
+    setHistoryStep(-1);
     handleClear();
   }
 

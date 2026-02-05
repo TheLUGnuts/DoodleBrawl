@@ -11,6 +11,7 @@ import LeaderboardModal from './components/LeaderboardModal';
 function App() {
   const [connectionStatus, setConnectionStatus] = useState("Never Connected");
   const [openLeaderboard, setOpenLeaderboard] = useState(false);
+  const [activeTab, setActiveTab] = useState("doodle"); //default to the drawing canvas
 
   useEffect(() => {
     function onConnect() {
@@ -36,32 +37,50 @@ function App() {
     <>
       <div class='header'>
         <h1>Doodle Brawl!</h1>
-        <hr/>
-      </div>
-      
-      <div class='battle'>
-        <h2>Battle Grounds</h2>
-        <BattleView />
+          <button className = {`tab-button ${activeTab === 'doodle' ? 'active' : ''}`} onClick={() => setActiveTab('doodle')}>
+              Doodle!
+            </button>
+          <button className = {`tab-button ${activeTab === 'battleground' ? 'active' : ''}`} onClick={() => setActiveTab('battleground')}>
+            Arena!
+          </button>
+          <button className = {`tab-button ${activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('leaderboard')}>
+            Roster!
+          </button>
         <hr/>
       </div>
 
-      <div class='drawing'>
-        <h2>Draw your fighter!</h2>
-        <DrawingCanvas />
-        <hr/>
+
+      <div className="main-content">
+        {activeTab === 'doodle' && (
+          <div class='drawing'>
+            <h2>Draw your fighter!</h2>
+            <DrawingCanvas />
+            <hr/>
+          </div>
+        )}
+
+        {activeTab === 'battleground' && (
+        <div class='battleground'>
+          <h2>Battle Grounds</h2>
+          <BattleView />
+          <hr/>
+        </div>
+        )}
+
+        {activeTab === 'leaderboard' && (
+        <div class='leaderboard'>
+          <h2>Coming Soon...</h2>
+          <LeaderboardModal />
+          <hr/>
+        </div>
+        )}
       </div>
 
       <div class='tutorial'>
         <h2>How to Play</h2>
         <p>
-          At the bottom, draw a character to be entered into the pool of fighters. Draw anything!
-          When ready, hit the "Submit for Battle!" button to enter your fighter into the fray.
-          AI will evaluate your character and give it hidden fighting characteristics.
-        </p>
-        <p>
-          In the battle grounds, two characters will be selected from the pool of fighters.
-          AI will take the character statistics and simulate a battle between them.
-          The match will play out in front of your eyes, and you will see who wins!
+          Doodle a combatant then hit "Submit For Battle!".<br></br>
+          You drawing will be given a name and secret stats, then enter the fray.
         </p>
         <hr/>
       </div>

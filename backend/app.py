@@ -1,7 +1,7 @@
 #jfr, cwf, tjc
 #Created for the 2026 VCU 24HR Hackathon
 
-import json, os, random, base64
+import json, os, random
 from flask_cors                                   import CORS
 from components.genclient                    import Genclient
 from components.character                    import Character
@@ -69,7 +69,7 @@ def load_queue():
             #create the character objects in memory form the file.
             for char_id, char_data in data.items():
                 APPROVAL_QUEUE[char_id] = Character(id_or_data=char_id, data=char_data)
-        print(f"$-- LOADED {len(QUEUE_FILE)} CHARACTERS FOR APPROVAL QUEUE --$")
+        print(f"$-- LOADED {len(APPROVAL_QUEUE)} CHARACTERS FOR APPROVAL QUEUE --$")
     except Exception as e:
         print(f"!-- ERROR LOADING APPROVAL QUEUE --!\n ERROR: {e}")
 
@@ -298,10 +298,6 @@ def server_loop():
     with app.app_context():
         schedule_next_match()
 
-    #When running as main, do an intial shorter match for faster testing
-    if TEST:
-        timer = 10
-
     while True:
         socketio.sleep(1)
         if len(APPROVAL_QUEUE) >= 3:
@@ -330,5 +326,4 @@ print("!-- STARTING BATTLE LOOP... --!")
 socketio.start_background_task(server_loop)
 
 if __name__ == '__main__':
-    TEST = True
     socketio.run(app, debug=True, port=5000, use_reloader=False)

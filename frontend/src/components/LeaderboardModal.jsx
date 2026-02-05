@@ -30,7 +30,8 @@ export default memo(function LeaderboardModal({ isOpen, setIsOpen }) {
   // Fetch data only when modal opens
   useEffect(() => {
     if (!isOpen) return; // Don't fetch if modal is closed
-    
+    console.log("Fetching leaderboard")
+
     setLoading(true);
     setError(null);
     
