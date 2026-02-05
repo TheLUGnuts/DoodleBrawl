@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { socket, useLocalhost } from '../socket.js';
-import './BattleView.css';
+import './ArenaView.css';
 import '../text_decor.css';
 
-export default function BattleView() {
+export default function ArenaView() {
   const defaultBattleState = {
     fighters: [
       {
