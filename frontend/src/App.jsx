@@ -5,10 +5,10 @@ import './App.css'
 import DoodleCanvas from './components/DoodleCanvas';
 import ArenaView from './components/ArenaView';
 import RosterView from './components/RosterView';
+import ArenaMini from './components/ArenaMini';
 
 function App() {
   const [connectionStatus, setConnectionStatus] = useState("Never Connected");
-  const [openLeaderboard, setOpenLeaderboard] = useState(false);
   const [activeTab, setActiveTab] = useState("doodle"); //default to the drawing canvas
 
   useEffect(() => {
@@ -49,6 +49,13 @@ function App() {
 
 
       <div className="main-content">
+        {activeTab !== 'battleground' && (
+          <div class='small-battleground'>
+            <ArenaMini />
+            <hr/>
+          </div>
+        )}
+
         {activeTab === 'doodle' && (
           <div class='drawing'>
             <h2>Draw your fighter!</h2>
