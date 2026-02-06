@@ -1,25 +1,25 @@
-.root {
+.root-mini {
   color: #000;
 }
 
-.column {
+.column-mini {
   float: left;
   width: 10%;
   padding: 5px;
 }
 
-.row {
+.row-mini {
   align-items:center;
   justify-content: center;
   display: flex;
 }
 
-.versus {
+.versus-mini {
   font-weight: 800;
   justify-content: center;
 }
 
-.fighter-name {
+.fighter-name-mini {
   font-size: .9em;
   text-overflow: ellipsis;
   white-space: nowrap;
