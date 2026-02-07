@@ -2,51 +2,82 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { socket, API_URL } from '../socket.js';
-import { Button, CloseButton, Dialog, Portal, Text } from "@chakra-ui/react"
 import './RosterView.css'
 
 export default function RosterView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [leaderboardData, setLeaderboardData] = useState({})
+  const [rosterData, setRosterData] = useState({});
+  const [page, setPage] = useState(1); // Page number for fetch
 
   function ImageViewer({ base64, fighterPlacement }) {
     // Decodes base64 image from server
     // Fighter placement (eg 1, 2, 3, etc.) is the fighter's placement in the lineup. 1st, 2nd, 3rd get special css
     return (
       <img
-        className={'fighter-' + fighterPlacement}
+        className="{'fighter-' + fighterPlacement} fighter-img"
         src={`data:image/png;base64,${base64}`}
         alt="Fighter Image"
       />
     );
   }
 
-  function processLeaderboardData(json) {
+  function processRosterData(json) {
+    // Pass data around where necessary
     console.log(json)
-    setLeaderboardData(json)
+    setRosterData(json)
   }
 
-  useEffect(() => {
-    console.log("Fetching leaderboard")
+  const fetchRoster = async (pageNum) => {
+    // Fetch data from server
+    // pageNum specifies which page of data to return (1st, 2nd, 3rd, etc.)
 
+    // Set fetch status
     setLoading(true);
     setError(null);
-    
-    fetch(`${API_URL}/api/leaderboard`)
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-      })
-      .then(json => {
-        console.log("Got Fresh Fighter Data");
-        processLeaderboardData(json);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
+
+    // Attempt POST to server
+    try {
+      const response = await fetch(`${API_URL}/api/roster`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          page: pageNum,
+        })
       });
+
+      // Process data upon success
+      const data = await response.json();
+      console.log("Got Fresh Fighter Data");
+      processRosterData(data);
+
+    } catch (error) {  // Catch error
+      console.error('Error fetching items:', error);
+      setError(error.message);
+
+    } finally {  // Unset loading variable
+      setLoading(false);
+    }
+  };
+
+  const getNextPage = () => {
+    const pageNum = page + 1;
+    setPage(pageNum);
+    fetchRoster(pageNum);
+  }
+
+  const getPrevPage = () => {
+    const pageNum = page - 1;
+    setPage(pageNum);
+    fetchRoster(pageNum);
+  }
+
+  // Fetch initial data
+  useEffect(() => {
+    console.log("Fetching initial roster data")
+    fetchRoster(1);
   }, []);
 
   // Show loading/error states inside the dialog
@@ -58,18 +89,25 @@ export default function RosterView() {
         <div class='net-error'>Error: {error}</div>
       ) : (
         <div class='leaderboard-display'>
-        {leaderboardData.map((item, index) => (
+        {rosterData.map((item, index) => (
           <div key={item.id || index} class="leaderboard-entry">
             <h2>#{index + 1}</h2>
             <b>{item.name}</b>
             <p>{item.description}</p>
             <p>Wins: {item.wins}</p>
-            {leaderboardData && <ImageViewer base64={item.image_file} fighterPlacement='{1}' />}
-            <hr/>
+            <p>Losses: {item.losses}</p>
+            <p>W/L Ratio: {item.wins / item.losses}</p>
+            {rosterData && <ImageViewer base64={item.image_file} fighterPlacement='{1}' />}
+            <hr />
           </div>
         ))}
       </div>
       )}
+
+      <div className="page-button-container">
+        <p>hi</p>
+        <button className="page-button"onClick={getNextPage}>Next</button>
+      </div>
     </>
   )
 };

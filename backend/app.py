@@ -7,7 +7,7 @@ from components.genclient                    import Genclient
 from components.character                    import Character
 from dotenv                                import load_dotenv
 from flask_socketio                     import SocketIO, emit
-from flask             import Flask, render_template, jsonify
+from flask             import Flask, render_template, jsonify, request
 
 #################################
 #          DOODLE BRAWL         #
@@ -275,15 +275,25 @@ def return_current_card():
         return jsonify({'error': str(e)}), 500
 
 #Creates a leaderboard by sorting the top three fighters
-@app.route('/api/leaderboard')
+@app.route('/api/roster', methods=['POST'])
 def return_top_fighters():
     # Number of fighters to feature on the leaderboard
-    NUM_FIGHTERS = 3
+    NUM_FIGHTERS = 5
+
+    # Get page number
+    data = request.get_json()
+    page = data.get('page', 1)
+    per_page = NUM_FIGHTERS
+    #per_page = data.get('num_per_page', 5)  # Maybe use this later to give a variable number of fighters per page
+
+    # Find indicies of characters to return
+    char_start = (page - 1) * per_page
+    char_end = char_start + per_page
 
     # Find top fighters
     char_list = [c.to_dict() for c in CHARACTERS.values()]  # Get fighter data into list
     char_list = sorted(char_list, key=lambda x: x['wins'], reverse=True)  # Sort by wins
-    char_list = char_list[0:NUM_FIGHTERS]  # Pull out top fighters
+    char_list = char_list[char_start:char_end]  # Pull out top fighters
 
     return jsonify(char_list)
 

@@ -1,3 +1,23 @@
 .leaderboard-display {
   color: black;
 }
+
+.fighter-img {
+  border: outset;
+  margin: 15px
+}
+
+.page-button-container {
+  border: solid red;
+}
+
+.page-button {
+  padding: 8px 16px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #777;
+}
