@@ -1,55 +1,33 @@
-.root {
+.root-mini {
   color: #000;
 }
 
-.column {
+.column-mini {
   float: left;
-  width: 50%;
+  width: 10%;
   padding: 5px;
 }
 
-/* Clear floats after image containers */
-.row::after {
-  content: "";
-  clear: both;
-  display: table;
+.row-mini {
+  align-items:center;
+  justify-content: center;
+  display: flex;
 }
 
-.fighter-name {
-  font-size: 1.1em;
+.versus-mini {
+  padding-top: 25px;
+  font-weight: bolder;
+  justify-content: center;
 }
 
-.fighter-1 {
-  color: red;
-}
-
-.fighter-2 {
-  color: blue;
-}
-
-.stats {
-  text-align: left;
+.fighter-name-mini {
+  font-size: .9em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fighter-img {
   border: outset;
-}
-
-.summary {
-  margin-top: 10px;
-  font-size: 1.2em;
-}
-
-.logs {
-  margin-top: 10px;
-}
-
-.one-log {
-  margin-bottom: 20px;
-}
-
-.log-name {
-  font-weight: bold;
 }
 
 .net-error {
@@ -79,6 +57,11 @@
     box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
     border-color: gold;
   }
+}
+
+.thumbnail-img {
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .winner-img {

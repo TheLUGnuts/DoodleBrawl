@@ -248,7 +248,7 @@ const DoodleCanvas = () => {
         <div className="color-palette">
           <span className="color-palette-label">Color:</span>
           {/* custom color picker for the pallette*/}
-          <input class="custom-color"
+          <input className="custom-color"
             type="color" 
             value={strokeColor} 
             onChange={(e) => {
