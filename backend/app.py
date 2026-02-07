@@ -14,13 +14,14 @@ from flask             import Flask, render_template, jsonify, request
 #################################
 
 load_dotenv()                                                           #load the env variables
+API_URL = os.getenv('VITE_SOCKET_URL')
 app = Flask(__name__,                                                   #launch the flask app
     static_folder="../Frontend/dist/assets",
     template_folder="../Frontend/dist",
     static_url_path="/assets")
 app.config['SECRET_KEYS'] = os.getenv('SECRET_KEY')                     #secret key for CORS prevention, taken from .env file
 CORS(app)                                                               #Apply the CORS prevention onto the flask app
-socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", "https://doodle.jfelix.space"]) #begin sockets for listening and sending out info
+socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", f"{API_URL}"]) #begin sockets for listening and sending out info
 
 #Global variables
 BATTLE_TIMER=180                                                        #3 minutes in seconds
