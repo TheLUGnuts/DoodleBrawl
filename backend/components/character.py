@@ -22,8 +22,9 @@ class Character():
         self.stats: dict = dict()
         self.wins: int = 0
         self.losses: int = 0
-        self.name = name
+        self.name: str = name
         self.description: str = "Mysterious Challenger!"
+        self.championship: str = ""
         # If data dict is present, overwrite defaults
         if data:
             self.id = data.get("id", self.id)
@@ -45,7 +46,8 @@ class Character():
             "wins": self.wins,
             "losses": self.losses,
             "name": self.name,
-            "description": self.description
+            "description": self.description,
+            "championship": self.championship
         }
 
     def to_light_dict(self) -> dict:
@@ -56,7 +58,8 @@ class Character():
             "stats": self.stats,
             "wins": self.wins,
             "losses": self.losses,
-            "description": self.description
+            "description": self.description,
+            "championship": self.championship
         }
     
     def update_values(self, new_stats: dict) -> None:

@@ -64,7 +64,7 @@ Your NUMBER ONE PRIORITY is to generate an interesting match, so **be creative**
 You'll end off by declaring the winner, and providing an exciting, but brief, breakdown of the match.
 
 ### OUTPUT FORMAT
-Return strictly valid JSON. In the provided action descriptions OF THE BATTLE LOG ONLY, wrap key action words (e.g. punch, kick, slice) with a <span class="action-(color)">action </span>. You can choose the action-(color) as the following ONLY: action-red, action-blue, action-black, action-brown, action-yellow, action-pink, action-green, and action-rainbow.
+Return strictly valid JSON. In the provided action descriptions OF THE BATTLE LOG ONLY, wrap key action words (e.g. punch, kick, slice) with a <span class="action-(color)">action </span>. You can choose the action-(color) as the following ONLY: action-red, action-blue, action-black, action-orange, action-purple, action-brown, action-yellow, action-pink, action-green, and action-rainbow.
 {
     "new_stats": {
         "ID_OF_CHAR": { 

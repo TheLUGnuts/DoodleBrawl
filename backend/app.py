@@ -196,6 +196,7 @@ def schedule_next_match():
     else:
         NEXT_MATCH = random.sample(all_chars, 2)
     print(f"{NEXT_MATCH}")
+
     #send match 'card' to frontend
     socketio.emit('match_scheduled', {
         'fighters': [c.to_dict() for c in NEXT_MATCH],
@@ -228,6 +229,10 @@ def run_scheduled_battle():
         json.dump(result, file, indent=2)
 
     #updates players win/loss
+    for character in NEXT_MATCH:
+        if character.championship != "":
+            pass
+        
     winner_id = result.get('winner_id')
     if winner_id == NEXT_MATCH[0].id:
         NEXT_MATCH[0].wins += 1
