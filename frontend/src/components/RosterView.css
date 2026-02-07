@@ -1,3 +1,67 @@
-.leaderboard-display {
+.roster-container {
   color: black;
+}
+
+.entry {
+  display: flex;
+  justify-content: space-between;
+}
+
+.info {
+  display: flex;
+  flex-direction: row;
+  margin: 10px;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+
+  order: 2;
+  margin-top: 5px;
+  margin-left: 20px;
+  margin-right: 10px;
+}
+
+.fighter-img {
+  border: outset;
+  margin: 15px;
+  max-width: 50%;
+}
+
+.place-number {
+  font-size: 2.5em;
+
+  order: 1;
+}
+
+.fighter-name {
+  font-size: 1.5em;
+}
+
+.description {
+  font-style: italic;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+.page-button-container {
+  margin: 10px;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.page-button {
+  padding: 8px 16px;
+  margin-left: 12px;
+  margin-right: 12px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #777;
 }
