@@ -83,6 +83,11 @@ export default function RosterView() {
   // Show loading/error states inside the dialog
   return (
     <>
+      <div className="page-button-container">
+        <button className="page-button" onClick={getPrevPage}>Previous</button>
+        <button className="page-button" onClick={getNextPage}>Next</button>
+      </div>
+
       {loading ? (
         <div class='net-loading'>Loading...</div>
       ) : error ? (
@@ -104,15 +109,18 @@ export default function RosterView() {
               </div>
               {rosterData && <ImageViewer base64={item.image_file} fighterPlacement='{1}' />}
             </div>
-            <hr />
+            {index < rosterData.length - 1 && <hr />}
           </>
         ))}
       </div>
       )}
 
-      <div className="page-button-container">
-        <button className="page-button"onClick={getNextPage}>Next</button>
-      </div>
+      {rosterData.length > 0 && (
+        <div className="page-button-container">
+          <button className="page-button" onClick={getPrevPage}>Previous</button>
+          <button className="page-button" onClick={getNextPage}>Next</button>
+        </div>
+      )}
     </>
   )
 };
