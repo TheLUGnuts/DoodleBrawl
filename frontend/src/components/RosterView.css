@@ -23,7 +23,7 @@
   margin-right: 10px;
 }
 
-.fighter-img {
+.roster-fighter-img {
   border: outset;
   margin: 15px;
   max-width: 50%;
@@ -59,7 +59,6 @@
   margin-right: 12px;
   background-color: #fff;
   border: 1px solid #ccc;
-  border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;

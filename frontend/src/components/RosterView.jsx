@@ -15,7 +15,7 @@ export default function RosterView() {
     // Fighter placement (eg 1, 2, 3, etc.) is the fighter's placement in the lineup. 1st, 2nd, 3rd get special css
     return (
       <img
-        className="{'fighter-' + fighterPlacement} fighter-img"
+        className="{'fighter-' + fighterPlacement} roster-fighter-img"
         src={`data:image/png;base64,${base64}`}
         alt="Fighter Image"
       />
@@ -98,7 +98,7 @@ export default function RosterView() {
           <>
             <div key={item.id || index} class="entry">
               <div className="info">
-                <p className="place-number">#{index + 1}</p>
+                <p className="place-number">#{(index + 1) + ((page-1))*5}</p> 
                 <div className="stats">
                   <b className="fighter-name">{item.name}</b>
                   <p className="description">{item.description}</p>
