@@ -88,24 +88,29 @@ export default function RosterView() {
       ) : error ? (
         <div class='net-error'>Error: {error}</div>
       ) : (
-        <div class='leaderboard-display'>
+        <div class='roster-container'>
         {rosterData.map((item, index) => (
-          <div key={item.id || index} class="leaderboard-entry">
-            <h2>#{index + 1}</h2>
-            <b>{item.name}</b>
-            <p>{item.description}</p>
-            <p>Wins: {item.wins}</p>
-            <p>Losses: {item.losses}</p>
-            <p>W/L Ratio: {item.wins / item.losses}</p>
-            {rosterData && <ImageViewer base64={item.image_file} fighterPlacement='{1}' />}
+          <>
+            <div key={item.id || index} class="entry">
+              <div className="info">
+                <p className="place-number">#{index + 1}</p>
+                <div className="stats">
+                  <b className="fighter-name">{item.name}</b>
+                  <p className="description">{item.description}</p>
+                  <p>Wins: {item.wins}</p>
+                  <p>Losses: {item.losses}</p>
+                  <p>W/L Ratio: {item.wins / item.losses}</p>
+                </div>
+              </div>
+              {rosterData && <ImageViewer base64={item.image_file} fighterPlacement='{1}' />}
+            </div>
             <hr />
-          </div>
+          </>
         ))}
       </div>
       )}
 
       <div className="page-button-container">
-        <p>hi</p>
         <button className="page-button"onClick={getNextPage}>Next</button>
       </div>
     </>
