@@ -15,7 +15,8 @@
 }
 
 .versus-mini {
-  font-weight: 800;
+  padding-top: 25px;
+  font-weight: bolder;
   justify-content: center;
 }
 
@@ -35,6 +36,12 @@
 
 .net-loading {
   color: #aaaa00;
+}
+
+.throbber {
+  margin-top: 5px;
+  display: inline;
+  max-height: 90%;
 }
 
 @keyframes winner-pulse {

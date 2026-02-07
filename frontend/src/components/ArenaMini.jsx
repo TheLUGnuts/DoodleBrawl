@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import './ArenaMini.css';
 import '../text_decor.css';
 
-export default function ArenaMini({ battleState, timer }) {
+export default function ArenaMini({ battleState, timer, lastWinner}) {
   //const [battleState, setBattleState] = useState(defaultBattleState);
-  const [lastWinner, setLastWinner] = useState("")
   const [error, setError] = useState(null);
   //const [timer, setTimer] = useState(null);
   const timeouts = useRef([]);
@@ -25,7 +24,8 @@ export default function ArenaMini({ battleState, timer }) {
   if (error) return <div class='net-error'>Error: {error}</div>;
   if (!battleState || !battleState.fighters || battleState.fighters.length < 2) { return (
         <div className='root waiting-screen'>
-            <h1>Waiting for Next Match...</h1>
+            <img className="throbber" src="./RatJohnson.gif"></img>
+            <p>Waiting for Next Match...</p>
             {timer && <h2>Next Match in: {timer}s</h2>}
         </div>
       );
@@ -46,8 +46,8 @@ export default function ArenaMini({ battleState, timer }) {
         </div>
 
         <div className="column-mini">
-            <p className="versus">VS</p>
-            <p>IN: {timer}</p>
+            <p className="versus-mini"><u>VS</u></p>
+            <p>{timer}</p>
         </div>
 
         <div className='column-mini'>

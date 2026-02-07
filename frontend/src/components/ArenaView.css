@@ -60,6 +60,12 @@
   color: #aaaa00;
 }
 
+.throbber {
+  margin-top: 5px;
+  display: inline;
+  max-height: 90%;
+}
+
 @keyframes winner-pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);

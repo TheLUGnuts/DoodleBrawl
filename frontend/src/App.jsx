@@ -122,10 +122,10 @@ function App() {
       setTimer(data.time_left);
     } 
     else if (data.time_left == 0) {
-      setTimer("Battle commencing!")
+      setTimer(<img className="throbber" src="./RatJohnson.gif"></img>);
     }
     else {
-      setTimer("Bookie is working on the next match...")
+      setTimer("Scheduling...")
     }
     console.log(data);
   }
@@ -170,7 +170,7 @@ function App() {
       <div className="main-content">
         {activeTab !== 'battleground' && (
           <div className='small-battleground'>
-            <ArenaMini battleState={battleState} timer={timer}/>
+            <ArenaMini battleState={battleState} timer={timer} lastWinner={lastWinner}/>
             <hr/>
           </div>
         )}
