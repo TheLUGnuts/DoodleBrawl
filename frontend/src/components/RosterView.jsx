@@ -101,7 +101,7 @@ export default function RosterView() {
                 <p className="place-number">#{(index + 1) + ((page-1))*5}</p> 
                 <div className="stats">
                   <b className="fighter-name">{item.name}</b>
-                  <p className="description">{item.description}</p>
+                  <p className="description"><span dangerouslySetInnerHTML={{ __html: item.description }} /></p>
                   <p>Wins: {item.wins}</p>
                   <p>Losses: {item.losses}</p>
                   <p>W/L Ratio: {item.wins / item.losses}</p>
