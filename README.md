@@ -1,19 +1,9 @@
 # Doodle Brawl
 
-**[Play it here!](https://doodlebrawl.com)**  
-
-Made for the VCU 24 hour Hackathon - January 30th-31st 2026  
-<sub>Due to Gemini API costs, the server will not usually be up.
+[Play it here!](https://doodlebrawl.com)
+ 
+<sub>Due to Gemini API costs, the backend server may not be up.
 Please consider hosting your own instance with the instructions below.</sub>
-
-## Tech Stack
-* Frontend
-    * [React](https://react.dev/)
-    * [Vite](https://vite.dev/)
-* Backend
-    * [Python](https://www.python.org/)
-    * [Flask](https://flask.palletsprojects.com/)
-    * [Google Gemini](https://ai.google.dev/gemini-api/docs)
 
 ## Description
 
@@ -25,6 +15,14 @@ Please consider hosting your own instance with the instructions below.</sub>
 ![Brawl Demo](./assets/frontend-1.png)
 ![Canvas Demo](./assets/frontend-2.png)
 
+## Tech Stack
+* Frontend
+    * [React](https://react.dev/)
+    * [Vite](https://vite.dev/)
+* Backend
+    * [Python](https://www.python.org/)
+    * [Flask](https://flask.palletsprojects.com/)
+    * [Google Gemini](https://ai.google.dev/gemini-api/docs)
 
 # How to Host
 
@@ -52,3 +50,5 @@ Steps 2 and 3 can be done in either order, the browser client will continually t
 * [Connor Fair](https://www.linkedin.com/in/connor-fair36/)
 * [Jon Rutan](https://www.linkedin.com/in/jonathanrutan/)
 * [Trevor Corcoran](https://www.linkedin.com/in/trevorcorc/)
+
+Made for the VCU 24 hour Hackathon - January 30th-31st 2026 
