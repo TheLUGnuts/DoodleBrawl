@@ -1,12 +1,12 @@
 #jfr, cwf, tjc
 #Created for the 2026 VCU 24HR Hackathon
 
-import json, os, random, re
-from flask_cors                                   import CORS
-from components.genclient                    import Genclient
-from components.character                    import Character
-from dotenv                                import load_dotenv
-from flask_socketio                     import SocketIO, emit
+import json, os, random, re, time
+from flask_cors                                            import CORS
+from components.genclient                             import Genclient
+from components.character                             import Character
+from dotenv                                         import load_dotenv
+from flask_socketio                              import SocketIO, emit
 from flask             import Flask, render_template, jsonify, request
 
 #################################
@@ -25,10 +25,12 @@ socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", f"{API_U
 
 #Global variables
 BATTLE_TIMER=180                                                        #3 minutes in seconds
+CURRENT_TIMER = BATTLE_TIMER                                            #global time tracker
 CHARACTERS = {}                                                         #dict of character objects
 APPROVAL_QUEUE = {}                                                     #dict of submitted characters to be approved
 NEXT_MATCH = None                                                       #holds the [char1, char2] for upcoming fight.
 CLIENT = Genclient(os.getenv('GEMINI_API'))                             #genclient class for API calling
+MATCH_HISTORY = []                                                      #the in-memory list
 #Data paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  #current directory
 DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                        #file ref where data is stored
@@ -37,6 +39,29 @@ CHARACTER_FILE = os.path.join(DATA_DIR, 'characters.json')              #JSON fi
 QUEUE_FILE = os.path.join(DATA_DIR, 'queue.json')                       #approval queue of characters
 OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                   #last generated response for debugging.
 REJECTED_FILE = os.path.join(DATA_DIR, 'rejected.json')                 #file containing rejected images, their ID, and reason for rejection
+HISTORY_FILE = os.path.join(DATA_DIR, 'history.json')                   #the file path
+
+##################################
+#         DEBUG HANDLERS         #
+##################################
+
+@app.route('/api/debug/skip', methods=['POST'])
+def debug_skip_timer():
+    if not app.debug and "localhost" not in API_URL:
+        return
+    global CURRENT_TIMER
+    #set the timer for the next battle to start to 10 seconds
+    CURRENT_TIMER = 10
+    print("!-- DEBUG: SKIPPING TIMER TO 10s --!")
+    return jsonify({"status": "skipped", "time_left": CURRENT_TIMER})
+
+@app.route('/api/debug/rematch', methods=['POST'])
+def debug_new_matchup():
+    if not app.debug and "localhost" not in API_URL:
+        return
+    #schedule a new match, instantly
+    schedule_next_match()
+    return jsonify({"status": "rematched", "new_match": [c.name for c in NEXT_MATCH]})
 
 ##################################
 #          DATA HANDLERS         #
@@ -153,6 +178,45 @@ def log_rejection(char_id, char_obj, reason):
     except Exception as e:
         print(f"!-- ERROR SAVING REJECTION: {e} --!")
 
+def load_history():
+    global MATCH_HISTORY
+    if not os.path.exists(HISTORY_FILE):
+        return
+    try:
+        with open(HISTORY_FILE, 'r') as file:
+            MATCH_HISTORY = json.load(file)
+        print(f"$-- LOADED {len(MATCH_HISTORY)} PAST MATCHES --$")
+    except Exception as e:
+        print(f"!-- ERROR LOADING HISTORY: {e} --!")
+
+def save_history():
+    try:
+        with open(HISTORY_FILE, 'w') as file:
+            json.dump(MATCH_HISTORY, file, indent=2)
+    except Exception as e:
+        print(f"!-- ERROR SAVING HISTORY: {e} --!")
+
+def log_match_result(teams, winner, summary, match_type="1v1", title_change=None):
+    #create the teams for when we add future team matches. 1v1 matches will just have one fighter in each team
+    formatted_teams = []
+    for team in teams:
+        team_data = [{"id": f.id, "name": f.name} for f in team]
+        formatted_teams.append(team_data)
+
+    #the history json entry
+    entry = {
+        "timestamp": time.time(),
+        "match_type": match_type,           # "1v1", "TAG", "GAUNTLET", etc.
+        "is_title_bout": title_change is not None,
+        "title_exchanged": title_change if title_change else False, #false if retained, a string if changed
+        "teams": formatted_teams,
+        "winner_id": winner.id,
+        "display_text": summary #match summary
+    }
+
+    MATCH_HISTORY.append(entry)
+    save_history()
+
 ##################################
 #        FRONTEND HANDLERS       #
 ##################################
@@ -232,6 +296,13 @@ def run_scheduled_battle():
                     print(f"Updated description for {target.name}")
                 target.stats = stats_data
                 print(f"Updated stats for {target.name}: {target.stats}")
+
+    if 'updated_stats' in result and result['updated_stats']:
+        for char_id, char_data in result['updated_stats'].items():
+            if char_id in CHARACTERS:
+                print(f"$-- UPDATING CHARACTER: {char_id} --$")
+                CHARACTERS[char_id].update_values(char_data)
+
     with open(OUTPUT_FILE, 'w') as file:
         json.dump(result, file, indent=2)
 
@@ -243,26 +314,40 @@ def run_scheduled_battle():
         winner_obj = NEXT_MATCH[1]
         loser_obj = NEXT_MATCH[0]
 
+    title_exchange_name = None
+    if is_champion(loser_obj.status) or is_champion(winner_obj.status):
+        #if the loser was the champion, give the title to the winner
+        if is_champion(loser_obj.status):
+            title_exchange_name = loser_obj.status
+            winner_obj.status = title_exchange_name
+            loser_obj.status = f"Former {title_exchange_name}"
+        else:
+            title_exchange_name = False
+
     winner_obj.wins += 1
     loser_obj.losses += 1
-
-    #change title hands if one of them was a champion.
-    if loser_obj.status and is_champion(loser_obj.status):
-        title_name = loser_obj.status
-        # The Winner takes the title
-        winner_obj.status = title_name
-        # The Loser becomes "Former <Title Name>"
-        loser_obj.status = f"Former {title_name}"
-        
-    #save all updates to characters
     save_characters()
 
-    #emit to clients
+    bout_teams = [
+        [NEXT_MATCH[0]],
+        [NEXT_MATCH[1]]
+    ]
+
+    log_match_result(
+        teams=bout_teams,
+        winner=winner_obj,
+        summary=result.get('summary', "Match Concluded."),
+        match_type="1v1",
+        title_change=title_exchange_name
+    )
+
+    #wrap up the match and send the result to all the clients
     socketio.emit('match_result', {
         'fighters': [c.to_dict() for c in NEXT_MATCH],
         'log': result['battle_log'],
         'winner': CHARACTERS[winner_id].name,
-        'summary': result['summary']
+        'summary': result['summary'],
+        'introduction': result['introduction']
     })
     print(f"$-- MATCH FINISHED - WINNER {CHARACTERS[winner_id].name} --$")
     NEXT_MATCH = None
@@ -323,35 +408,39 @@ def index():
 
 #Main server loop. Timer counts down, when it hits zero
 def server_loop():
-    timer = BATTLE_TIMER
+    global CURRENT_TIMER, NEXT_MATCH
     with app.app_context():
         schedule_next_match()
 
     while True:
         socketio.sleep(1)
+
         if len(APPROVAL_QUEUE) >= 3:
             with app.app_context():
                 submit_queue_for_approval()
-        timer -= 1
+
+        CURRENT_TIMER -= 1
         #emit the timer for clients
-        socketio.emit('timer_update', {'time_left': timer,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
-        if timer <= 0:
+        socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
+
+        if CURRENT_TIMER <= 0:
             with app.app_context():
-                timer = 0
-                socketio.emit('timer_update', {'time_left': timer,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
+                CURRENT_TIMER = 0
+                socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
                 run_scheduled_battle() #run the match
                 socketio.sleep(60)     #so we see the throbber for one minute
-                timer = -1
-                socketio.emit('timer_update', {'time_left': timer,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
+                CURRENT_TIMER = -1
+                socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
                 socketio.sleep(60)     #then scheduling announcement
                 schedule_next_match()  #schedule the next match
-            timer = BATTLE_TIMER
+            CURRENT_TIMER = BATTLE_TIMER
 
 
 #Starting up server, loading players and approval queue
 print("!-- SERVER STARTING UP: LOADING CHARACTERS... --!")
 load_characters()
 load_queue()
+load_history()
 print("!-- STARTING BATTLE LOOP... --!")
 socketio.start_background_task(server_loop)
 

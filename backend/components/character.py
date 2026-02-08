@@ -24,8 +24,10 @@ class Character():
         self.losses: int = 0
         self.name: str = name
         self.description: str = "Mysterious Challenger!"
-        self.status: str = ""
+        self.status: str = "Rookie"
         self.personality: str = ""
+        self.height: str = "Unknown"
+        self.weight: str = "Unknown"
         # If data dict is present, overwrite defaults
         if data:
             self.id = data.get("id", self.id)
@@ -37,6 +39,8 @@ class Character():
             self.description = data.get("description", self.description)
             self.status = data.get("status", self.status)
             self.personality = data.get("personality", self.personality)
+            self.height = data.get("height", self.height)
+            self.weight = data.get("weight", self.weight)
         self.total_battles = self.wins + self.losses
 
     
@@ -51,7 +55,9 @@ class Character():
             "name": self.name,
             "description": self.description,
             "status": self.status,
-            "personality": self.personality
+            "personality": self.personality,
+            "height": self.height,
+            "weight": self.weight
         }
 
     def to_light_dict(self) -> dict:
@@ -64,19 +70,32 @@ class Character():
             "losses": self.losses,
             "description": self.description,
             "status": self.status,
-            "personality": self.personality
+            "personality": self.personality,
+            "height": self.height,
+            "weight": self.weight
         }
     
     def update_values(self, new_stats: dict) -> None:
         """Takes a dictionary containing new values for any of the character stats."""
-        self.id = new_stats["id"] if new_stats.get("id", False) else self.id
-        self.image_file = new_stats["image_file"] if new_stats.get("image_file", False) else self.image_file
-        self.stats = new_stats["stats"] if new_stats.get("stats", False) else self.stats
-        self.wins = new_stats["wins"] if new_stats.get("wins", False) else self.wins
-        self.losses = new_stats["losses"] if new_stats.get("losses", False) else self.losses
-        self.name = new_stats["name"] if new_stats.get("name", False) else self.name
-        self.description = new_stats["description"] if new_stats.get("description", self.description) else self.description
-        self.personality = new_stats["personality"] if new_stats.get("personality", self.personality) else self.personality
+        self.id = new_stats.get("id", self.id)
+        self.image_file = new_stats.get("image_file", self.image_file)
+        self.stats = new_stats.get("stats", self.stats)
+        self.wins = new_stats.get("wins", self.wins)
+        self.losses = new_stats.get("losses", self.losses)
+
+        self.name = new_stats.get("name", self.name)
+        self.description = new_stats.get("description", self.description)
+        self.personality = new_stats.get("personality", self.personality)
+        self.height = new_stats.get("height", self.height)
+        self.weight = new_stats.get("weight", self.weight)
+        self.status = new_stats.get("status", self.status)
+
+        #keywords for capturing any remaining stat keys
+        combat_keys = ['hp', 'HP', 'agility', 'Agility', 'power', 'Power', 'speed', 'Speed']
+        stats_update = {k: v for k, v in new_stats.items() if k.lower() in [ck.lower() for ck in combat_keys]}
+        
+        if stats_update:
+            self.stats.update(stats_update)
 
     #Representation of character object
     def __repr__(self):
