@@ -90,3 +90,18 @@
   filter: brightness(0.6);
   border: 5px solid rgb(39, 39, 28);
 }
+
+.image-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.champ-badge {
+  position: absolute;
+  top: 15px;
+  left: -20px;
+  width: 150px;
+  transform: rotate(-30deg); 
+  z-index: 10; 
+  pointer-events: none; 
+}

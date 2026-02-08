@@ -1,7 +1,7 @@
 #jfr, cwf, tjc
 #Created for the 2026 VCU 24HR Hackathon
 
-import json, os, random
+import json, os, random, re
 from flask_cors                                   import CORS
 from components.genclient                    import Genclient
 from components.character                    import Character
@@ -41,6 +41,13 @@ REJECTED_FILE = os.path.join(DATA_DIR, 'rejected.json')                 #file co
 ##################################
 #          DATA HANDLERS         #
 ##################################
+
+#checks if a string has the word "Champion" and NOT "Former"
+def is_champion(status):
+    if re.findall("Champion", status) and not re.findall("Former", status):
+        return True
+    else:
+        return False
 
 #load the characters from the characters.json file
 def load_characters():
@@ -228,19 +235,25 @@ def run_scheduled_battle():
     with open(OUTPUT_FILE, 'w') as file:
         json.dump(result, file, indent=2)
 
-    #updates players win/loss
-    for character in NEXT_MATCH:
-        if character.championship != "":
-            pass
-        
     winner_id = result.get('winner_id')
     if winner_id == NEXT_MATCH[0].id:
-        NEXT_MATCH[0].wins += 1
-        NEXT_MATCH[1].losses += 1
-    elif winner_id == NEXT_MATCH[1].id:
-        NEXT_MATCH[1].wins += 1
-        NEXT_MATCH[0].losses += 1
+        winner_obj = NEXT_MATCH[0]
+        loser_obj = NEXT_MATCH[1]
+    else:
+        winner_obj = NEXT_MATCH[1]
+        loser_obj = NEXT_MATCH[0]
 
+    winner_obj.wins += 1
+    loser_obj.losses += 1
+
+    #change title hands if one of them was a champion.
+    if loser_obj.status and is_champion(loser_obj.status):
+        title_name = loser_obj.status
+        # The Winner takes the title
+        winner_obj.status = title_name
+        # The Loser becomes "Former <Title Name>"
+        loser_obj.status = f"Former {title_name}"
+        
     #save all updates to characters
     save_characters()
 

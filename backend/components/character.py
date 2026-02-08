@@ -24,7 +24,8 @@ class Character():
         self.losses: int = 0
         self.name: str = name
         self.description: str = "Mysterious Challenger!"
-        self.championship: str = ""
+        self.status: str = ""
+        self.personality: str = ""
         # If data dict is present, overwrite defaults
         if data:
             self.id = data.get("id", self.id)
@@ -34,6 +35,8 @@ class Character():
             self.losses = data.get("losses", self.losses)
             self.name = data.get("name", self.name)
             self.description = data.get("description", self.description)
+            self.status = data.get("status", self.status)
+            self.personality = data.get("personality", self.personality)
         self.total_battles = self.wins + self.losses
 
     
@@ -47,7 +50,8 @@ class Character():
             "losses": self.losses,
             "name": self.name,
             "description": self.description,
-            "championship": self.championship
+            "status": self.status,
+            "personality": self.personality
         }
 
     def to_light_dict(self) -> dict:
@@ -59,7 +63,8 @@ class Character():
             "wins": self.wins,
             "losses": self.losses,
             "description": self.description,
-            "championship": self.championship
+            "status": self.status,
+            "personality": self.personality
         }
     
     def update_values(self, new_stats: dict) -> None:
@@ -70,7 +75,8 @@ class Character():
         self.wins = new_stats["wins"] if new_stats.get("wins", False) else self.wins
         self.losses = new_stats["losses"] if new_stats.get("losses", False) else self.losses
         self.name = new_stats["name"] if new_stats.get("name", False) else self.name
-        self.description = new_stats.get("description", self.description)
+        self.description = new_stats["description"] if new_stats.get("description", self.description) else self.description
+        self.personality = new_stats["personality"] if new_stats.get("personality", self.personality) else self.personality
 
     #Representation of character object
     def __repr__(self):
@@ -78,7 +84,7 @@ class Character():
 
 
 
-
+# lol, what is this?
 if __name__ == "__main__":
     data = {
         "image_file": "/nope.png",

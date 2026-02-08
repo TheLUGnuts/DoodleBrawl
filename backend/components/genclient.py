@@ -25,7 +25,6 @@ Output strictly valid JSON in the following format:
         "CHAR_ID_2": { "approved": false, "reason": "Contains nudity" }
     }
 }
-If an image is safe/ambiguous but leans towards cartoonish/silly, approve it.
 """
 
 BATTLE_SYSTEM_PROMPT = """
@@ -40,6 +39,7 @@ Check the "Current Stats" provided for each fighter.
    - Generate a *NAME*: This will be a stylistic ring name, capturing the fighters essence. (e.g. Drawing of a bulky man with massive arms "The Super Strangler")
    - Generate **HP** (50-200 - AVERAGE BEING 100), **AGILITY** (1-100 - AVERAGE BEING 50), **POWER** (1-100 - AVERAGE BEING 50).
    - Generate a **DESCRIPTION**: A brief combat-sport introduction (e.g. "The heavy-hitting titan from the void." or "A scrappy brawler with explosive speed").
+   - Generate a **PERSONALITY**: One word that will influence how they behave outside the ring in interactions and inside the ring while fighting (e.g. "Aggressive", "Wacky")
    - You MUST include these in the `new_stats` object in the JSON output.
 
 2. **IF stats are PROVIDED (Fight Count > 0):**
@@ -62,9 +62,12 @@ Your NUMBER ONE PRIORITY is to generate an interesting match, so **be creative**
     
 ### PHASE 3: MATCH SUMMARY AND WINNER
 You'll end off by declaring the winner, and providing an exciting, but brief, breakdown of the match.
+If a fighter's status is that of a champion, this is a championship bout. This means the description and breakdown should have more levity and weight to them. If BOTH fighters are champions, the first fighter is the defending champion (one that has their title on the line).
+Otherwise their status will contain their general "experience" within Doodle Brawl (Rookie, Veteran, etc.)
 
 ### OUTPUT FORMAT
 Return strictly valid JSON. In the provided action descriptions OF THE BATTLE LOG ONLY, wrap key action words (e.g. punch, kick, slice) with a <span class="action-(color)">action </span>. You can choose the action-(color) as the following ONLY: action-red, action-blue, action-black, action-orange, action-purple, action-brown, action-yellow, action-pink, action-green, and action-rainbow.
+action-rainbow should be reserved for ULTIMATE moves.
 {
     "new_stats": {
         "ID_OF_CHAR": { 
@@ -72,7 +75,8 @@ Return strictly valid JSON. In the provided action descriptions OF THE BATTLE LO
             "hp": 120, 
             "agility": 30, 
             "power": 75,
-            "description": "A tall, muscular rat holding a red sword."
+            "description": "A tall, muscular rat holding a red sword.",
+            "personality": "Kniving"
         } 
     },
     "battle_log": [
@@ -190,6 +194,8 @@ class Genclient():
             Description: {p1.description}
             Current Stats: {p1.stats} (If empty, generate them based on attached image)
             Fight Count: {p1.wins + p1.losses}
+            Personality: {p1.personality}
+            status: {p1.status}
             """,
             get_image_part_from_base64(p1.image_file), #fighter 1 drawing
             
@@ -200,6 +206,8 @@ class Genclient():
             Description: {p2.description}
             Current Stats: {p2.stats} (If empty, generate them based on attached image)
             Fight Count: {p2.wins + p2.losses}
+            Personality: {p2.personality}
+            status: {p2.status}
             """,
             get_image_part_from_base64(p2.image_file)  #fighter 2 drawing
         ]

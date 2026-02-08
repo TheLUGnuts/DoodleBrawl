@@ -29,9 +29,13 @@
   max-width: 50%;
 }
 
+.fighter-status {
+  font-weight: bolder;
+  color: #a70000;
+}
+
 .place-number {
   font-size: 2.5em;
-
   order: 1;
 }
 
