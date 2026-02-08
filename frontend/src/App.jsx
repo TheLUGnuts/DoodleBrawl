@@ -5,6 +5,7 @@ import DoodleCanvas from './components/DoodleCanvas';
 import ArenaView from './components/ArenaView';
 import RosterView from './components/RosterView';
 import ArenaMini from './components/ArenaMini';
+import Debug from './components/Debug';
 
 function App() {
   const [timer, setTimer] = useState(null);
@@ -16,12 +17,13 @@ function App() {
   const [logState, setLogState] = useState([]);
   const [lastWinner, setLastWinner] = useState("");
   const [summaryState, setSummaryState] = useState("");
-  
+  const [introState, setIntroState] = useState("");
 
   const [loading, setLoading] = useState(true);
 
   const handleResult = (data) => {
     // Takes data from a fight and places it in the correct places
+    setIntroState(data.introduction);
     console.log("RESULT ------")
     //in order to preview the new character name and description we used a mixed battle state
     //the mixed battle state retains all the information of the previous battle state but includes the new name and description
@@ -113,6 +115,7 @@ function App() {
     setLogState([{description: "The match will begin soon!"}]);
     setLastWinner("");
     setSummaryState("");
+    setIntroState("");
     processFightData(data);
   }
 
@@ -185,7 +188,7 @@ function App() {
 
         {activeTab === 'battleground' && (
         <div class='battleground'>
-          <ArenaView battleState={battleState} timer={timer} logState={logState} lastWinner={lastWinner} summaryState={summaryState}/>
+          <ArenaView battleState={battleState} timer={timer} logState={logState} lastWinner={lastWinner} summaryState={summaryState} introState={introState}/>
           <hr/>
         </div>
         )}
@@ -212,6 +215,7 @@ function App() {
         <p>Made with love by <a className='status-link' href='https://www.linkedin.com/in/connor-fair36/'>Connor Fair</a>, <a className='status-link' href='https://www.linkedin.com/in/jonathanrutan/'>Jon Rutan</a>, and <a className='status-link' href='https://www.linkedin.com/in/trevorcorc/'>Trevor Corcoran</a> for VCU's 2026 Hackathon</p>
         <a className='status-link' href='https://github.com/TheLUGnuts/DoodleBrawl'>View on GitHub</a>
       </div>
+      <Debug />
     </>
   )
 }

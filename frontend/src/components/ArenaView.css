@@ -64,6 +64,7 @@
   margin-top: 5px;
   display: inline;
   max-height: 90%;
+  transform:scale(80%)
 }
 
 @keyframes winner-pulse {
@@ -96,6 +97,12 @@
   display: inline-block;
 }
 
+.image-wrapper img {
+  display: inline-block;
+  vertical-align: bottom;
+  max-width: 100%; 
+}
+
 .champ-badge {
   position: absolute;
   top: 6px;
@@ -104,4 +111,9 @@
   transform: rotate(-27deg); 
   z-index: 10; 
   pointer-events: none; 
+}
+
+.introduction {
+  margin-top: 25px;
+  font-weight: bold;
 }

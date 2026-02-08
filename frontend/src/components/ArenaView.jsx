@@ -1,10 +1,10 @@
 import './ArenaView.css';
 import '../text_decor.css';
 
-export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState}) {
+export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState, introState}) {
 
   const checkIsChampion = (status) => {
-    return status && status.includes("Champion");
+    return status && status.includes("Champion") && !status.includes("Former");
   };
 
   const isTitleFight = battleState && battleState.fighters && (
@@ -94,6 +94,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
         </div>
 
       </div>
+        <p class='introduction' dangerouslySetInnerHTML={{ __html: introState }} />
         <div class='logs'>
           <ul>
             {logState.map((log, index) => (
