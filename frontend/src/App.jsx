@@ -9,7 +9,7 @@ import ArenaMini from './components/ArenaMini';
 function App() {
   const [timer, setTimer] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("Never Connected");
-  const [activeTab, setActiveTab] = useState("doodle"); //default to the drawing canvas
+  const [activeTab, setActiveTab] = useState("battleground"); //default to the drawing canvas
   const [battleState, setBattleState] = useState(null);
   const [lastFightResult, setLastFightResult] = useState(null);
   const timeouts = useRef([]);

@@ -31,11 +31,7 @@ export default function RosterView() {
   const fetchRoster = async (pageNum) => {
     // Fetch data from server
     // pageNum specifies which page of data to return (1st, 2nd, 3rd, etc.)
-
     // Set fetch status
-    setLoading(true);
-    setError(null);
-
     // Attempt POST to server
     try {
       const response = await fetch(`${API_URL}/api/roster`, {
@@ -51,7 +47,13 @@ export default function RosterView() {
       // Process data upon success
       const data = await response.json();
       console.log("Got Fresh Fighter Data");
+      if (data.length == 0) {
+        console.log("No fighters to display.")
+        return false;
+      } 
       processRosterData(data);
+      setPage(pageNum);
+      return true;
 
     } catch (error) {  // Catch error
       console.error('Error fetching items:', error);
@@ -64,11 +66,11 @@ export default function RosterView() {
 
   const getNextPage = () => {
     const pageNum = page + 1;
-    setPage(pageNum);
     fetchRoster(pageNum);
   }
 
   const getPrevPage = () => {
+    if (page === 1) return;
     const pageNum = page - 1;
     setPage(pageNum);
     fetchRoster(pageNum);

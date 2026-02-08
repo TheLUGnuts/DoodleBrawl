@@ -327,9 +327,10 @@ def server_loop():
                 timer = 0
                 socketio.emit('timer_update', {'time_left': timer,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
                 run_scheduled_battle() #run the match
+                socketio.sleep(60)     #so we see the throbber for one minute
                 timer = -1
                 socketio.emit('timer_update', {'time_left': timer,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
-                socketio.sleep(120)
+                socketio.sleep(60)     #then scheduling announcement
                 schedule_next_match()  #schedule the next match
             timer = BATTLE_TIMER
 
