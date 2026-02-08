@@ -98,10 +98,10 @@
 
 .champ-badge {
   position: absolute;
-  top: 15px;
-  left: -20px;
+  top: 6px;
+  left: -15px;
   width: 150px;
-  transform: rotate(-30deg); 
+  transform: rotate(-27deg); 
   z-index: 10; 
   pointer-events: none; 
 }

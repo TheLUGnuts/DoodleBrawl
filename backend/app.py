@@ -311,7 +311,7 @@ def return_top_fighters():
 
     # Find top fighters
     char_list = [c.to_dict() for c in CHARACTERS.values()]  # Get fighter data into list
-    char_list = sorted(char_list, key=lambda x: x['wins'], reverse=True)  # Sort by wins
+    char_list = sorted(char_list, key=lambda x: (x['wins']+1)/(x['losses']+1), reverse=True)  # Sort by wins
     char_list = char_list[char_start:char_end]  # Pull out top fighters
 
     return jsonify(char_list)
