@@ -1,0 +1,99 @@
+#jfr, cwf, tjc
+
+# This class will define SQLite tables
+
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from sqlalchemy.dialects.sqlite import JSON
+from sqlalchemy.orm import Mapped, mapped_column
+import time
+
+db = SQLAlchemy()
+
+#user accounts use a Mullvad-style 16 digit number for account identification.
+#easy to track and easy to remember/copy
+class User(UserMixin, db.model):
+    id = db.Column(db.String(16), primary_key=True)                          #Unique 16-digit ID
+    creation_time = db.Column(db.Float, default=time.time)                   #Time of user creation
+    portrait = db.Column(db.Text)                                            #User portrait, stored as a base64 text
+    username = db.Column(db.String(32))                                      #Username of account
+    money = db.Column(db.Int, default=100)                                   #how much money the user has
+    #One user may manage many characters
+    characters = db.relationship('Character', backref='manager', lazy=True)  #who this user 'manages'
+
+class Character(db.model):
+    #identifiers/meta
+    id = db.Column(db.String(36), primary_key=True)                          #UUID
+    name = db.Column(db.String(64), nullable=False)                          #name of this character
+    creation_time = db.Column(db.Float, default=time.time)                   #time the character was created
+    image_file = db.Column(db.Text, nullable=False)                          #the drawing of the character.
+    #who made this
+    creator_id = db.Column(db.String(16), db.ForeignKey('user.id'), nullable=True, default="Unknown")
+
+    #bio
+    description = db.Column(db.Text, default="Mysterious Challenger!")       #description of character
+    personality = db.Column(db.String(16), default="Unknown")                
+    height = db.Column(db.String(16), default="Unknown")
+    weight = db.Column(db.String(16), default="Unknown")
+    status = db.Column(db.Text, default="Rookie")
+    manager_id = db.Column(db.String(16), db.ForeignKey('user.id'), nullable=True, default="None")
+
+    #combat stats, stored as a json still
+    stats = db.Column(JSON, default=dict)
+    wins = db.Column(db.Integer, default=0)
+    losses = db.Column(db.Integer, default=0)
+
+    #flags
+    is_approved = db.Column(db.Boolean, default=False)
+
+    #return the db entry as a dict with everything we could need.
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "creation_time": self.creation_time,
+            "stats": self.stats,
+            "wins": self.wins,
+            "losses": self.losses,
+            "description": self.description,
+            "status": self.status,
+            "personality": self.personality,
+            "height": self.height,
+            "weight": self.weight,
+            "image_file": self.image_file,
+            "creator_id": self.creator_id,
+            "manager_id": self.manager_id
+        }
+    #return the db entry as a dict EXCLUDING the base64 image string
+    def to_dict_light(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "creation_time": self.creation_time,
+            "stats": self.stats,
+            "wins": self.wins,
+            "losses": self.losses,
+            "description": self.description,
+            "status": self.status,
+            "personality": self.personality,
+            "height": self.height,
+            "weight": self.weight,
+            "creator_id": self.creator_id,
+            "manager_id": self.manager_id
+        }
+
+#Match history db
+class Match(db.Model):
+    id = db.Column(db.Integer, primary_key=True)                #id of the match. this is just sequential
+    timestamp = db.Column(db.float, default=time.time)          #timestamp of when the match happened
+    match_type = db.Column(db.String(16), default="1v1")        #what kind of match, usually just a 1v1
+    summary = db.Column(db.Text)                                #the summary of the match
+    winner_name = db.Column(db.String(64))                      
+    winner_id = db.Column(db.String(36))                        
+    match_data = db.Column(JSON, default=dict)                  #JSON containing the teams
+    is_title_bout = db.Column(db.Boolean, default=False)        #was this for a title?
+    title_exchanged = db.Column(db.String(36), nullable=True)   #what title was exchanged, if one was?
+
+
+
+
