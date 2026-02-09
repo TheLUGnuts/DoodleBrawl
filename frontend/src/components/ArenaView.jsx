@@ -1,5 +1,6 @@
 import './ArenaView.css';
 import '../text_decor.css';
+import { decompressBase64Image } from '../socket';
 
 export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState, introState}) {
 
@@ -28,10 +29,15 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
     return checkIsChampion(fighter.status);
   };
 
-  function ImageViewer({ base64, isWinner, isLoser, isChampion }) {
+  function ImageViewer({ compressedBase64, isWinner, isLoser, isChampion }) {
     let className = '';
+    console.log("VIEWING IMAGE");
+    console.log(compressedBase64);
+    const base64 = decompressBase64Image(compressedBase64);
+
     if (isWinner) className = 'winner-img';
     if (isLoser) className = 'loser-img';
+
     return (
       <div className="image-wrapper">
         <img
@@ -61,7 +67,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
           <p>{battleState.fighters[0].status ? battleState.fighters[0].status : "Fighter"}</p>
           <div class='fighter-img'>
             {battleState && 
-            <ImageViewer base64={battleState.fighters[0].image_file} 
+            <ImageViewer compressedBase64={battleState.fighters[0].image_file} 
               isWinner={lastWinner && lastWinner === battleState.fighters[0].name}
               isLoser={lastWinner && lastWinner !== battleState.fighters[0].name}
               isChampion={shouldShowBelt(battleState.fighters[0])}
@@ -80,7 +86,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
           <p>{battleState.fighters[1].status ? battleState.fighters[1].status : "Fighter"}</p>
           <div class='fighter-img'>
             {battleState && 
-            <ImageViewer base64={battleState.fighters[1].image_file} 
+            <ImageViewer compressedBase64={battleState.fighters[1].image_file} 
               isWinner={lastWinner && lastWinner === battleState.fighters[1].name}
               isLoser={lastWinner && lastWinner !== battleState.fighters[1].name}
               isChampion={shouldShowBelt(battleState.fighters[1])}
