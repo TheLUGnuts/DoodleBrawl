@@ -97,7 +97,7 @@ Colors: red, blue, green, yellow, purple, pink, orange, brown, black, rainbow (U
             "actor": "Name", 
             "action": "ATTACK", 
             "damage": 12, 
-            "description": "Threw a wild <span class='action-red'>punch</span>!",
+            "description": "Threw a wild <span className='action-red'>punch</span>!",
             "remaining_hp": 88
         }
     ],
