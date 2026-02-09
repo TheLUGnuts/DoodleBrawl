@@ -1,7 +1,5 @@
 #cwf, jfr, tjc
-import random
-import string
-
+import random, string, time
 
 ##################################
 #       CHARACTER HANDLING       #
@@ -33,6 +31,8 @@ class Character():
         self.personality: str = ""
         self.height: str = "Unknown"
         self.weight: str = "Unknown"
+        self.creation_time = time.time()
+        self.manager: str = "None"
         # If data dict is present, overwrite defaults
         if data:
             self.id = data.get("id", self.id)
@@ -46,6 +46,8 @@ class Character():
             self.personality = data.get("personality", self.personality)
             self.height = data.get("height", self.height)
             self.weight = data.get("weight", self.weight)
+            self.manager = data.get("manager", self.manager)
+
         self.total_battles = self.wins + self.losses
 
     
@@ -62,7 +64,8 @@ class Character():
             "status": self.status,
             "personality": self.personality,
             "height": self.height,
-            "weight": self.weight
+            "weight": self.weight,
+            "manager": self.manager
         }
 
     def to_light_dict(self) -> dict:
@@ -77,7 +80,8 @@ class Character():
             "status": self.status,
             "personality": self.personality,
             "height": self.height,
-            "weight": self.weight
+            "weight": self.weight,
+            "manager": self.manager
         }
     
     def update_values(self, new_stats: dict) -> None:
