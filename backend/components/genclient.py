@@ -46,7 +46,8 @@ If a fighter has 0 fights, you MUST generate their full profile based on their i
 **B. EXISTING FIGHTERS (Fight Count > 0)**
 If a fighter is established, you must NOT change their Combat Stats (HP/Agility/Power), but you may need to backfill missing bio data.
 1.  **Backfill Missing Data:** If Height, Weight, or Personality are listed as "Unknown", generate them based on the image.
-2.  **Status Evolution:** If Temperature > 75, you may update their `status` (e.g., "Rookie" -> "Fan Favorite"). **EXCEPTION:** Never change a status if it contains "Champion".
+2.  **Status Evolution:** If Temperature > 75, you may update their `status` (e.g., "Rookie" -> "Fan Favorite") The 'status' update should be random, and based on their match performance and traits (e.g. An angry looking character who performs poorly "Rookie" -> "Disgruntled Pride Fighter"). 
+    **EXCEPTION:** Never change a status if it contains "Champion". **IMPERATIVE** DO NOT ASSIGN THE SAME 'status' TO BOTH FIGHTERS.
 3.  **Action:** Place these specific updates (Height, Weight, Status) into the `updated_stats` JSON key.
 
 ### PHASE 2: COMBAT SIMULATION
@@ -80,6 +81,9 @@ Colors: red, blue, green, yellow, purple, pink, orange, brown, black, rainbow (U
         } 
     },
     "updated_stats": {
+        "CHAR_ID_1": {
+                "status": "Beloved Rookie"
+            }
         "CHAR_ID_2": {
             "height": "6ft5", 
             "weight": "280lbs",

@@ -41,7 +41,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
     );
   }
 
-  if (!battleState || !battleState.fighters || battleState.fighters.length < 2) { return (
+  if (!battleState || !battleState.fighters || battleState.fighters.length === 0) { return (
         <div className='root waiting-screen'>
             <img className="throbber" src="./RatJohnson.gif"></img>
             <h1>Waiting for Next Match...</h1>
