@@ -98,6 +98,7 @@ class Character():
         self.height = new_stats.get("height", self.height)
         self.weight = new_stats.get("weight", self.weight)
         self.status = new_stats.get("status", self.status)
+        self.manager = new_stats.get("manager", self.manager)
 
         #keywords for capturing any remaining stat keys
         combat_keys = ['hp', 'HP', 'agility', 'Agility', 'power', 'Power', 'speed', 'Speed']

@@ -33,15 +33,6 @@ NEXT_MATCH = None                                                       #holds t
 CLIENT = Genclient(os.getenv('GEMINI_API'))                             #genclient class for API calling
 MATCH_HISTORY = []                                                      #the in-memory list
 DATA = ServerData(CLIENT)                                               #Data handling class
-#Data paths
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  #current directory
-DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                        #file ref where data is stored
-IMAGE_DIR = os.path.join(BASE_DIR, 'assets/Images')                     #file ref where images are located
-CHARACTER_FILE = os.path.join(DATA_DIR, 'characters.json')              #JSON file reference of character objects
-QUEUE_FILE = os.path.join(DATA_DIR, 'queue.json')                       #approval queue of characters
-OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                   #last generated response for debugging.
-REJECTED_FILE = os.path.join(DATA_DIR, 'rejected.json')                 #file containing rejected images, their ID, and reason for rejection
-HISTORY_FILE = os.path.join(DATA_DIR, 'history.json')                   #the file path
 
 def is_champion(status):
     if re.findall("Champion", status) and not re.findall("Former", status):

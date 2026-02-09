@@ -1,12 +1,15 @@
 #jfr, cwf, tjc
 
-import json, random, base64
+import json, random, base64, os
 from google                 import genai
 from google.genai           import types
 
 ##################################
 #           GEMINI API           #
 ##################################
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #current directory
+DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                                         #file ref where data is stored
+OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                                    #last generated response for debugging.
 
 APPROVAL_SYSTEM_PROMPT="""
 You are a Content Safety Moderator for a "Doodle Brawl" game. 
@@ -218,6 +221,10 @@ class Genclient():
                 config=self.battle_generation_config
             )
             result = json.loads(response.text)
+
+            with open(OUTPUT_FILE, 'w') as file:
+                json.dump(result, file, indent=2)
+
             return result
         except Exception as e:
             print(f"!-- ERROR OCCURRED: {e} --!")
