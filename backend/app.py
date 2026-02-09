@@ -1,10 +1,11 @@
 #jfr, cwf, tjc
 #Created for the 2026 VCU 24HR Hackathon
 
-import json, os, random, re, time
+import json, os, random, re, time, secrets
 from flask_cors                                            import CORS
 from components.genclient                             import Genclient
 from components.character                             import Character
+from components.serverdata                           import ServerData
 from dotenv                                         import load_dotenv
 from flask_socketio                              import SocketIO, emit
 from flask             import Flask, render_template, jsonify, request
@@ -31,6 +32,7 @@ APPROVAL_QUEUE = {}                                                     #dict of
 NEXT_MATCH = None                                                       #holds the [char1, char2] for upcoming fight.
 CLIENT = Genclient(os.getenv('GEMINI_API'))                             #genclient class for API calling
 MATCH_HISTORY = []                                                      #the in-memory list
+DATA = ServerData(CLIENT)                                               #Data handling class
 #Data paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  #current directory
 DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                        #file ref where data is stored
@@ -40,6 +42,12 @@ QUEUE_FILE = os.path.join(DATA_DIR, 'queue.json')                       #approva
 OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                   #last generated response for debugging.
 REJECTED_FILE = os.path.join(DATA_DIR, 'rejected.json')                 #file containing rejected images, their ID, and reason for rejection
 HISTORY_FILE = os.path.join(DATA_DIR, 'history.json')                   #the file path
+
+def is_champion(status):
+    if re.findall("Champion", status) and not re.findall("Former", status):
+        return True
+    else:
+        return False
 
 ##################################
 #         DEBUG HANDLERS         #
@@ -64,160 +72,6 @@ def debug_new_matchup():
     return jsonify({"status": "rematched", "new_match": [c.name for c in NEXT_MATCH]})
 
 ##################################
-#          DATA HANDLERS         #
-##################################
-
-#checks if a string has the word "Champion" and NOT "Former"
-def is_champion(status):
-    if re.findall("Champion", status) and not re.findall("Former", status):
-        return True
-    else:
-        return False
-
-#load the characters from the characters.json file
-def load_characters():
-    global CHARACTERS 
-    if not os.path.exists(CHARACTER_FILE):
-        print(f"!--- CHARACTER FILE WASN'T FOUND AT {CHARACTER_FILE}---!")
-        return
-    try:
-        with open(CHARACTER_FILE, 'r') as file:
-            data = json.load(file)
-            #create the character objects in memory form the file.
-            for char_id, char_data in data.items():
-                CHARACTERS[char_id] = Character(id_or_data=char_id, data=char_data)
-        print(f"$-- LOADED {len(CHARACTERS)} CHARACTERS --$")
-    except Exception as e:
-        print(f"!-- ERROR LOADING CHARACTERS --!\n ERROR: {e}")
-
-#load the approval queue from the queue.json file
-def load_queue():
-    global APPROVAL_QUEUE 
-    if not os.path.exists(QUEUE_FILE):
-        print(f"!--- QUEUE FILE WASN'T FOUND AT {QUEUE_FILE}---!")
-        return
-    try:
-        with open(QUEUE_FILE, 'r') as file:
-            data = json.load(file)
-            #create the character objects in memory form the file.
-            for char_id, char_data in data.items():
-                APPROVAL_QUEUE[char_id] = Character(id_or_data=char_id, data=char_data)
-        print(f"$-- LOADED {len(APPROVAL_QUEUE)} CHARACTERS FOR APPROVAL QUEUE --$")
-    except Exception as e:
-        print(f"!-- ERROR LOADING APPROVAL QUEUE --!\n ERROR: {e}")
-
-#save all characters to the characters.json file
-def save_characters():
-    try:
-        data = {c_id: c.to_dict() for c_id, c in CHARACTERS.items()}
-        with open(CHARACTER_FILE, 'w') as file:
-            json.dump(data, file, indent=2)
-        print(f"$-- CHARACTERS SAVED TO characters.json --$")
-    except Exception as e:
-        print(f"!-- ERROR SAVING CHARACTERS --!\n ERROR: {e}")
-
-#save queued characters to queue.json
-def save_queue():
-    try:
-        data = {c_id: c.to_dict() for c_id, c in APPROVAL_QUEUE.items()}
-        with open(QUEUE_FILE, 'w') as file:
-            json.dump(data, file, indent=2)
-        print(f"$-- QUEUE SAVED TO queue.json --$")
-    except Exception as e:
-        print(f"!-- ERROR SAVING QUEUE --!\n ERROR: {e}")
-
-#submit the current approval queue to the API for inappropriate content
-def submit_queue_for_approval():
-    global APPROVAL_QUEUE, CHARACTERS
-    #only run the approval submission if theres at least 3 to add.
-    if len(APPROVAL_QUEUE) < 3:
-        return
-    #submit the approval queue for AI approval
-    results = CLIENT.submit_for_approval(APPROVAL_QUEUE)
-    if not results:
-        return
-    ids_to_remove = []
-    for char_id, decision in results.items():
-        if char_id in APPROVAL_QUEUE:
-            if decision.get('approved'):
-                #Move to main game roster
-                character = APPROVAL_QUEUE[char_id]
-                CHARACTERS[char_id] = character
-                print(f"$-- APPROVED: {char_id} --$")
-            else:
-                #Rejected, log it
-                reason = decision.get('reason', 'Unknown')
-                print(f"!-- REJECTED: {char_id} - Reason: {reason} --!")
-                log_rejection(char_id, APPROVAL_QUEUE[char_id], reason)
-            ids_to_remove.append(char_id)
-    for char_id in ids_to_remove:
-        del APPROVAL_QUEUE[char_id]
-    save_characters()
-    save_queue()
-
-#log rejections
-def log_rejection(char_id, char_obj, reason):
-    rejected_data = {}
-    if os.path.exists(REJECTED_FILE):
-        try:
-            with open(REJECTED_FILE, 'r') as f:
-                rejected_data = json.load(f)
-        except:
-            rejected_data = {}
-    #add the new rejection
-    rejected_data[char_id] = {
-        "id": char_id,
-        "name": char_obj.name,
-        "reason": reason,
-        "image": char_obj.image_file # save the base64 string image
-    }
-    try:
-        with open(REJECTED_FILE, 'w') as f:
-            json.dump(rejected_data, f, indent=2)
-        print(f"!-- LOGGED REJECTION FOR {char_id} --!")
-    except Exception as e:
-        print(f"!-- ERROR SAVING REJECTION: {e} --!")
-
-def load_history():
-    global MATCH_HISTORY
-    if not os.path.exists(HISTORY_FILE):
-        return
-    try:
-        with open(HISTORY_FILE, 'r') as file:
-            MATCH_HISTORY = json.load(file)
-        print(f"$-- LOADED {len(MATCH_HISTORY)} PAST MATCHES --$")
-    except Exception as e:
-        print(f"!-- ERROR LOADING HISTORY: {e} --!")
-
-def save_history():
-    try:
-        with open(HISTORY_FILE, 'w') as file:
-            json.dump(MATCH_HISTORY, file, indent=2)
-    except Exception as e:
-        print(f"!-- ERROR SAVING HISTORY: {e} --!")
-
-def log_match_result(teams, winner, summary, match_type="1v1", title_change=None):
-    #create the teams for when we add future team matches. 1v1 matches will just have one fighter in each team
-    formatted_teams = []
-    for team in teams:
-        team_data = [{"id": f.id, "name": f.name} for f in team]
-        formatted_teams.append(team_data)
-
-    #the history json entry
-    entry = {
-        "timestamp": time.time(),
-        "match_type": match_type,           # "1v1", "TAG", "GAUNTLET", etc.
-        "is_title_bout": title_change is not None,
-        "title_exchanged": title_change if title_change else False, #false if retained, a string if changed
-        "teams": formatted_teams,
-        "winner_id": winner.id,
-        "display_text": summary #match summary
-    }
-
-    MATCH_HISTORY.append(entry)
-    save_history()
-
-##################################
 #        FRONTEND HANDLERS       #
 ##################################
 
@@ -237,19 +91,19 @@ def accept_new_character(data):
     c = Character(data['id'], data['imageBase'], char_name)
     #Assumed order of the submitted character data dictionary
     #1.Image File Ref 2.Stats 3.Wins 4.Losses 5.Character Name
-    APPROVAL_QUEUE[c.id] = c
+    DATA.approval_queue[c.id] = c
     print(f"$-- NEW CHARACTER ADDED TO APPROVAL QUEUE {data['id']} --$")
     emit('character_added', {'status': 'success', 'character': c.to_dict()})
-    save_queue()
+    DATA.save_queue()
 
 #chooses two random characters for the next match and schedules them to fight
 #prioritizes new characters
 def schedule_next_match():
     global NEXT_MATCH
-    if len(CHARACTERS) < 2:
+    if len(DATA.characters) < 2:
         print("!-- NOT ENOUGH FIGHTERS --!")
         return
-    all_chars = list(CHARACTERS.values())
+    all_chars = list(DATA.characters.values())
     #find new characters
     fresh_meat = [c for c in all_chars if (c.wins + c.losses) == 0]
     #prioritize new characters
@@ -285,8 +139,8 @@ def run_scheduled_battle():
     # if new stats were provided, update the character with them
     if 'new_stats' in result and result['new_stats']:
         for char_id, stats_data in result['new_stats'].items():
-            if char_id in CHARACTERS:
-                target = CHARACTERS[char_id]
+            if char_id in DATA.characters:
+                target = DATA.characters[char_id]
                 new_name = stats_data.pop('name', None) or stats_data.pop('Name', None) #Error with AI capitalizing the variable? Just being sure.
                 if new_name:
                     target.name = new_name
@@ -299,9 +153,9 @@ def run_scheduled_battle():
 
     if 'updated_stats' in result and result['updated_stats']:
         for char_id, char_data in result['updated_stats'].items():
-            if char_id in CHARACTERS:
+            if char_id in DATA.characters:
                 print(f"$-- UPDATING CHARACTER: {char_id} --$")
-                CHARACTERS[char_id].update_values(char_data)
+                DATA.characters[char_id].update_values(char_data)
 
     with open(OUTPUT_FILE, 'w') as file:
         json.dump(result, file, indent=2)
@@ -326,14 +180,14 @@ def run_scheduled_battle():
 
     winner_obj.wins += 1
     loser_obj.losses += 1
-    save_characters()
+    DATA.save_characters()
 
     bout_teams = [
         [NEXT_MATCH[0]],
         [NEXT_MATCH[1]]
     ]
 
-    log_match_result(
+    DATA.log_match_result(
         teams=bout_teams,
         winner=winner_obj,
         summary=result.get('summary', "Match Concluded."),
@@ -345,11 +199,11 @@ def run_scheduled_battle():
     socketio.emit('match_result', {
         'fighters': [c.to_dict() for c in NEXT_MATCH],
         'log': result['battle_log'],
-        'winner': CHARACTERS[winner_id].name,
+        'winner': DATA.characters[winner_id].name,
         'summary': result['summary'],
         'introduction': result['introduction']
     })
-    print(f"$-- MATCH FINISHED - WINNER {CHARACTERS[winner_id].name} --$")
+    print(f"$-- MATCH FINISHED - WINNER {DATA.characters[winner_id].name} --$")
     NEXT_MATCH = None
 
 ##################################
@@ -395,7 +249,7 @@ def return_top_fighters():
     char_end = char_start + per_page
 
     # Find top fighters
-    char_list = [c.to_dict() for c in CHARACTERS.values()]  # Get fighter data into list
+    char_list = [c.to_dict() for c in DATA.characters.values()]  # Get fighter data into list
     char_list = sorted(char_list, key=lambda x: (x['wins']+1)/(x['losses']+1), reverse=True)  # Sort by wins
     char_list = char_list[char_start:char_end]  # Pull out top fighters
 
@@ -415,9 +269,9 @@ def server_loop():
     while True:
         socketio.sleep(1)
 
-        if len(APPROVAL_QUEUE) >= 3:
+        if len(DATA.approval_queue) >= 3:
             with app.app_context():
-                submit_queue_for_approval()
+                DATA.submit_queue_for_approval()
 
         CURRENT_TIMER -= 1
         #emit the timer for clients
@@ -438,9 +292,9 @@ def server_loop():
 
 #Starting up server, loading players and approval queue
 print("!-- SERVER STARTING UP: LOADING CHARACTERS... --!")
-load_characters()
-load_queue()
-load_history()
+DATA.load_characters()
+DATA.load_queue()
+DATA.load_history()
 print("!-- STARTING BATTLE LOOP... --!")
 socketio.start_background_task(server_loop)
 

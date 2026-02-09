@@ -2,6 +2,11 @@
 import random
 import string
 
+
+##################################
+#       CHARACTER HANDLING       #
+##################################
+
 class Character():
     """The class for storing all the character information for a single character.
     @param id: A randomly generated string of characters that represents the character.
