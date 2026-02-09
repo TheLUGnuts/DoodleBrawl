@@ -155,8 +155,11 @@ def run_scheduled_battle():
 
     title_exchange_name = None
     if is_champion(loser_obj.status) or is_champion(winner_obj.status):
+        #if both are champions, just do nothing for now.
+        if is_champion(loser_obj.status) and is_champion(winner_obj.status):
+            pass
         #if the loser was the champion, give the title to the winner
-        if is_champion(loser_obj.status):
+        elif is_champion(loser_obj.status):
             title_exchange_name = loser_obj.status
             winner_obj.status = title_exchange_name
             loser_obj.status = f"Former {title_exchange_name}"

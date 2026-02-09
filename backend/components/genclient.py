@@ -64,6 +64,7 @@ Simulate the fight turn-by-turn until one reaches 0 HP.
 ### PHASE 3: MATCH SUMMARY
 Declare a winner and provide a summary.
 * **Championships:** If a fighter is a "Champion", this is a Title Fight. Treat it with high stakes.
+If both fighters are champions, it is a normal bout.
 
 ### OUTPUT FORMAT
 Return strictly valid JSON. 
