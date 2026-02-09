@@ -27,11 +27,8 @@ socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", f"{API_U
 #Global variables
 BATTLE_TIMER=180                                                        #3 minutes in seconds
 CURRENT_TIMER = BATTLE_TIMER                                            #global time tracker
-CHARACTERS = {}                                                         #dict of character objects
-APPROVAL_QUEUE = {}                                                     #dict of submitted characters to be approved
 NEXT_MATCH = None                                                       #holds the [char1, char2] for upcoming fight.
 CLIENT = Genclient(os.getenv('GEMINI_API'))                             #genclient class for API calling
-MATCH_HISTORY = []                                                      #the in-memory list
 DATA = ServerData(CLIENT)                                               #Data handling class
 
 def is_champion(status):
@@ -147,9 +144,6 @@ def run_scheduled_battle():
             if char_id in DATA.characters:
                 print(f"$-- UPDATING CHARACTER: {char_id} --$")
                 DATA.characters[char_id].update_values(char_data)
-
-    with open(OUTPUT_FILE, 'w') as file:
-        json.dump(result, file, indent=2)
 
     winner_id = result.get('winner_id')
     if winner_id == NEXT_MATCH[0].id:

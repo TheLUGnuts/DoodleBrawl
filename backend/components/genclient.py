@@ -1,8 +1,9 @@
 #jfr, cwf, tjc
 
 import json, random, base64, os
-from google                 import genai
-from google.genai           import types
+from google                                                  import genai
+from google.genai                                            import types
+from tenacity import Retrying, RetryError, stop_after_attempt, wait_fixed
 
 ##################################
 #           GEMINI API           #
@@ -32,7 +33,7 @@ Output strictly valid JSON in the following format:
 
 BATTLE_SYSTEM_PROMPT = """
 You are the "Doodle Brawl" Game Engine. Your goal is to simulate a turn-based battle between two characters to 0 HP.
-You act as both the Referee and the Color Commentator, inspired by the commentator Jim Ross.
+You act as both the Referee and the Color Commentator "Jim Scribble", inspired by the commentator Jim Ross.
 Fighter 1 is in the blue corner, Fighter 2 is in the red corner.
 A "Temperature" (1-100) and "Favorability" (1-100) are provided to influence chaos and winner bias.
 
@@ -165,13 +166,18 @@ class Genclient():
             else:
                 request_content.append("[IMAGE DATA MALFORMED - REJECT]")
         try:
-            response = self.client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=request_content,
-                config=self.approval_generation_config
-            )
-            result = json.loads(response.text)
+            for attempt in Retrying(stop=stop_after_attempt(5), wait=wait_fixed(5)):
+                with attempt:
+                    response = self.client.models.generate_content(
+                        model='gemini-2.0-flash',
+                        contents=request_content,
+                        config=self.approval_generation_config
+                    )
+                    result = json.loads(response.text)
             return result.get('results', {})
+        except RetryError:
+            print("!-- ERROR DURING APPROVAL PROCESS - RETRYING --!")
+            pass
         except Exception as e:
             print(f"!-- ERROR DURING APPROVAL PROCESS: {e} --!")
             return {}
@@ -215,17 +221,20 @@ class Genclient():
             get_image_part_from_base64(p2.image_file)  #fighter 2 drawing
         ]
         try:
-            response = self.client.models.generate_content(
-                model='gemini-2.0-flash', #NOTE - This model should suffice
-                contents=request_content,
-                config=self.battle_generation_config
-            )
-            result = json.loads(response.text)
-
-            with open(OUTPUT_FILE, 'w') as file:
-                json.dump(result, file, indent=2)
-
-            return result
+            for attempt in Retrying(stop=stop_after_attempt(5), wait=wait_fixed(5)):
+                with attempt:
+                    response = self.client.models.generate_content(
+                        model='gemini-2.0-flash', #NOTE - This model should suffice
+                        contents=request_content,
+                        config=self.battle_generation_config
+                    )
+                    result = json.loads(response.text)
+                    with open(OUTPUT_FILE, 'w') as file:
+                        json.dump(result, file, indent=2)
+                    return result
+        except RetryError:
+            print("!-- ERROR DURING GENERATION PROCESS - RETRYING --!")
+            pass
         except Exception as e:
             print(f"!-- ERROR OCCURRED: {e} --!")
             pass
