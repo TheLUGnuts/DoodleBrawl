@@ -18,7 +18,7 @@ export default function ArenaMini({ battleState, timer, lastWinner}) {
     return (
       <img
         className="thumbnail-img"
-        src={`data:image/png;base64,${base64}`}
+        src={`data:image/webp;base64,${base64}`}
         alt="Fighter Image"
       />
     );

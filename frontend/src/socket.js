@@ -16,24 +16,27 @@ const socket = io(
 );
 
 function encodeImageURL(dataURL) {
-    // Takes an image file URL as input, encodes it to base64, then compresses it.
+    // Takes an image file URL as input, encodes it to base64, compresses it, then converts that into base64 again.
     // Returns a stringified image ready to be sent to the backend
+    //
+    // NOTE: The data URL contains the actual base64 representation of the image used in display.
+    // Using fromByteArray, the gzip'd image is converted into base64 again, this time so it can be transmitted easily over JSON.
 
-    // Remove the "data:image/png;base64," prefix to get just the Base64 string
+    // Remove the "data:image/png;base64," prefix from the dataURL to get just the Base64 string
     const base64String = dataURL.split(',')[1];
 
     const compressed = gzip(base64String);  // Run compression
-    const result = fromByteArray(compressed); // Stringify for json transmission
-    console.log(result);
+    const result = fromByteArray(compressed); // Stringify to base64 (again) for json transmission
     return result;
 }
 
 function decompressBase64Image(compressedBase64String) {
-    // Takes a gzip-compressed base64 string (presumably from a json sent by the backend) and decompresses it.
+    // Takes a base64 encoded string of a gzip-compressed base64 image (presumably from a json sent by the backend) and decompresses it.
     // Returns an uncompressed base64 string
+    // .
+    // NOTE: This reverses encodeImageURL.
     const compressed = toByteArray(compressedBase64String);
     const result = ungzip(compressed, { to: 'string' });
-    console.log(result)
     return result;
 }
 

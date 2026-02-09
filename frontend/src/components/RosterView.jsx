@@ -21,7 +21,7 @@ export default function RosterView() {
     return (
       <img
         className="{'fighter-' + fighterPlacement} roster-fighter-img"
-        src={`data:image/png;base64,${base64}`}
+        src={`data:image/webp;base64,${base64}`}
         alt="Fighter Image"
       />
     );

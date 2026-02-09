@@ -42,7 +42,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
       <div className="image-wrapper">
         <img
           className={className}
-          src={`data:image/png;base64,${base64}`}
+          src={`data:image/webp;base64,${base64}`}
           alt="Fighter Image"
         />
         {isChampion && 
