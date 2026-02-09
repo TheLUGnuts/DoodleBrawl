@@ -113,7 +113,7 @@ export default function RosterView() {
                   <p className="description"><span dangerouslySetInnerHTML={{ __html: item.description }} /></p>
                   <p>Wins: {item.wins}</p>
                   <p>Losses: {item.losses}</p>
-                  <p>W/L Ratio: {item.wins / item.losses}</p>
+                  <p>W/L Ratio: {(item.wins / item.losses) ? (item.wins / item.losses) : "None"}</p>
                 </div>
               </div>
               {rosterData && <ImageViewer base64={item.image_file} fighterPlacement='{1}' isChampion={checkIsChampion(item.status)} />}
