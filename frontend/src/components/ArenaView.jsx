@@ -7,6 +7,15 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
     return status && status.includes("Champion") && !status.includes("Former");
   };
 
+  if (!battleState || !battleState.fighters || battleState.fighters.length === 0) { return (
+      <div className='root waiting-screen'>
+          <img className="throbber" src="./RatJohnson.gif"></img>
+          <h1>Waiting for Next Match...</h1>
+          {timer && <h2>Next Match in: {timer}</h2>}
+      </div>
+    );
+  }
+
   const isTitleFight = battleState && battleState.fighters && (
     checkIsChampion(battleState.fighters[0].status) || 
     checkIsChampion(battleState.fighters[1].status)
@@ -40,15 +49,6 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
       </div>
     );
   }
-
-  if (!battleState || !battleState.fighters || battleState.fighters.length === 0) { return (
-        <div className='root waiting-screen'>
-            <img className="throbber" src="./RatJohnson.gif"></img>
-            <h1>Waiting for Next Match...</h1>
-            {timer && <h2>Next Match in: {timer}</h2>}
-        </div>
-      );
-    }
 
   return (
     <div class='root'>
