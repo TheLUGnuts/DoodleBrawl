@@ -64,12 +64,56 @@
   animation: pulseGradient 2s linear infinite;
 }
 
+.action-orange {
+  /* Set a large font size for better visibility */
+  font-weight: bold;
+  
+  /* Apply the gradient as a background image #ffffff, #03fffb, #ffffff, #03fffb, */
+  background-image: linear-gradient(90deg, #fcb900, #a16900, #fc8600, #a16100,#fc8f00);
+  
+  /* Set a large background size to allow for movement */
+  background-size: 200% auto;
+  
+  /* Clip the background to the text shape */
+  background-clip: text;
+  -webkit-background-clip: text; /* For webkit browsers */
+  
+  /* Make the text transparent so the background shows through */
+  color: transparent;
+  -webkit-text-fill-color: transparent; /* For webkit browsers */
+  
+  /* Apply the animation */
+  animation: pulseGradient 2s linear infinite;
+}
+
+.action-purple {
+  /* Set a large font size for better visibility */
+  font-weight: bold;
+  
+  /* Apply the gradient as a background image #ffffff, #03fffb, #ffffff, #03fffb, */
+  background-image: linear-gradient(90deg, #8b00fc, #6100a1, #7600fc, #5800a1,#ac00fc);
+  
+  /* Set a large background size to allow for movement */
+  background-size: 200% auto;
+  
+  /* Clip the background to the text shape */
+  background-clip: text;
+  -webkit-background-clip: text; /* For webkit browsers */
+  
+  /* Make the text transparent so the background shows through */
+  color: transparent;
+  -webkit-text-fill-color: transparent; /* For webkit browsers */
+  
+  /* Apply the animation */
+  animation: pulseGradient 2s linear infinite;
+}
+
 .action-black {
   /* Set a large font size for better visibility */
   font-weight: bold;
   
   /* Apply the gradient as a background image #ffffff, #03fffb, #ffffff, #03fffb, */
-  background-image: linear-gradient(90deg, #636363, #4b4b4b, #202020, #292929,#555555);
+  background-image: linear-gradient(90deg, #636363, #333333, #646464, #2c2c2c,#555555);
   
   /* Set a large background size to allow for movement */
   background-size: 200% auto;
@@ -91,7 +135,7 @@
   font-weight: bold;
   
   /* Apply the gradient as a background image #ffffff, #03fffb, #ffffff, #03fffb, */
-  background-image: linear-gradient(90deg, #4d3820, #2e260d, #474413, #68563a,#413e28);
+  background-image: linear-gradient(90deg, #b9a253, #5a4917, #917843, #b89660,#462f0e);
   
   /* Set a large background size to allow for movement */
   background-size: 200% auto;

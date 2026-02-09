@@ -64,6 +64,7 @@
   margin-top: 5px;
   display: inline;
   max-height: 90%;
+  transform:scale(80%)
 }
 
 @keyframes winner-pulse {
@@ -89,4 +90,30 @@
 .loser-img {
   filter: brightness(0.6);
   border: 5px solid rgb(39, 39, 28);
+}
+
+.image-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.image-wrapper img {
+  display: inline-block;
+  vertical-align: bottom;
+  max-width: 100%; 
+}
+
+.champ-badge {
+  position: absolute;
+  top: 6px;
+  left: -15px;
+  width: 150px;
+  transform: rotate(-27deg); 
+  z-index: 10; 
+  pointer-events: none; 
+}
+
+.introduction {
+  margin-top: 25px;
+  font-weight: bold;
 }

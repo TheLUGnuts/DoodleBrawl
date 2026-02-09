@@ -1,0 +1,23 @@
+.debug-button {
+    cursor: pointer;
+    padding: 5px 10px; 
+}
+
+.debug-modal {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background-color: #727272;
+    padding: 10px;
+    border: 1px solid #414141; 
+    z-index: 9999;
+    display: flex;
+    gap: 10px;
+}
+
+.debug-h4 {
+    margin: 0; 
+    color: #ffffff;
+    align-self: center;
+    margin-right: 5px; 
+}

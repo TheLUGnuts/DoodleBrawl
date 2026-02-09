@@ -10,7 +10,11 @@ export default function RosterView() {
   const [rosterData, setRosterData] = useState({});
   const [page, setPage] = useState(1); // Page number for fetch
 
-  function ImageViewer({ base64, fighterPlacement }) {
+  const checkIsChampion = (status) => {
+    return status && status.includes("Champion");
+  };
+
+  function ImageViewer({ base64, fighterPlacement, isChampion }) {
     // Decodes base64 image from server
     // Fighter placement (eg 1, 2, 3, etc.) is the fighter's placement in the lineup. 1st, 2nd, 3rd get special css
     return (
@@ -22,6 +26,8 @@ export default function RosterView() {
     );
   }
 
+
+  
   function processRosterData(json) {
     // Pass data around where necessary
     console.log(json)
@@ -31,11 +37,7 @@ export default function RosterView() {
   const fetchRoster = async (pageNum) => {
     // Fetch data from server
     // pageNum specifies which page of data to return (1st, 2nd, 3rd, etc.)
-
     // Set fetch status
-    setLoading(true);
-    setError(null);
-
     // Attempt POST to server
     try {
       const response = await fetch(`${API_URL}/api/roster`, {
@@ -51,7 +53,13 @@ export default function RosterView() {
       // Process data upon success
       const data = await response.json();
       console.log("Got Fresh Fighter Data");
+      if (data.length == 0) {
+        console.log("No fighters to display.")
+        return false;
+      } 
       processRosterData(data);
+      setPage(pageNum);
+      return true;
 
     } catch (error) {  // Catch error
       console.error('Error fetching items:', error);
@@ -64,11 +72,11 @@ export default function RosterView() {
 
   const getNextPage = () => {
     const pageNum = page + 1;
-    setPage(pageNum);
     fetchRoster(pageNum);
   }
 
   const getPrevPage = () => {
+    if (page === 1) return;
     const pageNum = page - 1;
     setPage(pageNum);
     fetchRoster(pageNum);
@@ -101,13 +109,14 @@ export default function RosterView() {
                 <p className="place-number">#{(index + 1) + ((page-1))*5}</p> 
                 <div className="stats">
                   <b className="fighter-name">{item.name}</b>
+                  <b className="fighter-status">{item.status}</b>
                   <p className="description"><span dangerouslySetInnerHTML={{ __html: item.description }} /></p>
                   <p>Wins: {item.wins}</p>
                   <p>Losses: {item.losses}</p>
-                  <p>W/L Ratio: {item.wins / item.losses}</p>
+                  <p>W/L Ratio: {(item.wins / item.losses) ? (item.wins / item.losses) : "None"}</p>
                 </div>
               </div>
-              {rosterData && <ImageViewer base64={item.image_file} fighterPlacement='{1}' />}
+              {rosterData && <ImageViewer base64={item.image_file} fighterPlacement='{1}' isChampion={checkIsChampion(item.status)} />}
             </div>
             {index < rosterData.length - 1 && <hr />}
           </>

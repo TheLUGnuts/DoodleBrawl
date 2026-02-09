@@ -66,6 +66,11 @@ const DoodleCanvas = () => {
       return;
     }
 
+    if (activeTool === 'picker') {
+      pickColor(Math.floor(x), Math.floor(y));
+      return;
+    }
+
     //handle brush and eraser
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -168,6 +173,26 @@ const DoodleCanvas = () => {
     } : null;
   };
 
+  const rgbToHex = (r, g, b) => {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+  };
+
+  const pickColor = (startX, startY) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    const getPixelPos = (x, y) => (y * width + x) * 4;
+    const startPos = getPixelPos(startX, startY);
+    const startR = data[startPos];
+    const startG = data[startPos + 1];
+    const startB = data[startPos + 2];
+    setStrokeColor(rgbToHex(startR, startG, startB));
+    setActiveTool("brush");
+  }
+
   // paint bucket logic
   const paintFill = (startX, startY, fillColorHex) => {
     const canvas = canvasRef.current;
@@ -214,10 +239,6 @@ const DoodleCanvas = () => {
     ctx.putImageData(imageData, 0, 0);
     saveToHistory();
   };
-
-  const updateDrawingName = (change) => {
-    setDrawingName(change.target.value);    
-  }
 
   const sendImageOverSocket = () => {
     if (drawingName === "") {
@@ -295,6 +316,12 @@ const DoodleCanvas = () => {
             className={`tool-button bucket ${activeTool === 'bucket' ? 'active' : ''}`}
           >
             Bucket
+          </button>
+          <button
+            onClick={() => setActiveTool('picker')}
+            className={`tool-button picker ${activeTool === 'picker' ? 'active' : ''}`}
+          >
+            Color Pick
           </button>
           <button
             onClick={() => setActiveTool('eraser')}

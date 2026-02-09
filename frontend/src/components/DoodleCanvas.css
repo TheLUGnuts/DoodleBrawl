@@ -136,6 +136,15 @@
   color: #fff
 }
 
+.tool-button.picker {
+  background-color: #fff;
+}
+
+.tool-button.picker.active {
+  background-color: #484b23;
+  color: #fff
+}
+
 .tool-button.clear {
   background-color: #ff6b6b;
   color: white;
