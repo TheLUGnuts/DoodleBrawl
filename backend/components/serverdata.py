@@ -9,13 +9,13 @@ from components.character import Character
 
 #Data paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #current directory
-DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                        #file ref where data is stored
-IMAGE_DIR = os.path.join(BASE_DIR, 'assets/Images')                     #file ref where images are located
-CHARACTER_FILE = os.path.join(DATA_DIR, 'characters.json')              #JSON file reference of character objects
-QUEUE_FILE = os.path.join(DATA_DIR, 'queue.json')                       #approval queue of characters
-OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                   #last generated response for debugging.
-REJECTED_FILE = os.path.join(DATA_DIR, 'rejected.json')                 #file containing rejected images, their ID, and reason for rejection
-HISTORY_FILE = os.path.join(DATA_DIR, 'history.json')                   #the file path
+DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                                         #file ref where data is stored
+IMAGE_DIR = os.path.join(BASE_DIR, 'assets/Images')                                      #file ref where images are located
+CHARACTER_FILE = os.path.join(DATA_DIR, 'characters.json')                               #JSON file reference of character objects
+QUEUE_FILE = os.path.join(DATA_DIR, 'queue.json')                                        #approval queue of characters
+OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                                    #last generated response for debugging.
+REJECTED_FILE = os.path.join(DATA_DIR, 'rejected.json')                                  #file containing rejected images, their ID, and reason for rejection
+HISTORY_FILE = os.path.join(DATA_DIR, 'history.json')                                    #the file path
 
 class ServerData:
     def __init__(self, genclient):

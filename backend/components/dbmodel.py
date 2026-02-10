@@ -12,23 +12,23 @@ db = SQLAlchemy()
 
 #user accounts use a Mullvad-style 16 digit number for account identification.
 #easy to track and easy to remember/copy
-class User(UserMixin, db.model):
+class User(UserMixin, db.Model):
     id = db.Column(db.String(16), primary_key=True)                          #Unique 16-digit ID
     creation_time = db.Column(db.Float, default=time.time)                   #Time of user creation
     portrait = db.Column(db.Text)                                            #User portrait, stored as a base64 text
     username = db.Column(db.String(32))                                      #Username of account
-    money = db.Column(db.Int, default=100)                                   #how much money the user has
+    money = db.Column(db.Integer, default=100)                                   #how much money the user has
     #One user may manage many characters
     characters = db.relationship('Character', backref='manager', lazy=True)  #who this user 'manages'
 
-class Character(db.model):
+class Character(db.Model):
     #identifiers/meta
     id = db.Column(db.String(36), primary_key=True)                          #UUID
     name = db.Column(db.String(64), nullable=False)                          #name of this character
     creation_time = db.Column(db.Float, default=time.time)                   #time the character was created
     image_file = db.Column(db.Text, nullable=False)                          #the drawing of the character.
     #who made this
-    creator_id = db.Column(db.String(16), db.ForeignKey('user.id'), nullable=True, default="Unknown")
+    creator_id = db.Column(db.String(16), nullable=True, default="Unknown")
 
     #bio
     description = db.Column(db.Text, default="Mysterious Challenger!")       #description of character
@@ -85,7 +85,7 @@ class Character(db.model):
 #Match history db
 class Match(db.Model):
     id = db.Column(db.Integer, primary_key=True)                #id of the match. this is just sequential
-    timestamp = db.Column(db.float, default=time.time)          #timestamp of when the match happened
+    timestamp = db.Column(db.Float, default=time.time)          #timestamp of when the match happened
     match_type = db.Column(db.String(16), default="1v1")        #what kind of match, usually just a 1v1
     summary = db.Column(db.Text)                                #the summary of the match
     winner_name = db.Column(db.String(64))                      

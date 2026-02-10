@@ -2,13 +2,16 @@
 #Created for the 2026 VCU 24HR Hackathon
 
 import json, os, random, re, time, secrets
-from flask_cors                                            import CORS
-from components.genclient                             import Genclient
-from components.character                             import Character
-from components.serverdata                           import ServerData
-from dotenv                                         import load_dotenv
-from flask_socketio                              import SocketIO, emit
-from flask             import Flask, render_template, jsonify, request
+from components.dbmodel                                              import db
+from flask_cors                                                    import CORS
+from components.genclient                                     import Genclient
+from components.character                                     import Character
+from components.serverdata                                   import ServerData
+from dotenv                                                 import load_dotenv
+from flask_socketio                                      import SocketIO, emit
+from flask                     import Flask, render_template, jsonify, request
+from flask_login import LoginManager, login_user, current_user, login_required
+
 
 #################################
 #          DOODLE BRAWL         #
@@ -23,6 +26,11 @@ app = Flask(__name__,                                                   #launch 
 app.config['SECRET_KEYS'] = os.getenv('SECRET_KEY')                     #secret key for CORS prevention, taken from .env file
 CORS(app)                                                               #Apply the CORS prevention onto the flask app
 socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", f"{API_URL}"]) #begin sockets for listening and sending out info
+
+#SQLite database initialitzation
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///doodlebrawl.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
 
 #Global variables
 BATTLE_TIMER=180                                                        #3 minutes in seconds
