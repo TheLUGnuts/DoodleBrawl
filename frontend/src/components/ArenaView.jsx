@@ -31,8 +31,6 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
 
   function ImageViewer({ compressedBase64, isWinner, isLoser, isChampion }) {
     let className = '';
-    console.log("VIEWING IMAGE");
-    console.log(compressedBase64);
     const base64 = decompressBase64Image(compressedBase64);
 
     if (isWinner) className = 'winner-img';
