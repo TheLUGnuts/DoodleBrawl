@@ -77,6 +77,14 @@ def debug_new_matchup():
     schedule_next_match()
     return jsonify({"status": "rematched", "new_match": [c.name for c in NEXT_MATCH]})
 
+@app.route('/api/debug/randomize_alignments', methods=['POST'])
+def debug_randomize_alignments():
+    if not app.debug and "localhost" not in API_URL:
+        return jsonify({"error": "Debug mode only"}), 403
+        
+    count = DATA.randomize_alignments()
+    return jsonify({"status": "success", "count": count, "message": "Alignments randomized!"})
+
 ##################################
 #        FRONTEND HANDLERS       #
 ##################################

@@ -28,6 +28,14 @@ export default function Debug() {
     }
   };
 
+  const handleRandomize = async () => {
+    try {
+      await fetch(`${API_URL}/api/debug/randomize_alignments`, { method: 'POST' });
+    } catch (e) {
+      console.error("Debug Randomize Failed:", e);
+    }
+  };
+
   const handleRematch = async () => {
     try {
       await fetch(`${API_URL}/api/debug/rematch`, { method: 'POST' });
@@ -49,6 +57,9 @@ export default function Debug() {
       </button>
       <button onClick={handleRematch} className="debug-button">
         New Matchup
+      </button>
+      <button onClick={handleRandomize} className="debug-button">
+        Randomize Alignments
       </button>
     </div>
   );

@@ -158,3 +158,20 @@ class ServerData:
             print(f"!-- LOGGED REJECTION FOR {char_id} --!")
         except Exception as e:
             print(f"!-- ERROR SAVING REJECTION: {e} --!")
+
+    #########################
+    #     DEBUG FUNCs       #
+    #########################
+
+    def randomize_alignments(self):
+        all_chars = Character.query.all()
+        options = ["Face", "Heel", "Neutral"]
+        
+        count = 0
+        for char in all_chars:
+            char.alignment = random.choice(options)
+            count += 1
+            
+        self.commit()
+        print(f"!-- RANDOMIZED ALIGNMENTS FOR {count} CHARACTERS --!")
+        return count

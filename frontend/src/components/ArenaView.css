@@ -117,3 +117,21 @@
   margin-top: 25px;
   font-weight: bold;
 }
+
+.alignment-face {
+  color: #2ecc71;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.alignment-heel {
+  color: #9b59b6;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.alignment-neutral {
+  color: #333333;
+  font-weight: bold;
+  text-transform: capitalize;
+}
