@@ -2,6 +2,7 @@
 *.json
 !.env.sample
 !package.json
+*.db
 #Node gitignore template
 # Logs
 logs
