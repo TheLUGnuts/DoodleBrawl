@@ -1,14 +1,14 @@
 #jfr, cwf, tjc
 
 import os, json, time, random
-from components.dbmodel import db, Character, Match
 from sqlalchemy.sql.expression import func
+from components.dbmodel import db, Character, Match
 
 ##################################
 #          DATA HANDLERS         #
 ##################################
 
-#Data paths
+#data paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')
 REJECTED_FILE = os.path.join(DATA_DIR, 'rejected.json')
@@ -37,7 +37,7 @@ class ServerData:
         Smart logic to find fighters for the next match.
         Prioritizes fresh meat (0 fights).
         """
-        # 1. Look for Fresh Meat (0 fights)
+        #find fresh meat
         fresh_meat = Character.query.filter_by(is_approved=True).filter(
             (Character.wins + Character.losses) == 0
         ).all()
@@ -49,8 +49,7 @@ class ServerData:
         elif len(fresh_meat) == 1:
             print("!-- PRIORITY MATCH: 1 NEW FIGHTER FOUND --!")
             p1 = fresh_meat[0]
-            # Get a random opponent that isn't p1
-            # func.random() works with SQLite
+            #select two random characters
             p2 = Character.query.filter_by(is_approved=True).filter(
                 Character.id != p1.id
             ).order_by(func.random()).first()
@@ -58,7 +57,7 @@ class ServerData:
             if p2:
                 return [p1, p2]
         
-        # 2. If no fresh meat, fully random
+        #fully random if theres no fresh meat
         count = Character.query.filter_by(is_approved=True).count()
         if count < 2:
             return None
@@ -68,9 +67,6 @@ class ServerData:
     #########################
     #      SAVING FUNCs     #
     #########################
-    
-    # NOTE: With SQLite, we generally just call db.session.commit() in the main logic,
-    # but we can add helper wrappers here if needed.
     
     def commit(self):
         try:
@@ -84,25 +80,18 @@ class ServerData:
     #########################
 
     def submit_queue_for_approval(self):
-        # 1. Get unapproved characters
-        queue = self.get_queue()
-        
-        # Only run if we have a batch (e.g., 3 or more, or just run it on whatever)
-        if len(queue) < 3:
+        queue = self.get_queue() #unapproved characters
+        if len(queue) < 2:
             return
 
         print(f"!-- SUBMITTING {len(queue)} IMAGES FOR APPROVAL --!")
         
         # Convert list of objs to dict {id: obj} for the genclient
         queue_dict = {c.id: c for c in queue}
-        
-        # 2. Send to AI
         results = self.genclient.submit_for_approval(queue_dict)
-        
         if not results:
             return
 
-        # 3. Process Results
         ids_processed = []
         for char_id, decision in results.items():
             character = Character.query.get(char_id)
@@ -120,7 +109,6 @@ class ServerData:
             
             ids_processed.append(char_id)
 
-        # 4. Save changes
         self.commit()
 
     #########################
@@ -149,7 +137,6 @@ class ServerData:
         self.commit()
 
     def log_rejection(self, char_id, char_obj, reason):
-        # We still use a JSON file for rejections since we didn't make a Rejection Table
         rejected_data = {}
         if os.path.exists(REJECTED_FILE):
             try:
@@ -162,7 +149,6 @@ class ServerData:
             "id": char_id,
             "name": char_obj.name,
             "reason": reason,
-            # For DB objects, image_file is the base64 string
             "image": char_obj.image_file 
         }
         

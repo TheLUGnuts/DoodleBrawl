@@ -60,7 +60,9 @@ class Character(db.Model):
             "image_file": self.image_file,
             "creator_id": self.creator_id,
             "manager_id": self.manager_id,
-            "popularity": self.popularity
+            "popularity": self.popularity,
+            "alignment": self.alignment,
+            "titles": self.titles
         }
     #return the db entry as a dict EXCLUDING the base64 image string
     def to_dict_light(self):
@@ -75,7 +77,9 @@ class Character(db.Model):
             "personality": self.personality,
             "creator_id": self.creator_id,
             "manager_id": self.manager_id,
-            "popularity": self.popularity
+            "popularity": self.popularity,
+            "alignment": self.alignment,
+            "titles": self.titles
         }
 
 #Match history db
