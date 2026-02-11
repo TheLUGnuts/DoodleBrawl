@@ -81,7 +81,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
         {/* FIGHTER 2*/}
         <div class='column'>
           <p class='fighter-name fighter-2'>{battleState.fighters[1].name}</p>
-          <p>{battleState.fighters[1].titles ? battleState.fighters[1].titles : battleState.fighters[1].alignment}</p>
+          <p>{battleState.fighters[1].titles == [] ? battleState.fighters[1].titles : battleState.fighters[1].alignment}</p>
           <div class='fighter-img'>
             {battleState && 
             <ImageViewer compressedBase64={battleState.fighters[1].image_file} 
