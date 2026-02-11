@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { socket } from '../socket.js';
+import { socket, encodeImageURL } from '../socket.js';
 import './DoodleCanvas.css';
 
 const DoodleCanvas = () => {
@@ -141,11 +141,11 @@ const DoodleCanvas = () => {
   const handleDownloadPNG = () => {
     // Downloads directly to user's computer
     const canvas = canvasRef.current;
-    const image = canvas.toDataURL('image/png');
+    const image = canvas.toDataURL('image/webp');
     
     const link = document.createElement('a');
     link.href = image;
-    link.download = `drawing-${Date.now()}.png`;
+    link.download = `drawing-${Date.now()}.webp`;
     link.click();
   };
 
@@ -153,12 +153,11 @@ const DoodleCanvas = () => {
     // Returns a base64 string of the canvas image
     // This is used for sending the image over the sockets.
     const canvas = canvasRef.current;
-    const dataURL = canvas.toDataURL('image/png'); // "data:image/png;base64,..."
+    const dataURL = canvas.toDataURL('image/webp'); // "data:image/png;base64,..."
     
-    // Remove the "data:image/png;base64," prefix to get just the Base64 string
-    const base64String = dataURL.split(',')[1];
+    const encodedBase64String = encodeImageURL(dataURL);
     
-    return base64String; // Send this via socket
+    return encodedBase64String; // Send this via socket
   }
 
   //change hex decimals to RGB

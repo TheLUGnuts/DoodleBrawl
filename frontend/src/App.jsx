@@ -133,6 +133,7 @@ function App() {
     console.log(data);
   }
 
+  // Enables connected/disconnected status events
   useEffect(() => {
     function onConnect() {
       setConnectionStatus("Connected!");
