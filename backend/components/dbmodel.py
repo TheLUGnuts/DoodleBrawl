@@ -33,10 +33,10 @@ class Character(db.Model):
     #bio
     description = db.Column(db.Text, default="Mysterious Challenger!")       #description of character
     personality = db.Column(db.String(16), default="Unknown")                
-    height = db.Column(db.String(16), default="Unknown")
-    weight = db.Column(db.String(16), default="Unknown")
-    status = db.Column(db.Text, default="Rookie")
+    alignment = db.Column(db.String(20), default="Unknown") 
+    titles = db.Column(JSON, default=list)                                   #list of strings
     manager_id = db.Column(db.String(16), db.ForeignKey('user.id'), nullable=True, default="None")
+    popularity = db.Column(db.Integer, default=1)
 
     #combat stats, stored as a json still
     stats = db.Column(JSON, default=dict)
@@ -56,13 +56,11 @@ class Character(db.Model):
             "wins": self.wins,
             "losses": self.losses,
             "description": self.description,
-            "status": self.status,
             "personality": self.personality,
-            "height": self.height,
-            "weight": self.weight,
             "image_file": self.image_file,
             "creator_id": self.creator_id,
-            "manager_id": self.manager_id
+            "manager_id": self.manager_id,
+            "popularity": self.popularity
         }
     #return the db entry as a dict EXCLUDING the base64 image string
     def to_dict_light(self):
@@ -74,12 +72,10 @@ class Character(db.Model):
             "wins": self.wins,
             "losses": self.losses,
             "description": self.description,
-            "status": self.status,
             "personality": self.personality,
-            "height": self.height,
-            "weight": self.weight,
             "creator_id": self.creator_id,
-            "manager_id": self.manager_id
+            "manager_id": self.manager_id,
+            "popularity": self.popularity
         }
 
 #Match history db

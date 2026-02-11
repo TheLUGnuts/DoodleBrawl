@@ -27,12 +27,12 @@ class Character():
         self.losses: int = 0
         self.name: str = name
         self.description: str = "Mysterious Challenger!"
-        self.status: str = "Rookie"
+        self.alignment: str = "Neutral"
+        self.titles: list = []
         self.personality: str = ""
-        self.height: str = "Unknown"
-        self.weight: str = "Unknown"
         self.creation_time = time.time()
         self.manager: str = "None"
+        self.popularity: int = 1
         # If data dict is present, overwrite defaults
         if data:
             self.id = data.get("id", self.id)
@@ -42,10 +42,16 @@ class Character():
             self.losses = data.get("losses", self.losses)
             self.name = data.get("name", self.name)
             self.description = data.get("description", self.description)
-            self.status = data.get("status", self.status)
+            self.alignment = data.get("alignment", "Unknown")
+            self.titles = data.get("titles", [])
+            #fallback to safely move championship status into the new 'titles' list.
+            old_status = data.get("status", None)
+            if old_status:
+                if "Champion" in old_status and "Former" not in old_status:
+                    if old_status not in self.titles:
+                        self.titles.append(old_status)
+
             self.personality = data.get("personality", self.personality)
-            self.height = data.get("height", self.height)
-            self.weight = data.get("weight", self.weight)
             self.manager = data.get("manager", self.manager)
 
         self.total_battles = self.wins + self.losses
@@ -61,10 +67,9 @@ class Character():
             "losses": self.losses,
             "name": self.name,
             "description": self.description,
-            "status": self.status,
+            "alignment": self.alignment,
+            "titles": self.titles,
             "personality": self.personality,
-            "height": self.height,
-            "weight": self.weight,
             "manager": self.manager
         }
 
@@ -77,10 +82,9 @@ class Character():
             "wins": self.wins,
             "losses": self.losses,
             "description": self.description,
-            "status": self.status,
+            "alignment": self.alignment,
+            "titles": self.titles,
             "personality": self.personality,
-            "height": self.height,
-            "weight": self.weight,
             "manager": self.manager
         }
     
@@ -95,10 +99,13 @@ class Character():
         self.name = new_stats.get("name", self.name)
         self.description = new_stats.get("description", self.description)
         self.personality = new_stats.get("personality", self.personality)
-        self.height = new_stats.get("height", self.height)
-        self.weight = new_stats.get("weight", self.weight)
         self.status = new_stats.get("status", self.status)
         self.manager = new_stats.get("manager", self.manager)
+
+        self.alignment = new_stats.get("alignment", self.alignment)
+        #on the offchance that we want it to create a new title, or something.
+        if "titles" in new_stats:
+            self.titles = new_stats["titles"]
 
         #keywords for capturing any remaining stat keys
         combat_keys = ['hp', 'HP', 'agility', 'Agility', 'power', 'Power', 'speed', 'Speed']

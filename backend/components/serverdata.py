@@ -1,164 +1,155 @@
 #jfr, cwf, tjc
 
-import os, json, time, re
-from components.character import Character
+import os, json, time, random
+from components.dbmodel import db, Character, Match
+from sqlalchemy.sql.expression import func
 
 ##################################
 #          DATA HANDLERS         #
 ##################################
 
 #Data paths
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #current directory
-DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                                         #file ref where data is stored
-IMAGE_DIR = os.path.join(BASE_DIR, 'assets/Images')                                      #file ref where images are located
-CHARACTER_FILE = os.path.join(DATA_DIR, 'characters.json')                               #JSON file reference of character objects
-QUEUE_FILE = os.path.join(DATA_DIR, 'queue.json')                                        #approval queue of characters
-OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                                    #last generated response for debugging.
-REJECTED_FILE = os.path.join(DATA_DIR, 'rejected.json')                                  #file containing rejected images, their ID, and reason for rejection
-HISTORY_FILE = os.path.join(DATA_DIR, 'history.json')                                    #the file path
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')
+REJECTED_FILE = os.path.join(DATA_DIR, 'rejected.json')
 
 class ServerData:
     def __init__(self, genclient):
-        self.match_history = []                                              #match history array
-        self.characters = {}                                                 #dict of character objects
-        self.approval_queue = {}                                             #dict of submitted characters to be approved
-        self.genclient = genclient                                           #gemini API client
+        self.genclient = genclient 
 
     #########################
-    #     LOADING FUNCs     #
+    #      FETCH FUNCs      #
     #########################
 
-    #load the characters from the characters.json file
-    def load_characters(self):
-        if not os.path.exists(CHARACTER_FILE):
-            print(f"!--- CHARACTER FILE WASN'T FOUND AT {CHARACTER_FILE}---!")
-            return
-        try:
-            with open(CHARACTER_FILE, 'r') as file:
-                data = json.load(file)
-                #create the character objects in memory form the file.
-                for char_id, char_data in data.items():
-                    self.characters[char_id] = Character(id_or_data=char_id, data=char_data)
-            print(f"$-- LOADED {len(self.characters)} CHARACTERS --$")
-        except Exception as e:
-            print(f"!-- ERROR LOADING CHARACTERS --!\n ERROR: {e}")
+    def get_character(self, char_id):
+        return Character.query.get(char_id)
 
-    #load the approval queue from the queue.json file
-    def load_queue(self):
-        if not os.path.exists(QUEUE_FILE):
-            print(f"!--- QUEUE FILE WASN'T FOUND AT {QUEUE_FILE}---!")
-            return
-        try:
-            with open(QUEUE_FILE, 'r') as file:
-                data = json.load(file)
-                #create the character objects in memory form the file.
-                for char_id, char_data in data.items():
-                    self.approval_queue[char_id] = Character(id_or_data=char_id, data=char_data)
-            print(f"$-- LOADED {len(self.approval_queue)} CHARACTERS FOR APPROVAL QUEUE --$")
-        except Exception as e:
-            print(f"!-- ERROR LOADING APPROVAL QUEUE --!\n ERROR: {e}")
+    def get_roster(self):
+        """Returns all approved characters."""
+        return Character.query.filter_by(is_approved=True).all()
     
-    #load match history
-    def load_history(self):
-        if not os.path.exists(HISTORY_FILE):
-            return
-        try:
-            with open(HISTORY_FILE, 'r') as file:
-                self.match_history = json.load(file)
-            print(f"$-- LOADED {len(self.match_history)} PAST MATCHES --$")
-        except Exception as e:
-            print(f"!-- ERROR LOADING HISTORY: {e} --!")
+    def get_queue(self):
+        """Returns all unapproved characters."""
+        return Character.query.filter_by(is_approved=False).all()
+
+    def get_candidates_for_match(self):
+        """
+        Smart logic to find fighters for the next match.
+        Prioritizes fresh meat (0 fights).
+        """
+        # 1. Look for Fresh Meat (0 fights)
+        fresh_meat = Character.query.filter_by(is_approved=True).filter(
+            (Character.wins + Character.losses) == 0
+        ).all()
+
+        if len(fresh_meat) >= 2:
+            print(f"!-- PRIORITY MATCH: FOUND {len(fresh_meat)} NEW FIGHTERS --!")
+            return random.sample(fresh_meat, 2)
+        
+        elif len(fresh_meat) == 1:
+            print("!-- PRIORITY MATCH: 1 NEW FIGHTER FOUND --!")
+            p1 = fresh_meat[0]
+            # Get a random opponent that isn't p1
+            # func.random() works with SQLite
+            p2 = Character.query.filter_by(is_approved=True).filter(
+                Character.id != p1.id
+            ).order_by(func.random()).first()
+            
+            if p2:
+                return [p1, p2]
+        
+        # 2. If no fresh meat, fully random
+        count = Character.query.filter_by(is_approved=True).count()
+        if count < 2:
+            return None
+            
+        return Character.query.filter_by(is_approved=True).order_by(func.random()).limit(2).all()
 
     #########################
     #      SAVING FUNCs     #
     #########################
-
-    def save_history(self):
+    
+    # NOTE: With SQLite, we generally just call db.session.commit() in the main logic,
+    # but we can add helper wrappers here if needed.
+    
+    def commit(self):
         try:
-            with open(HISTORY_FILE, 'w') as file:
-                json.dump(self.match_history, file, indent=2)
+            db.session.commit()
         except Exception as e:
-            print(f"!-- ERROR SAVING HISTORY: {e} --!")
-
-    #save all characters to the characters.json file
-    def save_characters(self):
-        try:
-            data = {c_id: c.to_dict() for c_id, c in self.characters.items()}
-            with open(CHARACTER_FILE, 'w') as file:
-                json.dump(data, file, indent=2)
-            print(f"$-- CHARACTERS SAVED TO characters.json --$")
-        except Exception as e:
-            print(f"!-- ERROR SAVING CHARACTERS --!\n ERROR: {e}")
-
-    #save queued characters to queue.json
-    def save_queue(self):
-        try:
-            data = {c_id: c.to_dict() for c_id, c in self.approval_queue.items()}
-            with open(QUEUE_FILE, 'w') as file:
-                json.dump(data, file, indent=2)
-            print(f"$-- QUEUE SAVED TO queue.json --$")
-        except Exception as e:
-            print(f"!-- ERROR SAVING QUEUE --!\n ERROR: {e}")
+            print(f"!-- DB COMMIT ERROR: {e} --!")
+            db.session.rollback()
 
     #########################
     #    GenClient FUNCs    #
     #########################
 
-    #submit the current approval queue to the API for inappropriate content
     def submit_queue_for_approval(self):
-        #only run the approval submission if theres at least 3 to add.
-        if len(self.approval_queue) < 3:
+        # 1. Get unapproved characters
+        queue = self.get_queue()
+        
+        # Only run if we have a batch (e.g., 3 or more, or just run it on whatever)
+        if len(queue) < 3:
             return
-        #submit the approval queue for AI approval
-        results = self.genclient.submit_for_approval(self.approval_queue)
+
+        print(f"!-- SUBMITTING {len(queue)} IMAGES FOR APPROVAL --!")
+        
+        # Convert list of objs to dict {id: obj} for the genclient
+        queue_dict = {c.id: c for c in queue}
+        
+        # 2. Send to AI
+        results = self.genclient.submit_for_approval(queue_dict)
+        
         if not results:
             return
-        ids_to_remove = []
+
+        # 3. Process Results
+        ids_processed = []
         for char_id, decision in results.items():
-            if char_id in self.approval_queue:
-                if decision.get('approved'):
-                    #Move to main game roster
-                    character = self.approval_queue[char_id]
-                    self.characters[char_id] = character
-                    print(f"$-- APPROVED: {char_id} --$")
-                else:
-                    #Rejected, log it
-                    reason = decision.get('reason', 'Unknown')
-                    print(f"!-- REJECTED: {char_id} - Reason: {reason} --!")
-                    self.log_rejection(char_id, self.approval_queue[char_id], reason)
-                ids_to_remove.append(char_id)
-        for char_id in ids_to_remove:
-            del self.approval_queue[char_id]
-        self.save_characters()
-        self.save_queue()
+            character = Character.query.get(char_id)
+            if not character: continue
+
+            if decision.get('approved'):
+                character.is_approved = True
+                print(f"$-- APPROVED: {char_id} --$")
+            else:
+                # Rejected - Delete from DB and Log
+                reason = decision.get('reason', 'Unknown')
+                print(f"!-- REJECTED: {char_id} - Reason: {reason} --!")
+                self.log_rejection(char_id, character, reason)
+                db.session.delete(character)
+            
+            ids_processed.append(char_id)
+
+        # 4. Save changes
+        self.commit()
 
     #########################
     #     Logging FUNCs     #
     #########################
 
     def log_match_result(self, teams, winner, summary, match_type="1v1", title_change=None):
-        #create the teams for when we add future team matches. 1v1 matches will just have one fighter in each team
+        # Format teams for JSON storage
         formatted_teams = []
         for team in teams:
             team_data = [{"id": f.id, "name": f.name} for f in team]
             formatted_teams.append(team_data)
 
-        #the history json entry
-        entry = {
-            "timestamp": time.time(),
-            "match_type": match_type,           # "1v1", "TAG", "GAUNTLET", etc.
-            "is_title_bout": title_change is not None,
-            "title_exchanged": title_change if title_change else False, #false if retained, a string if changed
-            "teams": formatted_teams,
-            "winner_id": winner.id,
-            "display_text": summary #match summary
-        }
+        new_match = Match(
+            timestamp=time.time(),
+            match_type=match_type,
+            is_title_bout=(title_change is not None),
+            title_exchanged=title_change if title_change else None,
+            match_data={"teams": formatted_teams}, # Stores the team composition
+            winner_id=winner.id,
+            winner_name=winner.name,
+            summary=summary
+        )
 
-        self.match_history.append(entry)
-        self.save_history()
+        db.session.add(new_match)
+        self.commit()
 
-    #log rejections
     def log_rejection(self, char_id, char_obj, reason):
+        # We still use a JSON file for rejections since we didn't make a Rejection Table
         rejected_data = {}
         if os.path.exists(REJECTED_FILE):
             try:
@@ -166,13 +157,15 @@ class ServerData:
                     rejected_data = json.load(f)
             except:
                 rejected_data = {}
-        #add the new rejection
+        
         rejected_data[char_id] = {
             "id": char_id,
             "name": char_obj.name,
             "reason": reason,
-            "image": char_obj.image_file # save the base64 string image
+            # For DB objects, image_file is the base64 string
+            "image": char_obj.image_file 
         }
+        
         try:
             with open(REJECTED_FILE, 'w') as f:
                 json.dump(rejected_data, f, indent=2)

@@ -18,19 +18,26 @@ def migrate():
                     print(f"CHARACTER FILE: {len(data.items())}")
                     for c_id, c_data in data.items():
                         if not Character.query.get(c_id):
+                            old_status = c_data.get('status', 'Rookie')
+                            new_alignment = "Neutral"
+                            new_titles = []
+                            #if they were a Champion, move it to titles
+                            if "Champion" in old_status and "Former" not in old_status:
+                                new_titles.append(old_status)
+                                new_alignment = "Neutral"
+
                             new_char = Character(
                                 id=c_id,
                                 name=c_data.get('name', 'Unknown'),
                                 description=c_data.get('description', ''),
                                 personality=c_data.get('personality', 'Unknown'),
-                                height=c_data.get('height', "Unknown"),
-                                weight=c_data.get('weight', "Unknown"),
                                 stats=c_data.get('stats', {}),
                                 wins=c_data.get('wins', 0),
                                 losses=c_data.get('losses', 0),
                                 image_file=c_data.get('image_file', ''),
-                                status=c_data.get('status', 'Rookie'),
-                                is_approved=True # It was in characters.json, so it's approved
+                                is_approved=True, # It was in characters.json, so it's approved
+                                alignment=new_alignment,
+                                titles=new_titles
                             )
                             print(f"ADDING {c_data.get('name')}")
                             db.session.add(new_char)
