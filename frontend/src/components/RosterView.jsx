@@ -1,7 +1,7 @@
 /* This component shows the top few fighters, including their stats and images. */
 
-import { useState, useEffect, useRef } from 'react';
-import { socket, API_URL } from '../socket.js';
+import { useState, useEffect } from 'react';
+import { API_URL, decompressBase64Image } from '../socket.js';
 import './RosterView.css'
 
 export default function RosterView() {
@@ -14,13 +14,14 @@ export default function RosterView() {
     return status && status.includes("Champion");
   };
 
-  function ImageViewer({ base64, fighterPlacement, isChampion }) {
+  function ImageViewer({ compressedBase64, fighterPlacement, isChampion }) {
     // Decodes base64 image from server
     // Fighter placement (eg 1, 2, 3, etc.) is the fighter's placement in the lineup. 1st, 2nd, 3rd get special css
+    const base64 = decompressBase64Image(compressedBase64);
     return (
       <img
         className="{'fighter-' + fighterPlacement} roster-fighter-img"
-        src={`data:image/png;base64,${base64}`}
+        src={`data:image/webp;base64,${base64}`}
         alt="Fighter Image"
       />
     );
@@ -116,7 +117,7 @@ export default function RosterView() {
                   <p>W/L Ratio: {(item.wins / item.losses) ? (item.wins / item.losses) : "None"}</p>
                 </div>
               </div>
-              {rosterData && <ImageViewer base64={item.image_file} fighterPlacement='{1}' isChampion={checkIsChampion(item.status)} />}
+              {rosterData && <ImageViewer compressedBase64={item.image_file} fighterPlacement='{1}' isChampion={checkIsChampion(item.status)} />}
             </div>
             {index < rosterData.length - 1 && <hr />}
           </>
