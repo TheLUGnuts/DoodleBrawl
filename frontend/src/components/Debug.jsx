@@ -12,6 +12,14 @@ export default function Debug() {
     }
   }, []);
 
+  const handleFreeze = async () => {
+    try {
+      await fetch(`${API_URL}/api/debug/freeze`, { method: 'POST' });
+    } catch (e) {
+      console.error("Debug Freeze Failed:", e);
+    }
+  };
+
   const handleSkip = async () => {
     try {
       await fetch(`${API_URL}/api/debug/skip`, { method: 'POST' });
@@ -35,6 +43,9 @@ export default function Debug() {
       <h4 className='debug-h4'>DEBUG:</h4>
       <button onClick={handleSkip} className="debug-button">
         Skip Timer
+      </button>
+      <button onClick={handleFreeze} className="debug-button">
+        Freeze Timer
       </button>
       <button onClick={handleRematch} className="debug-button">
         New Matchup

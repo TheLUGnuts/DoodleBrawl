@@ -38,6 +38,7 @@ CURRENT_TIMER = BATTLE_TIMER                                            #global 
 NEXT_MATCH = None                                                       #holds the [char1, char2] for upcoming fight.
 CLIENT = Genclient(os.getenv('GEMINI_API'))                             #genclient class for API calling
 DATA = ServerData(CLIENT)                                               #Data handling class
+FROZEN = False                                                          #For freezing the timer
 
 def is_champion(status):
     if re.findall("Champion", status) and not re.findall("Former", status):
@@ -58,6 +59,15 @@ def debug_skip_timer():
     CURRENT_TIMER = 5
     print("!-- DEBUG: SKIPPING TIMER TO 10s --!")
     return jsonify({"status": "skipped", "time_left": CURRENT_TIMER})
+
+@app.route('/api/debug/freeze', methods=['POST'])
+def debug_freeze_timer():
+    if not app.debug and "localhost" not in API_URL:
+        return
+    global FROZEN
+    FROZEN = not FROZEN
+    print(f"!-- FROZEN TIMER : {FROZEN} --!")
+    return jsonify({"status": "frozen", "is_frozen": FROZEN})
 
 @app.route('/api/debug/rematch', methods=['POST'])
 def debug_new_matchup():
@@ -259,32 +269,30 @@ def index():
 
 #Main server loop. Timer counts down, when it hits zero
 def server_loop():
-    global CURRENT_TIMER, NEXT_MATCH
+    global CURRENT_TIMER, NEXT_MATCH, FROZEN
     with app.app_context():
         schedule_next_match()
 
     while True:
         socketio.sleep(1)
-
         with app.app_context():
             if len(DATA.get_queue()) > 2:
                 DATA.submit_queue_for_approval()
-
-        CURRENT_TIMER -= 1
-        #emit the timer for clients
-        socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
-
-        if CURRENT_TIMER <= 0:
-            with app.app_context():
-                CURRENT_TIMER = 0
-                socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
-                run_scheduled_battle() #run the match
-                socketio.sleep(60)     #so we see the throbber for one minute
-                CURRENT_TIMER = -1
-                socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
-                socketio.sleep(60)     #then scheduling announcement
-                schedule_next_match()  #schedule the next match
-            CURRENT_TIMER = BATTLE_TIMER
+        if not FROZEN:
+            CURRENT_TIMER -= 1
+            #emit the timer for clients
+            socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
+            if CURRENT_TIMER <= 0:
+                with app.app_context():
+                    CURRENT_TIMER = 0
+                    socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
+                    run_scheduled_battle() #run the match
+                    socketio.sleep(60)     #so we see the throbber for one minute
+                    CURRENT_TIMER = -1
+                    socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
+                    socketio.sleep(60)     #then scheduling announcement
+                    schedule_next_match()  #schedule the next match
+                CURRENT_TIMER = BATTLE_TIMER
 
 
 #Starting up server, loading players and approval queue
