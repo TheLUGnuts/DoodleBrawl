@@ -1,5 +1,6 @@
 .root-mini {
   color: #000;
+  height: 100px;
 }
 
 .column-mini {
@@ -15,7 +16,6 @@
 }
 
 .versus-mini {
-  padding-top: 25px;
   font-weight: bolder;
   justify-content: center;
 }
@@ -38,10 +38,10 @@
   color: #aaaa00;
 }
 
-.throbber {
-  margin-top: 5px;
+.throbber-mini {
   display: inline;
-  max-height: 90%;
+  max-height: 20%;
+  transform:scale(20%)
 }
 
 @keyframes winner-pulse {

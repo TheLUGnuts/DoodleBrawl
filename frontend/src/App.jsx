@@ -206,7 +206,7 @@ function App() {
         <h2>How to Play</h2>
         <p>
           Doodle a combatant then hit "Submit For Battle!".<br></br>
-          You drawing will be given a name and secret stats, then enter the fray.
+          Your drawing will be given a name and secret stats, then enter the fray.
         </p>
         <hr/>
       </div>

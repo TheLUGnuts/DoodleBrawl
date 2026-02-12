@@ -26,8 +26,8 @@ export default function ArenaMini({ battleState, timer, lastWinner}) {
 
   if (error) return <div class='net-error'>Error: {error}</div>;
   if (!battleState || !battleState.fighters || battleState.fighters.length < 2) { return (
-        <div className='root waiting-screen'>
-            <img className="throbber" src="./RatJohnson.gif"></img>
+        <div>
+            <img className="throbber-mini" src="./RatJohnson.gif"></img>
             <p>Waiting for Next Match...</p>
             {timer && <h2>Next Match in: {timer}s</h2>}
         </div>

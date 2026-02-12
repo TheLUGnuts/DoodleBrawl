@@ -27,7 +27,13 @@ export default function RosterView() {
     );
   }
 
-
+  const getAlignmentClass = (alignment) => {
+      if (!alignment) return 'alignment-neutral-roster';
+      const lower = alignment.toLowerCase();
+      if (lower === 'face') return 'alignment-face-roster';
+      if (lower === 'heel') return 'alignment-heel-roster';
+      return 'alignment-neutral-roster';
+    };
   
   function processRosterData(json) {
     // Pass data around where necessary
@@ -109,7 +115,7 @@ export default function RosterView() {
               <div className="info">
                 <p className="place-number">#{(index + 1) + ((page-1))*5}</p> 
                 <div className="stats">
-                  <b className="fighter-name">{item.name}</b>
+                  <b className={getAlignmentClass(item.alignment)}>{item.name}</b>
                   <b className="fighter-status">{item.status}</b>
                   <p className="description"><span dangerouslySetInnerHTML={{ __html: item.description }} /></p>
                   <p>Wins: {item.wins}</p>
