@@ -5,6 +5,7 @@ import DoodleCanvas from './components/DoodleCanvas';
 import ArenaView from './components/ArenaView';
 import RosterView from './components/RosterView';
 import ArenaMini from './components/ArenaMini';
+import Account from './components/Account';
 import Debug from './components/Debug';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
   const [lastWinner, setLastWinner] = useState("");
   const [summaryState, setSummaryState] = useState("");
   const [introState, setIntroState] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
 
   const [loading, setLoading] = useState(true);
 
@@ -159,13 +161,16 @@ function App() {
       <div className='header'>
         <h1>Doodle Brawl!</h1>
           <button className = {`tab-button ${activeTab === 'doodle' ? 'active' : ''}`} onClick={() => setActiveTab('doodle')}>
-              Doodle!
+              Doodle
             </button>
           <button className = {`tab-button ${activeTab === 'battleground' ? 'active' : ''}`} onClick={() => setActiveTab('battleground')}>
-            Arena!
+            Arena
           </button>
           <button className = {`tab-button ${activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('leaderboard')}>
-            Roster!
+            Roster
+          </button>
+          <button className = {`tab-button ${activeTab === 'account' ? 'active' : ''}`} onClick={() => setActiveTab('account')}>
+            Account
           </button>
         <hr/>
       </div>
@@ -201,6 +206,13 @@ function App() {
         </div>
         )}
       </div>
+
+        {activeTab === 'account' && (
+        <div class='account'>
+          <Account />
+          <hr/>
+        </div>
+        )}
 
       <div className='tutorial'>
         <h2>How to Play</h2>

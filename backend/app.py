@@ -3,14 +3,14 @@
 
 import json, os, random, re, time, secrets
 from components.dbmodel                            import db, Character, Match
+from components.account                               import account_blueprint
 from flask_cors                                                    import CORS
 from components.genclient                                     import Genclient
 from components.serverdata                                   import ServerData
 from dotenv                                                 import load_dotenv
 from flask_socketio                                      import SocketIO, emit
+from sqlalchemy.orm.attributes                            import flag_modified
 from flask                     import Flask, render_template, jsonify, request
-from flask_login import LoginManager, login_user, current_user, login_required
-from sqlalchemy.orm.attributes import flag_modified
 
 
 #################################
@@ -30,6 +30,7 @@ socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", f"{API_U
 #SQLite database initialitzation
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///doodlebrawl.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.register_blueprint(account_blueprint, url_prefix='/api/account')
 db.init_app(app)
 
 #Global variables
