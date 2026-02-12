@@ -118,13 +118,13 @@
   font-weight: bold;
 }
 
-.alignment-face {
+.alignment-good {
   color: #2ecc71;
   font-weight: bold;
   text-transform: capitalize;
 }
 
-.alignment-heel {
+.alignment-evil {
   color: #9b59b6;
   font-weight: bold;
   text-transform: capitalize;

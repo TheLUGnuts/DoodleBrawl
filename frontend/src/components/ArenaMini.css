@@ -40,8 +40,7 @@
 
 .throbber-mini {
   display: inline;
-  max-height: 20%;
-  transform:scale(20%)
+  padding-top: 10px;
 }
 
 @keyframes winner-pulse {

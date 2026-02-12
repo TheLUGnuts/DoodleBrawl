@@ -7,8 +7,8 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
   const getAlignmentClass = (alignment) => {
     if (!alignment) return 'alignment-neutral';
     const lower = alignment.toLowerCase();
-    if (lower === 'face') return 'alignment-face';
-    if (lower === 'heel') return 'alignment-heel';
+    if (lower === 'good') return 'alignment-good';
+    if (lower === 'evil') return 'alignment-evil';
     return 'alignment-neutral';
   };
 

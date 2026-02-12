@@ -165,7 +165,7 @@ class ServerData:
 
     def randomize_alignments(self):
         all_chars = Character.query.all()
-        options = ["Face", "Heel", "Neutral"]
+        options = ["Good", "Evil", "Neutral"]
         
         count = 0
         for char in all_chars:

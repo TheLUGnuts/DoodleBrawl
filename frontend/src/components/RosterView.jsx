@@ -30,8 +30,8 @@ export default function RosterView() {
   const getAlignmentClass = (alignment) => {
       if (!alignment) return 'alignment-neutral-roster';
       const lower = alignment.toLowerCase();
-      if (lower === 'face') return 'alignment-face-roster';
-      if (lower === 'heel') return 'alignment-heel-roster';
+      if (lower === 'good') return 'alignment-good-roster';
+      if (lower === 'evil') return 'alignment-evil-roster';
       return 'alignment-neutral-roster';
     };
   
