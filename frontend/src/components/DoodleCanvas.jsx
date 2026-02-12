@@ -13,6 +13,49 @@ const DoodleCanvas = () => {
   const [historyStep, setHistoryStep] = useState(-1);
   const [drawingName, setDrawingName] = useState("");
 
+  // localStorage item names
+  // This is just to avoid any unfortunate index mismatches between the set/get methods
+  const storageCanvas = "storageCanvas";
+
+  function saveToStorage() {
+    // Saves canvas information to the browser's local storage
+    const canvasImageData = canvasRef.current.toDataURL();
+    localStorage.setItem(storageCanvas, canvasImageData);
+  }
+
+  function loadFromStorage() {
+    // Loads canvas information from the browser's local storage
+    const savedImageData = localStorage.getItem(storageCanvas);
+    
+    if (!savedImageData) return; // No saved data
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      saveToHistory(); // Save loaded state to history
+    };
+    
+    img.src = savedImageData;
+  }
+
+  const saveToHistory = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const imageData = canvas.toDataURL();
+    const newHistory = history.slice(0, historyStep + 1);
+    newHistory.push(imageData);
+    setHistory(newHistory);
+    setHistoryStep(newHistory.length - 1);
+  };
+
+
   // Initialize canvas
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -32,17 +75,6 @@ const DoodleCanvas = () => {
     // Save initial state
     saveToHistory();
   }, []);
-
-  const saveToHistory = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const imageData = canvas.toDataURL();
-    const newHistory = history.slice(0, historyStep + 1);
-    newHistory.push(imageData);
-    setHistory(newHistory);
-    setHistoryStep(newHistory.length - 1);
-  };
 
   const getCoordinates = (e) => {
     const canvas = canvasRef.current;
