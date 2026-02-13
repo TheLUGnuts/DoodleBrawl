@@ -13,15 +13,13 @@ function App() {
   const [connectionStatus, setConnectionStatus] = useState("Never Connected");
   const [activeTab, setActiveTab] = useState("battleground"); //default to the drawing canvas
   const [battleState, setBattleState] = useState(null);
-  const [lastFightResult, setLastFightResult] = useState(null);
   const timeouts = useRef([]);
   const [logState, setLogState] = useState([]);
   const [lastWinner, setLastWinner] = useState("");
   const [summaryState, setSummaryState] = useState("");
   const [introState, setIntroState] = useState("");
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [log, setLoading] = useState(true);
 
   const handleResult = (data) => {
     // Takes data from a fight and places it in the correct places
@@ -77,6 +75,47 @@ function App() {
 
     // Fighter images
     setBattleState(data);
+  }
+
+  //see if a user has a locally saved login ID
+  useEffect(() => {
+    const savedID = localStorage.getItem("doodle_brawl_id");
+    if (savedID) {
+      console.log("Found saved ID, verifying...", savedID);
+      verifyLogin(savedID);
+    }
+  }, []);
+
+  //verify a login status if they have a local ID
+  const verifyLogin = async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/api/account/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_id: id })
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+        setUser(data);
+        console.log("Logged in as", data.username);
+      } else {
+        console.log("Saved ID invalid, clearing.");
+        localStorage.removeItem("doodle_brawl_id");
+      }
+    } catch (e) {
+      console.error("Login verification failed:", e);
+    }
+  };
+
+  const handleAuthSuccess = (userData) => {
+    localStorage.setItem("doodle_brawl_id", userData.id || userData.account_id);
+    // If it was a registration, we might need to fetch the full profile?
+    verifyLogin(userData.id || userData.account_id);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("doodle_brawl_id");
+    setUser(null);
   }
 
   // Listen for and load battles from backend
@@ -183,11 +222,11 @@ function App() {
             <hr/>
           </div>
         )}
-
         {activeTab === 'doodle' && (
           <div className='drawing'>
             <h2>Draw your fighter!</h2>
-            <DoodleCanvas />
+            {/*MAGIC NUMBER ALERT! This was our original size of the canvas before being made modifiable with props*/}
+            <DoodleCanvas canvWidth={754} canvHeight={400} userID={user ? user.id : null}/>
             <hr/>
           </div>
         )}
@@ -209,7 +248,7 @@ function App() {
 
         {activeTab === 'account' && (
         <div class='account'>
-          <Account />
+          <Account user={user} onLogin={handleAuthSuccess} onLogout={handleLogout}/>
           <hr/>
         </div>
         )}
