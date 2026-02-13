@@ -1,12 +1,12 @@
 #jfr, cwf, tjc
 
 from flask import Blueprint, request, jsonify
-from componenets.dbmodel import db, User
+from components.dbmodel import db, User, Character
 import secrets, time
 
-account_blueprint = Blueprint('account', __name__)
+account_bp = Blueprint('account', __name__)
 
-@account_blueprint.route('/create', methods=['POST'])
+@account_bp.route('/create', methods=['POST'])
 def create_account():
     data = request.get_json()
     if not data:
@@ -43,7 +43,7 @@ def create_account():
         print(f"!-- ACCOUNT CREATION ERROR: {e} --!")
         return jsonify({"error": "Database error during account creation"}), 500
     
-@account_blueprint.route('/login', method=['POST'])
+@account_bp.route('/login', methods=['POST'])
 def login_account():
     data = request.get_json()
     account_id = data.get('account_id')
@@ -51,11 +51,18 @@ def login_account():
         return jsonify({"error": "Account ID required"}), 400
     user = User.query.get(account_id)
     if user:
+        created_chars = Character.query.filter_by(creator_id=user.id).all()
+        managed_chars = user.characters
+
         return jsonify({
             "status": "success",
+            "id": user.id,
             "username": user.username,
             "money": user.money,
-            "portrait": user.portrait
+            "portrait": user.portrait,
+            "creation_time": user.creation_time,
+            "created_characters": [c.to_dict_light() for c in created_chars],
+            "managed_characters": [c.to_dict_light() for c in managed_chars]
         })
     else:
         return jsonify({"error": "Invalid Account ID"}), 401
