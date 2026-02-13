@@ -3,7 +3,7 @@
 
 import json, os, random, re, time, secrets
 from components.dbmodel                            import db, Character, Match
-from components.account                               import account_blueprint
+from components.account                                      import account_bp
 from flask_cors                                                    import CORS
 from components.genclient                                     import Genclient
 from components.serverdata                                   import ServerData
@@ -30,7 +30,7 @@ socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", f"{API_U
 #SQLite database initialitzation
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///doodlebrawl.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.register_blueprint(account_blueprint, url_prefix='/api/account')
+app.register_blueprint(account_bp, url_prefix='/api/account')
 db.init_app(app)
 
 #Global variables
@@ -56,9 +56,9 @@ def debug_skip_timer():
     if not app.debug and "localhost" not in API_URL:
         return
     global CURRENT_TIMER
-    #set the timer for the next battle to start to 10 seconds
+    #set the timer for the next battle to start to 5 seconds
     CURRENT_TIMER = 5
-    print("!-- DEBUG: SKIPPING TIMER TO 10s --!")
+    print("!-- DEBUG: SKIPPING TIMER TO 5s --!")
     return jsonify({"status": "skipped", "time_left": CURRENT_TIMER})
 
 @app.route('/api/debug/freeze', methods=['POST'])
@@ -99,12 +99,14 @@ def accept_new_character(data):
     char_id = data.get('id')
     image_base = data.get('imageBase')
     name = data.get('name') or "???"
+    creator_id = data.get('creator_id')
 
     # Create new DB Object
     c = Character(
         id=char_id,
         image_file=image_base,
         name=name,
+        creator_id=creator_id if creator_id else "Unknown",
         is_approved=False # Default to False (Queue)
     )
     
@@ -139,9 +141,17 @@ def run_scheduled_battle():
     global NEXT_MATCH
     if not NEXT_MATCH:
         return
+    
+    p1 = DATA.get_character(NEXT_MATCH[0].id)
+    p2 = DATA.get_character(NEXT_MATCH[1].id)
+    
+    if not p1 or not p2:
+        print("!-- ERROR: Fighters not in DB? --!")
+        return
+    live_match = [p1, p2]
 
     #run API call
-    result = CLIENT.run_match(NEXT_MATCH)
+    result = CLIENT.run_match(live_match)
     
     #initializing a new character
     if 'new_stats' in result and result['new_stats']:
@@ -175,12 +185,12 @@ def run_scheduled_battle():
                 if 'personality' in char_data: target.personality = char_data['personality']
 
     winner_id = result.get('winner_id')
-    if winner_id == NEXT_MATCH[0].id:
-        winner_obj = NEXT_MATCH[0]
-        loser_obj = NEXT_MATCH[1]
+    if winner_id == p1.id:
+        winner_obj = p1
+        loser_obj = p2
     else:
-        winner_obj = NEXT_MATCH[1]
-        loser_obj = NEXT_MATCH[0]
+        winner_obj = p2
+        loser_obj = p1
 
     title_exchange_name = None
     #does the loser have a title
@@ -212,7 +222,7 @@ def run_scheduled_battle():
     DATA.commit() #save all DB changes
 
     #save the match to match history
-    bout_teams = [[NEXT_MATCH[0]], [NEXT_MATCH[1]]]
+    bout_teams = [[p1], [p2]]
     DATA.log_match_result(
         teams=bout_teams,
         winner=winner_obj,
@@ -222,7 +232,7 @@ def run_scheduled_battle():
     )
     #emit the result to clients
     socketio.emit('match_result', {
-        'fighters': [c.to_dict() for c in NEXT_MATCH],
+        'fighters': [c.to_dict() for c in live_match],
         'log': result.get('battle_log', []),
         'winner': winner_obj.name,
         'summary': result.get('summary', ''),
