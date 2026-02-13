@@ -3,7 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { socket, encodeImageURL } from '../socket.js';
 import './DoodleCanvas.css';
 
-const DoodleCanvas = () => {
+
+const DoodleCanvas = ({ isAccount, canvWidth, canvHeight, onCanvasChange, userID }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [strokeColor, setStrokeColor] = useState('#000000');
@@ -21,9 +22,9 @@ const DoodleCanvas = () => {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
     // Set canvas size
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+    //const rect = canvas.getBoundingClientRect();
+    canvas.width = canvWidth;
+    canvas.height = canvHeight;
 
     // Set initial background
     ctx.fillStyle = 'white';
@@ -31,7 +32,7 @@ const DoodleCanvas = () => {
 
     // Save initial state
     saveToHistory();
-  }, []);
+  }, [canvWidth, canvHeight]);
 
   const saveToHistory = () => {
     const canvas = canvasRef.current;
@@ -42,14 +43,21 @@ const DoodleCanvas = () => {
     newHistory.push(imageData);
     setHistory(newHistory);
     setHistoryStep(newHistory.length - 1);
+    if (onCanvasChange) {
+      onCanvasChange(getImageBase64());
+    }
   };
 
+  // 754 x 400
   const getCoordinates = (e) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     
-    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = ((e.clientX || e.touches?.[0]?.clientX) - rect.left) * scaleX;
+    const y = ((e.clientY || e.touches?.[0]?.clientY) - rect.top) * scaleY;
     
     return { x, y };
   };
@@ -134,6 +142,7 @@ const DoodleCanvas = () => {
     img.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
+      if (onCanvasChange) onCanvasChange(getImageBase64());
     };
     img.src = imageData;
   };
@@ -247,8 +256,9 @@ const DoodleCanvas = () => {
     socket.emit('submit_character', {
       id: uuidv4(),
       imageBase: getImageBase64(),
-      name: drawingName}
-    );
+      name: drawingName,
+      creator_id: userID
+    });
 
     // Clear drawing
     setDrawingName("");
@@ -260,8 +270,17 @@ const DoodleCanvas = () => {
 
   const colors = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
 
+  const containerStyle = {
+    width: isAccount ? `100%` : `${canvWidth + 32}px`
+  };
+
+  const wrapperStyle = {
+    width: isAccount ? `fit-content`: ``,
+    'margin-left': isAccount ? '30%' : ``
+  }
+
   return (
-    <div className="drawable-canvas-container">
+    <div className="drawable-canvas-container" style={containerStyle}>
       {/* Toolbar */}
       <div className="toolbar">
         {/* Color Palette */}
@@ -273,6 +292,7 @@ const DoodleCanvas = () => {
             value={strokeColor} 
             onChange={(e) => {
                 setStrokeColor(e.target.value);
+                if (activeTool === 'eraser') setActiveTool('brush');
             }}
             title="Custom Color"
           />
@@ -281,6 +301,7 @@ const DoodleCanvas = () => {
               key={color}
               onClick={() => {
                 setStrokeColor(color);
+                if (activeTool === 'eraser') setActiveTool('brush');
               }}
               className={`color-button ${strokeColor === color && activeTool !== 'eraser' ? 'active' : ''}`}
               style={{ backgroundColor: color }}
@@ -344,12 +365,14 @@ const DoodleCanvas = () => {
           </button>
           <button onClick={handleClear} className="tool-button clear">Clear</button>
           <button onClick={handleDownloadPNG} className="tool-button export">Download</button>
-          <button onClick={sendImageOverSocket} className="tool-button submit">Submit for Battle!</button>
+          {!isAccount && (
+            <button onClick={sendImageOverSocket} className="tool-button submit">Submit for Battle!</button>
+          )}
         </div>
       </div>
 
       {/* Canvas */}
-      <div className="canvas-wrapper">
+      <div className="canvas-wrapper" style={wrapperStyle}>
         <canvas
           ref={canvasRef}
           onMouseDown={startDrawing}
