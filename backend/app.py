@@ -1,15 +1,16 @@
 #jfr, cwf, tjc
 #Created for the 2026 VCU 24HR Hackathon
 
-import json, os, random, re, time, secrets
-from components.dbmodel                            import db, Character, Match
-from components.account                                      import account_bp
+import os, re, time
 from flask_cors                                                    import CORS
+from sqlalchemy                                                    import text
 from components.genclient                                     import Genclient
+from components.account                                      import account_bp
 from components.serverdata                                   import ServerData
 from dotenv                                                 import load_dotenv
-from flask_socketio                                      import SocketIO, emit
 from sqlalchemy.orm.attributes                            import flag_modified
+from flask_socketio                                      import SocketIO, emit
+from components.dbmodel                      import db, Character, Match, User
 from flask                     import Flask, render_template, jsonify, request
 
 
@@ -32,6 +33,16 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///doodlebrawl.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.register_blueprint(account_bp, url_prefix='/api/account')
 db.init_app(app)
+
+#this is to add a new column to the user table.
+with app.app_context():
+    db.create_all()
+    try:
+        db.session.execute(text("ALTER TABLE user ADD COLUMN last_submission FLOAT DEFAULT 0.0"))
+        db.session.commit()
+        print("!-- ADDED 'last_submission' COLUMN TO USER TABLE --!")
+    except Exception:
+        db.session.rollback()
 
 #Global variables
 BATTLE_TIMER=180                                                        #3 minutes in seconds
@@ -86,6 +97,107 @@ def debug_randomize_alignments():
     count = DATA.randomize_alignments()
     return jsonify({"status": "success", "count": count, "message": "Alignments randomized!"})
 
+#returns all characters, approved or not.
+@app.route('/api/debug/characters', methods=['GET'])
+def debug_get_characters():
+    if not app.debug and "localhost" not in API_URL:
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    chars = Character.query.all()
+    #FIXME
+    #THIS MAY BE VERY INEFFICIENT
+    #this returns the base64 image of every single character in the roster
+    #if we have a lot of fighters, this may be extremely bloated.
+    return jsonify([c.to_dict() for c in chars])
+
+#edit the database entry of any character
+@app.route('/api/debug/character/<char_id>', methods=['POST'])
+def debug_update_character(char_id):
+    if not app.debug and "localhost" not in API_URL:
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    data = request.get_json()
+    char = Character.query.get(char_id)
+    
+    if not char:
+        return jsonify({"error": "Character not found"}), 404
+        
+    try:
+        if 'name' in data: char.name = data['name']
+        if 'description' in data: char.description = data['description']
+        if 'alignment' in data: char.alignment = data['alignment']
+        if 'popularity' in data: char.popularity = int(data['popularity'])
+        if 'wins' in data: char.wins = int(data['wins'])
+        if 'losses' in data: char.losses = int(data['losses'])
+        if 'personality' in data: char.personality = data['personality']
+        if 'is_approved' in data: char.is_approved = bool(data['is_approved'])
+        if 'creator_id' in data: char.creator_id = data['creator_id']
+        if 'creation_time' in data: char.creation_time = float(data['creation_time'])
+        
+        # Handle JSON fields explicitly
+        if 'stats' in data: 
+            char.stats = data['stats']
+            flag_modified(char, "stats")
+        if 'titles' in data:
+            char.titles = data['titles']
+            flag_modified(char, "titles")
+
+        db.session.commit()
+        print(f"!-- DEBUG: UPDATED CHARACTER {char.name} --!")
+        return jsonify({"status": "success", "message": f"Updated {char.name}"})
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"!-- DEBUG UPDATE ERROR: {e} --!")
+        return jsonify({"error": str(e)}), 500
+
+#grabs all user accounts for the debug editor
+@app.route('/api/debug/users', methods=['GET'])
+def debug_get_users():
+    if not app.debug and "localhost" not in API_URL:
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    users = User.query.all()
+    #No to_dict method, so we just build it right here.
+    #NOTE - It'd be simple to just add a to_dict to User.
+    return jsonify([{
+        "id": u.id,
+        "username": u.username,
+        "money": u.money,
+        "creation_time": u.creation_time,
+        "last_submission": u.last_submission,
+        "portrait": u.portrait
+    } for u in users])
+
+#update a users database row
+@app.route('/api/debug/user/<user_id>', methods=['POST'])
+def debug_update_user(user_id):
+    if not app.debug and "localhost" not in API_URL:
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    data = request.get_json()
+    u = User.query.get(user_id)
+    
+    if not u:
+        return jsonify({"error": "User not found"}), 404
+        
+    try:
+        if 'username' in data: u.username = data['username']
+        if 'money' in data: u.money = int(data['money'])
+        if 'creation_time' in data: u.creation_time = float(data['creation_time'])
+        if 'last_submission' in data: u.last_submission = float(data['last_submission'])
+        if 'portrait' in data: u.portrait = data['portrait']
+
+        db.session.commit()
+        print(f"!-- DEBUG: UPDATED USER {u.username} --!")
+        return jsonify({"status": "success", "message": f"Updated {u.username}"})
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"!-- DEBUG UPDATE ERROR: {e} --!")
+        return jsonify({"error": str(e)}), 500
+
+
 ##################################
 #        FRONTEND HANDLERS       #
 ##################################
@@ -96,20 +208,36 @@ def debug_randomize_alignments():
 def accept_new_character(data):
     if not data: return
     
+    creator_id = data.get('creator_id')
+    if not creator_id or creator_id == "Unknown":
+        return {'status': 'error', 'message': 'You must be logged in to submit a fighter!'}
+    user = User.query.get(creator_id)
+    if not user:
+        return {'status': 'error', 'message': 'Invalid user account.'}
+    
+    time_since_last = time.time() - user.last_submission
+    if time_since_last < 300:
+        remaining = int(300 - time_since_last)
+        minutes, seconds = divmod(remaining, 60)
+        return {
+            'status': 'error', 
+            'message': f'Cooldown active! Please wait {minutes}m {seconds}s before submitting another fighter.'
+        }
+    
     char_id = data.get('id')
     image_base = data.get('imageBase')
     name = data.get('name') or "???"
-    creator_id = data.get('creator_id')
 
-    # Create new DB Object
+    #create new DB Object
     c = Character(
         id=char_id,
         image_file=image_base,
         name=name,
         creator_id=creator_id if creator_id else "Unknown",
-        is_approved=False # Default to False (Queue)
+        is_approved=False #is_approved=False means it will be put into the approval queue.
     )
     
+    user.last_submission = time.time()
     db.session.add(c)
     db.session.commit()
     
@@ -274,7 +402,7 @@ def return_top_fighters():
     #pagination query
     data = request.get_json()
     page = data.get('page', 1)
-    per_page = 5
+    per_page = 10
     
     #just sorted by descending wins for now
     pagination = Character.query.filter_by(is_approved=True).order_by(Character.wins.desc()).paginate(page=page, per_page=per_page, error_out=False)
