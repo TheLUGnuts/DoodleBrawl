@@ -17,10 +17,16 @@ class User(UserMixin, db.Model):
     creation_time = db.Column(db.Float, default=time.time)                   #Time of user creation
     portrait = db.Column(db.Text)                                            #User portrait, stored as a base64 text
     username = db.Column(db.String(32))                                      #Username of account
-    money = db.Column(db.Integer, default=100)                                   #how much money the user has
+    money = db.Column(db.Integer, default=100)                               #how much money the user has
+    last_submission = db.Column(db.Float, default=0.0)
     #One user may manage many characters
     characters = db.relationship('Character', backref='manager', lazy=True)  #who this user 'manages'
 
+    def image_data(self):
+        return {
+            "image_file": self.image_file
+        }
+    
 class Character(db.Model):
     #identifiers/meta
     id = db.Column(db.String(36), primary_key=True)                          #UUID
@@ -62,7 +68,13 @@ class Character(db.Model):
             "manager_id": self.manager_id,
             "popularity": self.popularity,
             "alignment": self.alignment,
+            "is_approved": self.is_approved,
             "titles": self.titles
+        }
+    
+    def image_data(self):
+        return {
+            "image_file": self.image_file
         }
     #return the db entry as a dict EXCLUDING the base64 image string
     def to_dict_light(self):
@@ -79,6 +91,7 @@ class Character(db.Model):
             "manager_id": self.manager_id,
             "popularity": self.popularity,
             "alignment": self.alignment,
+            "is_approved": self.is_approved,
             "titles": self.titles
         }
 
