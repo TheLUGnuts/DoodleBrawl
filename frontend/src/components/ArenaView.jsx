@@ -1,11 +1,26 @@
+import { useState, useEffect } from 'react';
 import './ArenaView.css';
 import '../text_decor.css';
 import { decompressBase64Image } from '../socket';
 
 export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState, introState}) {
+  //jim scribble is speaking
+  const [isTalking, setIsTalking] = useState(false);
 
-  const checkIsChampion = (status) => {
-    return status && status.includes("Champion") && !status.includes("Former");
+  useEffect(() => {
+    if (logState && logState.length > 0) {
+      setIsTalking(true);
+      const timerId = setTimeout(() => setIsTalking(false), 400); // Stop shaking after 400ms
+      return () => clearTimeout(timerId);
+    }
+  }, [logState]);
+
+  const getAlignmentClass = (alignment) => {
+    if (!alignment) return 'alignment-neutral';
+    const lower = alignment.toLowerCase();
+    if (lower === 'good') return 'alignment-good';
+    if (lower === 'evil') return 'alignment-evil';
+    return 'alignment-neutral';
   };
 
   if (!battleState || !battleState.fighters || battleState.fighters.length === 0) { return (
@@ -17,16 +32,18 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
     );
   }
 
-  const isTitleFight = battleState && battleState.fighters && (
-    checkIsChampion(battleState.fighters[0].status) || 
-    checkIsChampion(battleState.fighters[1].status)
+  const hasTitles = (fighter) => fighter.titles && fighter.titles.length > 0;
+
+  const isTitleFight = (
+    (hasTitles(battleState.fighters[0])) || 
+    (hasTitles(battleState.fighters[1]))
   );
 
   const shouldShowBelt = (fighter) => {
     if (lastWinner && isTitleFight) {
       return lastWinner === fighter.name;
     }
-    return checkIsChampion(fighter.status);
+    return hasTitles(fighter);
   };
 
   function ImageViewer({ compressedBase64, isWinner, isLoser, isChampion }) {
@@ -62,7 +79,11 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
         {/* FIGHTER 1*/}
         <div class='column'>
           <p class='fighter-name fighter-1'>{battleState.fighters[0].name}</p>
-          <p>{battleState.fighters[0].status ? battleState.fighters[0].status : "Fighter"}</p>
+          <p className={getAlignmentClass(battleState.fighters[0].alignment)}>
+            {hasTitles(battleState.fighters[0]) 
+              ? battleState.fighters[0].titles.join(", ") 
+              : battleState.fighters[0].alignment}
+          </p>
           <div class='fighter-img'>
             {battleState && 
             <ImageViewer compressedBase64={battleState.fighters[0].image_file} 
@@ -81,7 +102,11 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
         {/* FIGHTER 2*/}
         <div class='column'>
           <p class='fighter-name fighter-2'>{battleState.fighters[1].name}</p>
-          <p>{battleState.fighters[1].status ? battleState.fighters[1].status : "Fighter"}</p>
+          <p className={getAlignmentClass(battleState.fighters[1].alignment)}>
+            {hasTitles(battleState.fighters[1]) 
+              ? battleState.fighters[1].titles.join(", ") 
+              : battleState.fighters[1].alignment}
+          </p>
           <div class='fighter-img'>
             {battleState && 
             <ImageViewer compressedBase64={battleState.fighters[1].image_file} 
@@ -97,6 +122,13 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
           </div>
         </div>
 
+      </div>
+      <div className="commentator-container">
+        <img 
+          src="./js.png" 
+          alt="Jim Scribble" 
+          className={`commentator-img ${isTalking ? 'talking' : ''}`} 
+        />
       </div>
         <p class='introduction' dangerouslySetInnerHTML={{ __html: introState }} />
         <div class='logs'>

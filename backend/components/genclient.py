@@ -1,12 +1,16 @@
 #jfr, cwf, tjc
 
-import json, random, base64
-from google                 import genai
-from google.genai           import types
+import json, random, base64, os, gzip, io
+from google                                                  import genai
+from google.genai                                            import types
+from tenacity import Retrying, RetryError, stop_after_attempt, wait_fixed
 
 ##################################
 #           GEMINI API           #
 ##################################
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #current directory
+DATA_DIR = os.path.join(BASE_DIR, 'assets/Data')                                         #file ref where data is stored
+OUTPUT_FILE = os.path.join(DATA_DIR, 'last_gen.json')                                    #last generated response for debugging.
 
 APPROVAL_SYSTEM_PROMPT="""
 You are a Content Safety Moderator for a "Doodle Brawl" game. 
@@ -29,8 +33,7 @@ Output strictly valid JSON in the following format:
 
 BATTLE_SYSTEM_PROMPT = """
 You are the "Doodle Brawl" Game Engine. Your goal is to simulate a turn-based battle between two characters to 0 HP.
-You act as both the Referee and the Color Commentator.
-Fighter 1 is in the blue corner, Fighter 2 is in the red corner.
+You act as both the Referee and the Color Commentator "Jim Scribble", inspired by the commentator Jim Ross.
 A "Temperature" (1-100) and "Favorability" (1-100) are provided to influence chaos and winner bias.
 
 ### PHASE 1: DATA ANALYSIS & GENERATION
@@ -40,30 +43,43 @@ Analyze the input data for both fighters. You must handle "New" and "Existing" f
 If a fighter has 0 fights, you MUST generate their full profile based on their image:
 1.  **Name:** A stylistic ring name (e.g. "The Super Strangler").
 2.  **Combat Stats:** HP (50-200, Avg 100), Agility (1-100), Power (1-100).
-3.  **Bio Stats:** Description, Personality (1 word), Height (e.g. "6ft2"), Weight (e.g. "220lbs").
-4.  **Action:** Place this FULL object into the `new_stats` JSON key.
+3.  **Bio Stats:** Description, Personality (1 word)
+4.  **Alignment:** Assign "good" (hero), "evil" (villainous), or "neutral"
+5.  **Action:** Place this FULL object into the `new_stats` JSON key.
+6.  **Popularity:** Popularity should range on a scale of (1-100). New fighters should be at MAXIMUM 10, and solely based on their appearance.
 
 **B. EXISTING FIGHTERS (Fight Count > 0)**
-If a fighter is established, you must NOT change their Combat Stats (HP/Agility/Power), but you may need to backfill missing bio data.
-1.  **Backfill Missing Data:** If Height, Weight, or Personality are listed as "Unknown", generate them based on the image.
-2.  **Status Evolution:** If Temperature > 75, you may update their `status` (e.g., "Rookie" -> "Fan Favorite") The 'status' update should be random, and based on their match performance and traits (e.g. An angry looking character who performs poorly "Rookie" -> "Disgruntled Pride Fighter"). 
-    **EXCEPTION:** Never change a status if it contains "Champion". **IMPERATIVE** DO NOT ASSIGN THE SAME 'status' TO BOTH FIGHTERS.
-3.  **Action:** Place these specific updates (Height, Weight, Status) into the `updated_stats` JSON key.
+If a fighter is established, you must NOT change their Combat Stats.
+1.  **Backfill Data:** If Height, Weight, Personality, Status are "Unknown", generate them.
+2.  **Alignment Evolution:** With a VERY HIGH temperature (>80) You *may* change their `alignment` based on match behavior.
+    * **good:** Honorable, crowd favorite, plays by the rules.
+    * **evil:** Dirty fighter, cheats, insults the crowd, arrogant.
+    * **neutral:** Anti-hero, average combatant, or just fights to fight.
+3.  **Popularity:** Popularity is on a scale of (1-100) and can be slightly shifted positive or negative after every match.
+    * Winning matches and having good performances should increase popularity. With VERY HIGH temperature (>90), they may do something even more influential to their popularity.
+    * Losing matches, poor performances, and boring/unenthusiastic attitudes should decrease popularity.
+    * Standard variance: +/- 1-3 points.
+    * High Temp (>90) variance: +/- 6 points max.
+    **IMPORTANT: ** Popularity should generally have a variance of 1-2 points in either direction per match. Very high temperatures (>90) can exceed this variance but NO MORE than 6 points per match.
+4.  **Action:** Place updates (Height, Weight, Alignment) into `updated_stats`.
 
 ### PHASE 2: COMBAT SIMULATION
 Simulate the fight turn-by-turn until one reaches 0 HP. 
-* **Favorability:** 1 = Favors Fighter 1 heavily. 100 = Favors Fighter 2 heavily. 50 = Neutral.
+* **Favorability:** 1 = Favors Fighter 1 heavily. 100 = Favors Fighter 2 heavily. 50 = Neutral. Favorability should always somewhat influence the match. A '1' should gurantee Fighter 1 victory, a '100' gurantees Fighter 2 victory.
 * **Agility Rule:** If Agility > 60, fighter has a 20% chance to "Combo" (2 moves) or "Dodge" (0 dmg taken).
 * **Move Variety:** Use a mix of `ATTACK`, `RECOVER`, `POWER` (High Dmg, requires Power > 70), `ACROBATIC` (Agility > 70), and `ULTIMATE` (Rare finisher).
 * **Narrative:** Be creative! Use the fighter's visual appearance and personality to flavor their moves. (e.g., A wizard shouldn't just "punch", they should "cast a hex").
+* **Narrative:** Use the fighter's Alignment to flavor their moves (Heels cheat, Faces rally).
 
 ### PHASE 3: MATCH SUMMARY
 Declare a winner and provide a summary.
-* **Championships:** If a fighter is a "Champion", this is a Title Fight. Treat it with high stakes.
+* **Consistency Rule:** You CANNOT mention a fighter changing alignment (e.g. "Heel turn" or "Showing their true colors") UNLESS you are explicitly returning a changed `alignment` value in the `updated_stats` JSON. 
+* **If you do not change the data, do not say it happened.**
+* If a fighter has a Title, treat it as a high-stakes match.
 
 ### OUTPUT FORMAT
 Return strictly valid JSON. 
-In `battle_log` descriptions, wrap key verbs in `<span className="action-(color)">verb</span>`. 
+In `battle_log` descriptions, wrap key verbs in `<span class="action-(color)">verb</span>`. These colors should align either with the character or the nature of their move. 
 Colors: red, blue, green, yellow, purple, pink, orange, brown, black, rainbow (Ultimates only).
 
 **JSON STRUCTURE EXAMPLE:**
@@ -76,19 +92,15 @@ Colors: red, blue, green, yellow, purple, pink, orange, brown, black, rainbow (U
             "power": 50,
             "description": "A new challenger approaches.",
             "personality": "Eager",
-            "height": "5ft9",
-            "weight": "160lbs"
+            "popularity": 5
         } 
     },
     "updated_stats": {
         "CHAR_ID_1": {
-                "status": "Beloved Rookie"
-            }
+            "alignment": "good", "popularity": 7
+        }
         "CHAR_ID_2": {
-            "height": "6ft5", 
-            "weight": "280lbs",
-            "personality": "Gruff",
-            "status": "Grizzled Veteran"
+            "alignment": "evil", "popularity": 65 
         }
     },
     "introduction": "Ladies and gentlemen...",
@@ -97,31 +109,34 @@ Colors: red, blue, green, yellow, purple, pink, orange, brown, black, rainbow (U
             "actor": "Name", 
             "action": "ATTACK", 
             "damage": 12, 
-            "description": "Threw a wild <span class='action-red'>punch</span>!",
+            "description": "Threw a wild <span class='action-orange'>punch</span>!",
             "remaining_hp": 88
         }
     ],
     "winner_id": "ID_OF_WINNER",
-    "summary": "A close match..."
+    "summary": "<Fighter 2> showed his evil side today in the brutal beatdown of the rookie <Fighter 1>! The fans seem to love it though, and are rooting for a future rematch! ..."
 }
 """
 
 #converts a base64 string into Gemini API parts (necessary for API generation)
+#Now does Base64 -> Gzip -> Base64(WebP) -> WebP Bytes
 def get_image_part_from_base64(base64_string):
-    if not base64_string:
-        return None
-
-    #strip data uri header, if it exists
-    if "base64," in base64_string:
-        base64_string = base64_string.split("base64,")[1]
-    
+    if not base64_string: return None
+    if "base64," in base64_string: base64_string = base64_string.split("base64,")[1]
     try:
-        #turn into bytes
-        image_bytes = base64.b64decode(base64_string)
-        #return this as a part object for gemini
-        return types.Part.from_bytes(data=image_bytes, mime_type="image/png")
+        #decode outer Base64 to get Gzipped bytes
+        compressed_data = base64.b64decode(base64_string)
+        #decompress Gzip to get the inner Base64 string (WebP)
+        try:
+            inner_base64 = gzip.decompress(compressed_data)
+        except gzip.BadGzipFile:
+            #if it wasn't gzipped, treat as raw image bytes.
+            return types.Part.from_bytes(data=compressed_data, mime_type="image/png")
+        #decode inner Base64 to get raw WebP bytes
+        image_bytes = base64.b64decode(inner_base64)
+        return types.Part.from_bytes(data=image_bytes, mime_type="image/webp")
     except Exception as e:
-        print(f"!-- ERROR DECODING BASE64 IMAGE: {e} --!")
+        print(f"!-- ERROR DECODING IMAGE: {e} --!")
         return None
         
 class Genclient():
@@ -162,13 +177,18 @@ class Genclient():
             else:
                 request_content.append("[IMAGE DATA MALFORMED - REJECT]")
         try:
-            response = self.client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=request_content,
-                config=self.approval_generation_config
-            )
-            result = json.loads(response.text)
+            for attempt in Retrying(stop=stop_after_attempt(5), wait=wait_fixed(5)):
+                with attempt:
+                    response = self.client.models.generate_content(
+                        model='gemini-2.0-flash',
+                        contents=request_content,
+                        config=self.approval_generation_config
+                    )
+                    result = json.loads(response.text)
             return result.get('results', {})
+        except RetryError:
+            print("!-- ERROR DURING APPROVAL PROCESS - RETRYING --!")
+            pass
         except Exception as e:
             print(f"!-- ERROR DURING APPROVAL PROCESS: {e} --!")
             return {}
@@ -181,19 +201,19 @@ class Genclient():
         print(f"!-- RUNNING BATTLE: {p1.name} vs {p2.name} WITH FAVORABILITY, TEMPERATURE: {favorability}, {temperature} --!")
         #battle information to be sent to gemini API
         request_content = [
-            f"FAVORABILITY: {favorability}",
-            f"TEMPERATURE: {temperature}"
+            f"FAVORABILITY: {favorability} (1=Favors P1, 100=Favors P2)",
+            f"TEMPERATURE: {temperature}",
             f"""
             FIGHTER 1:
             ID: {p1.id}
             Name: {p1.name}
             Description: {p1.description}
-            Height: {p1.height if p1.height else "Unknown"}
-            Weight: {p1.weight if p1.weight else "Unknown"}
+            Popularity: {p1.popularity}
             Current Stats: {p1.stats} (If empty, generate them based on attached image)
             Fight Count: {p1.wins + p1.losses}
             Personality: {p1.personality if p1.personality or p1.personality == " " else "Unknown"}
-            status: {p1.status}
+            Alignment: {p1.alignment}
+            Titles Held: {p1.titles}
             """,
             get_image_part_from_base64(p1.image_file), #fighter 1 drawing
             
@@ -202,23 +222,30 @@ class Genclient():
             ID: {p2.id}
             Name: {p2.name}
             Description: {p2.description}
-            Height: {p2.height if p2.height else "Unknown"}
-            Weight: {p2.weight if p2.weight else "Unknown"}
+            Popularity: {p2.popularity}
             Current Stats: {p2.stats} (If empty, generate them based on attached image)
             Fight Count: {p2.wins + p2.losses}
             Personality: {p2.personality if p2.personality or p2.personality == " " else "Unknown"}
-            status: {p2.status}
+            Alignment: {p2.alignment}
+            Titles Held: {p2.titles}
             """,
             get_image_part_from_base64(p2.image_file)  #fighter 2 drawing
         ]
         try:
-            response = self.client.models.generate_content(
-                model='gemini-2.0-flash', #NOTE - This model should suffice
-                contents=request_content,
-                config=self.battle_generation_config
-            )
-            result = json.loads(response.text)
-            return result
+            for attempt in Retrying(stop=stop_after_attempt(5), wait=wait_fixed(5)):
+                with attempt:
+                    response = self.client.models.generate_content(
+                        model='gemini-2.0-flash', #NOTE - This model should suffice
+                        contents=request_content,
+                        config=self.battle_generation_config
+                    )
+                    result = json.loads(response.text)
+                    with open(OUTPUT_FILE, 'w') as file:
+                        json.dump(result, file, indent=2)
+                    return result
+        except RetryError:
+            print("!-- ERROR DURING GENERATION PROCESS - RETRYING --!")
+            pass
         except Exception as e:
             print(f"!-- ERROR OCCURRED: {e} --!")
             pass

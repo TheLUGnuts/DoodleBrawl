@@ -16,18 +16,40 @@
 .stats {
   display: flex;
   flex-direction: column;
-
   order: 2;
   margin-top: 5px;
   margin-left: 20px;
   margin-right: 10px;
 }
 
-.roster-fighter-img {
-  border: outset;
+.roster-image-wrapper {
+  position: relative;
+  display: inline-block;
   margin: 15px;
-  max-width: 50%;
+  max-width: 30%; 
+  align-self: center;
 }
+
+.roster-titles {
+  font-style: italic;
+  color: #cc2e2e;
+}
+
+.roster-fighter-img {
+  border: outset 3px;
+  width: 100%;
+  height: auto;
+  display: block;
+  background-color: white;
+}
+
+.roster-champ-badge {
+  position: absolute;
+  width: 130px;
+  transform: rotate(-27deg); 
+  pointer-events: auto;
+}
+
 
 .fighter-status {
   font-weight: bolder;
@@ -39,10 +61,6 @@
   order: 1;
 }
 
-.fighter-name {
-  font-size: 1.5em;
-}
-
 .description {
   font-style: italic;
   margin-top: 5px;
@@ -51,7 +69,6 @@
 
 .page-button-container {
   margin: 10px;
-
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -67,4 +84,25 @@
   font-size: 14px;
   font-weight: 500;
   color: #777;
+}
+
+.alignment-good-roster {
+  color: #2ecc71;
+  font-weight: bold;
+  text-transform: capitalize;
+  font-size: 1.5em;
+}
+
+.alignment-evil-roster {
+  color: #9b59b6;
+  font-weight: bold;
+  text-transform: capitalize;
+  font-size: 1.5em;
+}
+
+.alignment-neutral-roster {
+  color: #333333;
+  font-weight: bold;
+  text-transform: capitalize;
+  font-size: 1.5em;
 }

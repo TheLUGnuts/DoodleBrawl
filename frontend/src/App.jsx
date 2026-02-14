@@ -5,6 +5,7 @@ import DoodleCanvas from './components/DoodleCanvas';
 import ArenaView from './components/ArenaView';
 import RosterView from './components/RosterView';
 import ArenaMini from './components/ArenaMini';
+import Account from './components/Account';
 import Debug from './components/Debug';
 
 function App() {
@@ -12,14 +13,13 @@ function App() {
   const [connectionStatus, setConnectionStatus] = useState("Never Connected");
   const [activeTab, setActiveTab] = useState("battleground"); //default to the drawing canvas
   const [battleState, setBattleState] = useState(null);
-  const [lastFightResult, setLastFightResult] = useState(null);
   const timeouts = useRef([]);
   const [logState, setLogState] = useState([]);
   const [lastWinner, setLastWinner] = useState("");
   const [summaryState, setSummaryState] = useState("");
   const [introState, setIntroState] = useState("");
-
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [log, setLoading] = useState(true);
 
   const handleResult = (data) => {
     // Takes data from a fight and places it in the correct places
@@ -35,7 +35,8 @@ function App() {
         return {
           ...newFighter,
           wins: oldFighter ? oldFighter.wins : newFighter.wins,
-          losses: oldFighter ? oldFighter.losses : newFighter.losses
+          losses: oldFighter ? oldFighter.losses : newFighter.losses,
+          titles: oldFighter ? oldFighter.titles : newFighter.titles
         };
       });
       return mixedState;
@@ -77,12 +78,70 @@ function App() {
     setBattleState(data);
   }
 
+  //see if a user has a locally saved login ID
+  useEffect(() => {
+    const savedID = localStorage.getItem("doodle_brawl_id");
+    if (savedID) {
+      console.log("Found saved ID, verifying...", savedID);
+      verifyLogin(savedID);
+    }
+  }, []);
+
+  //verify a login status if they have a local ID
+  const verifyLogin = async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/api/account/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_id: id })
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+        setUser(data);
+        console.log("Logged in as", data.username);
+      } else {
+        console.log("Saved ID invalid, clearing.");
+        localStorage.removeItem("doodle_brawl_id");
+      }
+    } catch (e) {
+      console.error("Login verification failed:", e);
+    }
+  };
+
+  const handleAuthSuccess = (userData) => {
+    localStorage.setItem("doodle_brawl_id", userData.id || userData.account_id);
+    // If it was a registration, we might need to fetch the full profile?
+    verifyLogin(userData.id || userData.account_id);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("doodle_brawl_id");
+    setUser(null);
+  }
+
+  const handleCharacterAdded = (data) => {
+      if (data.status === 'success') {
+        alert(`Success! ${data.character.name} has been added to the approval queue!`);
+        console.log("New character verified by server:", data.character);
+
+        setUser(prevUser => {
+          if (!prevUser) return prevUser;
+          
+          return {
+            ...prevUser,
+            created_characters: [...prevUser.created_characters, data.character]
+          };
+        });
+      }
+    };
+
   // Listen for and load battles from backend
   useEffect(() => {
     // Register listeners
     socket.on('match_scheduled', handleSchedule);
     socket.on('timer_update', handleTimerUpdate);
     socket.on('match_result', handleResult);
+    socket.on('character_added', handleCharacterAdded);
 
     // Get initial fighter info from scheduled battle
     fetch(`${API_URL}/api/card`)
@@ -104,6 +163,8 @@ function App() {
     return () => {
       socket.off('match_scheduled', handleSchedule);
       socket.off('timer_update', handleTimerUpdate);
+      socket.off('match_result', handleResult);
+      socket.off('character_added', handleCharacterAdded)
     }
   }, []);
 
@@ -154,23 +215,37 @@ function App() {
     };
   }, []);
 
+  //check if the logged in user is a registered admin
+  const adminIds = (import.meta.env.VITE_ADMIN_IDS || "").split(',');
+  const isAdmin = user && adminIds.includes(user.id);
+
   return (
     <>
       <div className='header'>
         <h1>Doodle Brawl!</h1>
           <button className = {`tab-button ${activeTab === 'doodle' ? 'active' : ''}`} onClick={() => setActiveTab('doodle')}>
-              Doodle!
+              Doodle
             </button>
           <button className = {`tab-button ${activeTab === 'battleground' ? 'active' : ''}`} onClick={() => setActiveTab('battleground')}>
-            Arena!
+            Arena
           </button>
           <button className = {`tab-button ${activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('leaderboard')}>
-            Roster!
+            Roster
           </button>
+          <button className = {`tab-button ${activeTab === 'account' ? 'active' : ''}`} onClick={() => setActiveTab('account')}>
+            Account
+          </button>
+          {/* ONLY RENDERS IF ADMIN */}
+          {isAdmin && (
+            <button className={`tab-button ${activeTab === 'debug' ? 'active' : ''}`} onClick={() => setActiveTab('debug')}>
+              Debug
+            </button>
+          )}
         <hr/>
       </div>
 
 
+      {/* These are all of our tabs at the top of the website */}
       <div className="main-content">
         {activeTab !== 'battleground' && (
           <div className='small-battleground'>
@@ -178,11 +253,11 @@ function App() {
             <hr/>
           </div>
         )}
-
         {activeTab === 'doodle' && (
           <div className='drawing'>
             <h2>Draw your fighter!</h2>
-            <DoodleCanvas />
+            {/*MAGIC NUMBER ALERT! This was our original size of the canvas before being made modifiable with props*/}
+            <DoodleCanvas canvWidth={754} canvHeight={400} userID={user ? user.id : null}/>
             <hr/>
           </div>
         )}
@@ -200,13 +275,28 @@ function App() {
           <hr/>
         </div>
         )}
+
+        {activeTab === 'account' && (
+        <div class='account'>
+          <Account user={user} onLogin={handleAuthSuccess} onLogout={handleLogout}/>
+          <hr/>
+        </div>
+        )}
+
+        {/* ONLY RENDERS IF ADMIN AND TAB IS ACTIVE */}
+        {activeTab === 'debug' && isAdmin && (
+          <div className='debug-tab-container'>
+            <Debug user={user} /> 
+            <hr/>
+          </div>
+        )}
       </div>
 
       <div className='tutorial'>
         <h2>How to Play</h2>
         <p>
           Doodle a combatant then hit "Submit For Battle!".<br></br>
-          You drawing will be given a name and secret stats, then enter the fray.
+          Your drawing will be given a name and secret stats, then enter the fray.
         </p>
         <hr/>
       </div>
@@ -216,7 +306,6 @@ function App() {
         <p>Made with love by <a className='status-link' href='https://www.linkedin.com/in/connor-fair36/'>Connor Fair</a>, <a className='status-link' href='https://www.linkedin.com/in/jonathanrutan/'>Jon Rutan</a>, and <a className='status-link' href='https://www.linkedin.com/in/trevorcorc/'>Trevor Corcoran</a> for VCU's 2026 Hackathon</p>
         <a className='status-link' href='https://github.com/TheLUGnuts/DoodleBrawl'>View on GitHub</a>
       </div>
-      <Debug />
     </>
   )
 }

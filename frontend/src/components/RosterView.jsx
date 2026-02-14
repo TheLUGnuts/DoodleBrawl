@@ -8,26 +8,44 @@ export default function RosterView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [rosterData, setRosterData] = useState({});
+  const [charPerPage, setCharPerPage] = useState(10);
   const [page, setPage] = useState(1); // Page number for fetch
 
-  const checkIsChampion = (status) => {
-    return status && status.includes("Champion");
-  };
-
-  function ImageViewer({ compressedBase64, fighterPlacement, isChampion }) {
-    // Decodes base64 image from server
-    // Fighter placement (eg 1, 2, 3, etc.) is the fighter's placement in the lineup. 1st, 2nd, 3rd get special css
+  function ImageViewer({ compressedBase64, titles }) {
     const base64 = decompressBase64Image(compressedBase64);
     return (
-      <img
-        className="{'fighter-' + fighterPlacement} roster-fighter-img"
-        src={`data:image/webp;base64,${base64}`}
-        alt="Fighter Image"
-      />
+      <div className="roster-image-wrapper">
+        <img
+          className="roster-fighter-img"
+          src={`data:image/webp;base64,${base64}`}
+          alt="Fighter Image"
+        />
+        {/* Map through all titles to stack overlapping belts */}
+        {titles && titles.map((title, index) => (
+          <img 
+            key={index}
+            className="roster-champ-badge" 
+            src="./champ.png" 
+            alt="Champion Badge" 
+            title={title}
+            style={{
+              top: `${6 + (index * 10)}px`,
+              left: `${-15 + (index * 10)}px`,
+              zIndex: 10 - index 
+            }}
+          />
+        ))}
+      </div>
     );
   }
 
-
+  const getAlignmentClass = (alignment) => {
+      if (!alignment) return 'alignment-neutral-roster';
+      const lower = alignment.toLowerCase();
+      if (lower === 'good') return 'alignment-good-roster';
+      if (lower === 'evil') return 'alignment-evil-roster';
+      return 'alignment-neutral-roster';
+    };
   
   function processRosterData(json) {
     // Pass data around where necessary
@@ -107,17 +125,20 @@ export default function RosterView() {
           <>
             <div key={item.id || index} class="entry">
               <div className="info">
-                <p className="place-number">#{(index + 1) + ((page-1))*5}</p> 
+                <p className="place-number">#{(index + 1) + ((page-1))*charPerPage}</p> 
                 <div className="stats">
-                  <b className="fighter-name">{item.name}</b>
+                  <b className={getAlignmentClass(item.alignment)}>{item.name}</b>
+                  <b className="roster-titles">{item.titles.join(", ")}</b>
                   <b className="fighter-status">{item.status}</b>
                   <p className="description"><span dangerouslySetInnerHTML={{ __html: item.description }} /></p>
                   <p>Wins: {item.wins}</p>
                   <p>Losses: {item.losses}</p>
                   <p>W/L Ratio: {(item.wins / item.losses) ? (item.wins / item.losses) : "None"}</p>
+                  <br/><br/>
+                  <p>Created by: {(item.creator_id) ? (item.creator_id) : "???" }</p>
                 </div>
               </div>
-              {rosterData && <ImageViewer compressedBase64={item.image_file} fighterPlacement='{1}' isChampion={checkIsChampion(item.status)} />}
+              {rosterData && <ImageViewer compressedBase64={item.image_file} titles={item.titles} />}
             </div>
             {index < rosterData.length - 1 && <hr />}
           </>
