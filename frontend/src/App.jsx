@@ -215,6 +215,10 @@ function App() {
     };
   }, []);
 
+  //check if the logged in user is a registered admin
+  const adminIds = (import.meta.env.VITE_ADMIN_IDS || "").split(',');
+  const isAdmin = user && adminIds.includes(user.id);
+
   return (
     <>
       <div className='header'>
@@ -231,9 +235,12 @@ function App() {
           <button className = {`tab-button ${activeTab === 'account' ? 'active' : ''}`} onClick={() => setActiveTab('account')}>
             Account
           </button>
-          <button className = {`tab-button ${activeTab === 'debug' ? 'active' : ''}`} onClick={() => setActiveTab('debug')}>
-            Debug
-          </button>
+          {/* ONLY RENDERS IF ADMIN */}
+          {isAdmin && (
+            <button className={`tab-button ${activeTab === 'debug' ? 'active' : ''}`} onClick={() => setActiveTab('debug')}>
+              Debug
+            </button>
+          )}
         <hr/>
       </div>
 
@@ -276,11 +283,12 @@ function App() {
         </div>
         )}
 
-        {activeTab === 'debug' && (
-        <div class='debug'>
-          <Debug />
-          <hr/>
-        </div>
+        {/* ONLY RENDERS IF ADMIN AND TAB IS ACTIVE */}
+        {activeTab === 'debug' && isAdmin && (
+          <div className='debug-tab-container'>
+            <Debug user={user} /> 
+            <hr/>
+          </div>
         )}
       </div>
 

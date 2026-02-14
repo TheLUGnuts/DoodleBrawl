@@ -3,7 +3,7 @@ import './Debug.css'
 import { API_URL } from '../socket.js';
 import { decompressBase64Image } from '../socket';
 
-export default function Debug() {
+export default function Debug({user}) {
   const [editorTab, setEditorTab] = useState('characters');
   const [isLocal, setIsLocal] = useState(false);
   const [characters, setCharacters] = useState([]);
@@ -24,7 +24,9 @@ export default function Debug() {
 
   const fetchCharacters = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/debug/characters`);
+      const res = await fetch(`${API_URL}/api/debug/characters`, {
+        headers: { 'X-User-ID': user?.id || '' }
+      });
       const data = await res.json();
       setCharacters(data);
     } catch (e) {
@@ -34,7 +36,9 @@ export default function Debug() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/debug/users`);
+      const res = await fetch(`${API_URL}/api/debug/users`, {
+        headers: { 'X-User-ID': user?.id || '' }
+      });
       const data = await res.json();
       setUsers(data);
     } catch (e) {
@@ -84,7 +88,10 @@ export default function Debug() {
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-ID': user?.id || '' 
+        },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -100,9 +107,13 @@ export default function Debug() {
     }
   };
 
+  //handles all general endpoint API calls
   const triggerAction = async (endpoint) => {
-    await fetch(`${API_URL}/api/debug/${endpoint}`, {method:'POST'});
-  }
+    await fetch(`${API_URL}/api/debug/${endpoint}`, { 
+      method: 'POST',
+      headers: { 'X-User-ID': user?.id || '' }
+    });
+  };
 
   //show the image in the DB editor window
   //FIXME - refer to the `app.py` /api/debug/characters route for more info
