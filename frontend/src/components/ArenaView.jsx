@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import './ArenaView.css';
 import '../text_decor.css';
-import { decompressBase64Image } from '../socket';
+import { socket, decompressBase64Image } from '../socket';
 
-export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState, introState}) {
+export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState, introState, user, setUser, currentPool, matchOdds}) {
   //jim scribble is speaking
   const [isTalking, setIsTalking] = useState(false);
+  //betting stuff
+  const [betAmount, setBetAmount] = useState(10);
+  const [isBetting, setIsBetting] = useState(false);
 
   useEffect(() => {
     if (logState && logState.length > 0) {
@@ -14,6 +17,31 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
       return () => clearTimeout(timerId);
     }
   }, [logState]);
+
+  const handleBet = (fighterId) => {
+    if (!user) {
+      alert("You must be logged in to place a bet!");
+      return;
+    }
+    if (betAmount > user.money) {
+      alert("You don't have enough money for that bet!");
+      return;
+    }
+    setIsBetting(true);
+    socket.emit('place_bet', {
+      user_id: user.id,
+      fighter_id: fighterId,
+      amount: Number(betAmount)
+    }, (response) => {
+      setIsBetting(false);
+      if (response.status === 'success') {
+        setUser(prev => ({...prev, money: response.new_balance}));
+      } else {
+        console.log(response.message);
+        alert(response.message);
+      }
+    });
+  };
 
   const getAlignmentClass = (alignment) => {
     if (!alignment) return 'alignment-neutral';
@@ -74,6 +102,51 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
   return (
     <div class='root'>
       <h2>Next match in: {timer}</h2>
+      {logState.length === 0 && battleState.fighters.length === 2 && (
+        <div className="betting-module">
+          <div className="pool-display">
+            <h3>Match Prize Pool: <span className="gold-text">${currentPool}</span></h3>
+          </div>
+          
+          {user ? (
+            <div className="betting-controls">
+              <div className="bet-input-row">
+                <label>Your Wager:</label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  max={user.money} 
+                  value={betAmount} 
+                  onChange={(e) => setBetAmount(e.target.value)} 
+                />
+                <span className="wallet">Wallet: ${user.money}</span>
+              </div>
+              
+              <div className="bet-buttons">
+                <button 
+                  disabled={isBetting || betAmount > user.money || betAmount < 1}
+                  onClick={() => handleBet(battleState.fighters[0].id)}
+                  className="bet-btn p1-bet"
+                >
+                  Bet on {battleState.fighters[0].name} <br/>
+                  <small>Pays {matchOdds[battleState.fighters[0].id]}x</small>
+                </button>
+                
+                <button 
+                  disabled={isBetting || betAmount > user.money || betAmount < 1}
+                  onClick={() => handleBet(battleState.fighters[1].id)}
+                  className="bet-btn p2-bet"
+                >
+                  Bet on {battleState.fighters[1].name} <br/>
+                  <small>Pays {matchOdds[battleState.fighters[1].id]}x</small>
+                </button>
+              </div>
+            </div>
+          ) : (
+             <p className="login-prompt">Log in from the Account tab to place bets!</p>
+          )}
+        </div>
+      )}
       <div class='row'>
 
         {/* FIGHTER 1*/}
