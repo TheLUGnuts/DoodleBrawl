@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DoodleCanvas from '../components/DoodleCanvas';
 import { API_URL } from '../socket';
 import { decompressBase64Image } from '../socket';
@@ -12,13 +12,28 @@ export default function Account({user, onLogin, onLogout}) {
   const [portraitData, setPortraitData] = useState(null); 
   const [error, setError] = useState("");
 
+  function ImageViewer({compressedBase64}) {
+    // Decodes base64 image from server
+    const base64 = decompressBase64Image(compressedBase64);
+    return (
+      <img
+        src={`data:image/webp;base64,${base64}`}
+        alt="Fighter Image"
+      />
+    );
+  }
+
+  useEffect(() => {
+      
+    }, []);
+  
+
   //dashboard view
   if (user) {
     const joinDate = new Date(user.creation_time * 1000).toLocaleDateString();
     
     //decompress the user portrait for display
-    const portraitSrc = user.portrait ? 
-      `data:image/webp;base64,${decompressBase64Image(user.portrait)}` : null;
+    const portraitSrc = user.portrait ? `data:image/webp;base64,${decompressBase64Image(user.portrait)}` : null;
 
     return (
       <div className="account-container dashboard">
@@ -36,8 +51,24 @@ export default function Account({user, onLogin, onLogout}) {
             </details>
           </div>
         </div>
-
         <div className="dashboard-lists">
+          <div className="list-section">
+            <h3>Created Fighters</h3>
+            <div className="list-entries">
+              {user.created_characters.map((item, index) => (
+              <>
+                <div key={item.id || index} class="character-list-entry">
+                  <div className="info">
+                    <div className="stats">
+                      <b className="character-list-name">{item.name}</b>
+                    </div>
+                  </div>
+                  {item.is_approved ? <img src={`data:image/webp;base64,${decompressBase64Image(item.image_file)}`} alt="Fighter picture" className="character-list-image"/> : <p className="unapproved">Not yet approved</p>}
+                </div>
+              </>
+            ))}
+            </div>
+          </div>
           <div className="list-section">
             <h3>Managed Fighters</h3>
             {user.managed_characters && user.managed_characters.length > 0 ? (
@@ -46,18 +77,7 @@ export default function Account({user, onLogin, onLogout}) {
                   <li key={char.id}>{char.name} ({char.wins}W - {char.losses}L)</li>
                 ))}
               </ul>
-            ) : <p>No fighters managed.</p>}
-          </div>
-
-          <div className="list-section">
-            <h3>Created Fighters</h3>
-            {user.created_characters && user.created_characters.length > 0 ? (
-              <ul>
-                {user.created_characters.map(char => (
-                  <li key={char.id}>{char.name}</li>
-                ))}
-              </ul>
-            ) : <p>No fighters created.</p>}
+            ) : <p>Coming Soon.</p>}
           </div>
         </div>
 
@@ -216,7 +236,7 @@ export default function Account({user, onLogin, onLogout}) {
         />
       </div>
 
-      <button className="generate-button" onClick={handleSubmit}>
+      <button className="generate-button" onClick={submitRegister}>
         Generate ID
       </button>
     </div>
