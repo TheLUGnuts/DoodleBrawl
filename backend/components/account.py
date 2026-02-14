@@ -61,8 +61,8 @@ def login_account():
             "money": user.money,
             "portrait": user.portrait,
             "creation_time": user.creation_time,
-            "created_characters": [c.to_dict_light() for c in created_chars],
-            "managed_characters": [c.to_dict_light() for c in managed_chars]
+            "created_characters": [c.to_dict() for c in created_chars],
+            "managed_characters": [c.to_dict() for c in managed_chars]
         })
     else:
         return jsonify({"error": "Invalid Account ID"}), 401
