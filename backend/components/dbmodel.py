@@ -52,6 +52,18 @@ class Character(db.Model):
     #flags
     is_approved = db.Column(db.Boolean, default=False)
 
+    def get_creator_name(self):
+        if self.creator_id and self.creator_id != "Unknown":
+            user = User.query.get(self.creator_id)
+            return user.username if user else "Unknown"
+        return "Unknown"
+
+    def get_manager_name(self):
+        if self.manager_id and self.manager_id != "None":
+            user = User.query.get(self.manager_id)
+            return user.username if user else "None"
+        return "None"
+    
     #return the db entry as a dict with everything we could need.
     def to_dict(self):
         return {
@@ -64,20 +76,15 @@ class Character(db.Model):
             "description": self.description,
             "personality": self.personality,
             "image_file": self.image_file,
-            "creator_id": self.creator_id,
-            "manager_id": self.manager_id,
+            "creator_name": self.get_creator_name(),
+            "manager_name": self.get_manager_name(),
             "popularity": self.popularity,
             "alignment": self.alignment,
             "is_approved": self.is_approved,
             "titles": self.titles
         }
     
-    def image_data(self):
-        return {
-            "image_file": self.image_file
-        }
-    #return the db entry as a dict EXCLUDING the base64 image string
-    def to_dict_light(self):
+    def to_dict_debug(self):
         return {
             "id": self.id,
             "name": self.name,
@@ -87,6 +94,7 @@ class Character(db.Model):
             "losses": self.losses,
             "description": self.description,
             "personality": self.personality,
+            "image_file": self.image_file,
             "creator_id": self.creator_id,
             "manager_id": self.manager_id,
             "popularity": self.popularity,

@@ -112,7 +112,7 @@ def debug_get_characters():
     #THIS MAY BE VERY INEFFICIENT
     #this returns the base64 image of every single character in the roster
     #if we have a lot of fighters, this may be extremely bloated.
-    return jsonify([c.to_dict() for c in chars])
+    return jsonify([c.to_dict_debug() for c in chars])
 
 #edit the database entry of any character
 @app.route('/api/debug/character/<char_id>', methods=['POST'])
