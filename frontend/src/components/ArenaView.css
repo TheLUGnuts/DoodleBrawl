@@ -8,7 +8,6 @@
   padding: 5px;
 }
 
-/* Clear floats after image containers */
 .row::after {
   content: "";
   clear: both;
@@ -134,4 +133,38 @@
   color: #333333;
   font-weight: bold;
   text-transform: capitalize;
+}
+
+.commentator-container {
+  position: fixed;
+  bottom: -10px;
+  right: 5px;
+  z-index: 1000;
+  pointer-events: none;
+  transform: translateY(100px);
+  animation: slideUpFadeIn 1s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+}
+
+.commentator-img {
+  max-height: 250px;
+  width: auto;
+  transform-origin: bottom center;
+  border: 4px solid #000;
+}
+
+.commentator-img.talking {
+  animation: jimTalkBounce 0.4s ease-in-out;
+}
+
+@keyframes slideUpFadeIn {
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes jimTalkBounce {
+  0%, 100% { transform: scaleY(1) translateY(0); }
+  25% { transform: scaleY(1.05) translateY(-5px); }
+  50% { transform: scaleY(0.95) translateY(2px); }
+  75% { transform: scaleY(1.02) translateY(-2px); }
 }

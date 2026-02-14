@@ -1,8 +1,19 @@
+import { useState, useEffect } from 'react';
 import './ArenaView.css';
 import '../text_decor.css';
 import { decompressBase64Image } from '../socket';
 
 export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState, introState}) {
+  //jim scribble is speaking
+  const [isTalking, setIsTalking] = useState(false);
+
+  useEffect(() => {
+    if (logState && logState.length > 0) {
+      setIsTalking(true);
+      const timerId = setTimeout(() => setIsTalking(false), 400); // Stop shaking after 400ms
+      return () => clearTimeout(timerId);
+    }
+  }, [logState]);
 
   const getAlignmentClass = (alignment) => {
     if (!alignment) return 'alignment-neutral';
@@ -111,6 +122,13 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
           </div>
         </div>
 
+      </div>
+      <div className="commentator-container">
+        <img 
+          src="./js.png" 
+          alt="Jim Scribble" 
+          className={`commentator-img ${isTalking ? 'talking' : ''}`} 
+        />
       </div>
         <p class='introduction' dangerouslySetInnerHTML={{ __html: introState }} />
         <div class='logs'>
