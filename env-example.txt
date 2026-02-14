@@ -1,5 +1,5 @@
 GEMINI_API="<insert api key inside quotes>"
 SECRET_KEY="<write anything in here>"
 VITE_SOCKET_URL=http://localhost:5000
-ADMIN_IDS="<admin user ids go here>"
-VITE_ADMIN_IDS="<admin user ids go here>"
+ADMIN_IDS="1234567890123456,9876543210987654" <-DUMMY VALUES
+VITE_ADMIN_IDS="<same admin user ids go here>"
