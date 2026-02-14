@@ -14,10 +14,6 @@ export default function Debug({user}) {
   const [showPreview, setShowPreview] = useState("");
 
   useEffect(() => {
-    const hostname = window.location.hostname;
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      setIsLocal(true);
-    }
     if (editorTab === 'characters') fetchCharacters();
     if (editorTab === 'users') fetchUsers();
   }, [editorTab]);
@@ -126,8 +122,6 @@ export default function Debug({user}) {
       return null;
     }
   };
-
-  if (!isLocal) return null;
 
   return (
     <div className="debug-container">

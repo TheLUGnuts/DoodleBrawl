@@ -135,7 +135,7 @@ export default function RosterView() {
                   <p>Losses: {item.losses}</p>
                   <p>W/L Ratio: {(item.wins / item.losses) ? (item.wins / item.losses) : "None"}</p>
                   <br/><br/>
-                  <p>Created by: {(item.creator_id) ? (item.creator_id) : "???" }</p>
+                  <p>Created by: {(item.creator_name) ? (item.creator_name) : "???" }</p>
                 </div>
               </div>
               {rosterData && <ImageViewer compressedBase64={item.image_file} titles={item.titles} />}
