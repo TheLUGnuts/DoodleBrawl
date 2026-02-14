@@ -13,6 +13,8 @@ const DoodleCanvas = ({ isAccount, canvWidth, canvHeight, onCanvasChange, userID
   const [history, setHistory] = useState([]);
   const [historyStep, setHistoryStep] = useState(-1);
   const [drawingName, setDrawingName] = useState("");
+  //key for local storage of the canvas
+  const storageKey = isAccount ? 'doodle_account_canvas' : 'doodle_main_canvas';
 
   // Initialize canvas
   useEffect(() => {
@@ -25,14 +27,27 @@ const DoodleCanvas = ({ isAccount, canvWidth, canvHeight, onCanvasChange, userID
     //const rect = canvas.getBoundingClientRect();
     canvas.width = canvWidth;
     canvas.height = canvHeight;
-
-    // Set initial background
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Save initial state
-    saveToHistory();
-  }, [canvWidth, canvHeight]);
+    const savedCanvas = localStorage.getItem(storageKey);
+    if (savedCanvas) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        
+        // Inject saved image as the base history step
+        setHistory([savedCanvas]);
+        setHistoryStep(0);
+        
+        if (onCanvasChange) onCanvasChange(getImageBase64());
+      };
+      img.src = savedCanvas;
+    } else {
+      // Set initial background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      saveToHistory();
+    }
+  }, [canvWidth, canvHeight, isAccount]);
 
   const saveToHistory = () => {
     const canvas = canvasRef.current;
@@ -43,6 +58,7 @@ const DoodleCanvas = ({ isAccount, canvWidth, canvHeight, onCanvasChange, userID
     newHistory.push(imageData);
     setHistory(newHistory);
     setHistoryStep(newHistory.length - 1);
+    localStorage.setItem(storageKey, imageData);
     if (onCanvasChange) {
       onCanvasChange(getImageBase64());
     }
@@ -249,22 +265,34 @@ const DoodleCanvas = ({ isAccount, canvWidth, canvHeight, onCanvasChange, userID
   };
 
   const sendImageOverSocket = () => {
-    if (drawingName === "") {
-      setDrawingName("Joe Mystery");
+    if (!userID) {
+      alert("You must be logged in to submit a fighter! Please go to the Account tab.");
+      return;
     }
+
+    let finalName = drawingName;
+    if (finalName === "") {
+      finalName = "???";
+      setDrawingName("???");
+    }
+
     // Sends current Canvas image to server
     socket.emit('submit_character', {
       id: uuidv4(),
       imageBase: getImageBase64(),
-      name: drawingName,
+      name: finalName,
       creator_id: userID
+    }, (response) => {
+      if (response && response.status === 'error') {
+        alert(response.message); 
+      } else {
+        localStorage.removeItem(storageKey);
+        setDrawingName("");
+        setHistory([]);
+        setHistoryStep(-1);
+        handleClear();
+      }
     });
-
-    // Clear drawing
-    setDrawingName("");
-    history.length = 0;
-    setHistoryStep(-1);
-    handleClear();
   }
 
 
@@ -366,7 +394,13 @@ const DoodleCanvas = ({ isAccount, canvWidth, canvHeight, onCanvasChange, userID
           <button onClick={handleClear} className="tool-button clear">Clear</button>
           <button onClick={handleDownloadPNG} className="tool-button export">Download</button>
           {!isAccount && (
-            <button onClick={sendImageOverSocket} className="tool-button submit">Submit for Battle!</button>
+            <button 
+                onClick={sendImageOverSocket} 
+                className={`tool-button submit`}
+                style={{ opacity: !userID ? 0.5 : 1 }}
+            >
+                {!userID ? "Login to Submit" : "Submit for Battle!"}
+            </button>
           )}
         </div>
       </div>
