@@ -35,7 +35,8 @@ function App() {
         return {
           ...newFighter,
           wins: oldFighter ? oldFighter.wins : newFighter.wins,
-          losses: oldFighter ? oldFighter.losses : newFighter.losses
+          losses: oldFighter ? oldFighter.losses : newFighter.losses,
+          titles: oldFighter ? oldFighter.titles : newFighter.titles
         };
       });
       return mixedState;
@@ -118,12 +119,29 @@ function App() {
     setUser(null);
   }
 
+  const handleCharacterAdded = (data) => {
+      if (data.status === 'success') {
+        alert(`Success! ${data.character.name} has been added to the approval queue!`);
+        console.log("New character verified by server:", data.character);
+
+        setUser(prevUser => {
+          if (!prevUser) return prevUser;
+          
+          return {
+            ...prevUser,
+            created_characters: [...prevUser.created_characters, data.character]
+          };
+        });
+      }
+    };
+
   // Listen for and load battles from backend
   useEffect(() => {
     // Register listeners
     socket.on('match_scheduled', handleSchedule);
     socket.on('timer_update', handleTimerUpdate);
     socket.on('match_result', handleResult);
+    socket.on('character_added', handleCharacterAdded);
 
     // Get initial fighter info from scheduled battle
     fetch(`${API_URL}/api/card`)
@@ -145,6 +163,8 @@ function App() {
     return () => {
       socket.off('match_scheduled', handleSchedule);
       socket.off('timer_update', handleTimerUpdate);
+      socket.off('match_result', handleResult);
+      socket.off('character_added', handleCharacterAdded)
     }
   }, []);
 
@@ -211,10 +231,14 @@ function App() {
           <button className = {`tab-button ${activeTab === 'account' ? 'active' : ''}`} onClick={() => setActiveTab('account')}>
             Account
           </button>
+          <button className = {`tab-button ${activeTab === 'debug' ? 'active' : ''}`} onClick={() => setActiveTab('debug')}>
+            Debug
+          </button>
         <hr/>
       </div>
 
 
+      {/* These are all of our tabs at the top of the website */}
       <div className="main-content">
         {activeTab !== 'battleground' && (
           <div className='small-battleground'>
@@ -244,7 +268,6 @@ function App() {
           <hr/>
         </div>
         )}
-      </div>
 
         {activeTab === 'account' && (
         <div class='account'>
@@ -252,6 +275,14 @@ function App() {
           <hr/>
         </div>
         )}
+
+        {activeTab === 'debug' && (
+        <div class='debug'>
+          <Debug />
+          <hr/>
+        </div>
+        )}
+      </div>
 
       <div className='tutorial'>
         <h2>How to Play</h2>
@@ -267,7 +298,6 @@ function App() {
         <p>Made with love by <a className='status-link' href='https://www.linkedin.com/in/connor-fair36/'>Connor Fair</a>, <a className='status-link' href='https://www.linkedin.com/in/jonathanrutan/'>Jon Rutan</a>, and <a className='status-link' href='https://www.linkedin.com/in/trevorcorc/'>Trevor Corcoran</a> for VCU's 2026 Hackathon</p>
         <a className='status-link' href='https://github.com/TheLUGnuts/DoodleBrawl'>View on GitHub</a>
       </div>
-      <Debug />
     </>
   )
 }
