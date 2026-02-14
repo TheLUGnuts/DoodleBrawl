@@ -1,5 +1,7 @@
 #jfr, cwf, tjc
 
+#THIS IS AN OLD BACKUP OF SERVERDATA USING LOCAL JSON FILES INSTEAD OF THE SQLITE DATABASE
+
 import os, json, time, re
 from components.character import Character
 
