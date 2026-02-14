@@ -62,10 +62,20 @@ def is_champion(status):
 #         DEBUG HANDLERS         #
 ##################################
 
+#see if an incoming debug api request is from an admin
+def is_admin_authorized():
+    #if local development, bypass this
+    if app.debug or "localhost" in API_URL:
+        return True
+        
+    admin_ids = [i.strip() for i in os.getenv('ADMIN_IDS', '').split(',') if i.strip()]
+    user_id = request.headers.get('X-User-ID')
+    
+    return user_id and user_id in admin_ids
+
 @app.route('/api/debug/skip', methods=['POST'])
 def debug_skip_timer():
-    if not app.debug and "localhost" not in API_URL:
-        return
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
     global CURRENT_TIMER
     #set the timer for the next battle to start to 5 seconds
     CURRENT_TIMER = 5
@@ -74,8 +84,7 @@ def debug_skip_timer():
 
 @app.route('/api/debug/freeze', methods=['POST'])
 def debug_freeze_timer():
-    if not app.debug and "localhost" not in API_URL:
-        return
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
     global FROZEN
     FROZEN = not FROZEN
     print(f"!-- FROZEN TIMER : {FROZEN} --!")
@@ -83,26 +92,21 @@ def debug_freeze_timer():
 
 @app.route('/api/debug/rematch', methods=['POST'])
 def debug_new_matchup():
-    if not app.debug and "localhost" not in API_URL:
-        return
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
     #schedule a new match, instantly
     schedule_next_match()
     return jsonify({"status": "rematched", "new_match": [c.name for c in NEXT_MATCH]})
 
 @app.route('/api/debug/randomize_alignments', methods=['POST'])
 def debug_randomize_alignments():
-    if not app.debug and "localhost" not in API_URL:
-        return jsonify({"error": "Debug mode only"}), 403
-        
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
     count = DATA.randomize_alignments()
     return jsonify({"status": "success", "count": count, "message": "Alignments randomized!"})
 
 #returns all characters, approved or not.
 @app.route('/api/debug/characters', methods=['GET'])
 def debug_get_characters():
-    if not app.debug and "localhost" not in API_URL:
-        return jsonify({"error": "Unauthorized"}), 403
-        
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
     chars = Character.query.all()
     #FIXME
     #THIS MAY BE VERY INEFFICIENT
@@ -113,9 +117,7 @@ def debug_get_characters():
 #edit the database entry of any character
 @app.route('/api/debug/character/<char_id>', methods=['POST'])
 def debug_update_character(char_id):
-    if not app.debug and "localhost" not in API_URL:
-        return jsonify({"error": "Unauthorized"}), 403
-        
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
     data = request.get_json()
     char = Character.query.get(char_id)
     
@@ -154,9 +156,7 @@ def debug_update_character(char_id):
 #grabs all user accounts for the debug editor
 @app.route('/api/debug/users', methods=['GET'])
 def debug_get_users():
-    if not app.debug and "localhost" not in API_URL:
-        return jsonify({"error": "Unauthorized"}), 403
-        
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403 
     users = User.query.all()
     #No to_dict method, so we just build it right here.
     #NOTE - It'd be simple to just add a to_dict to User.
@@ -172,9 +172,7 @@ def debug_get_users():
 #update a users database row
 @app.route('/api/debug/user/<user_id>', methods=['POST'])
 def debug_update_user(user_id):
-    if not app.debug and "localhost" not in API_URL:
-        return jsonify({"error": "Unauthorized"}), 403
-        
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403 
     data = request.get_json()
     u = User.query.get(user_id)
     
