@@ -308,7 +308,7 @@ def schedule_next_match():
     p1_popularity = p1.popularity if p1.popularity else 1
     p2_popularity = p2.popularity if p2.popularity else 1
     total_popularity = p1_popularity + p2_popularity
-    CURRENT_POOL = total_popularity * 10
+    CURRENT_POOL = total_popularity * 100
     CURRENT_BETS = []
 
     #emit the card to clients

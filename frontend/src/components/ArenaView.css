@@ -1,6 +1,6 @@
 .root {
   color: #000;
-  overflow-x: hidden; 
+  overflow-x: hidden;
   position: relative;
 }
 
@@ -43,6 +43,9 @@
 
 .logs {
   margin-top: 10px;
+  background-color: #eeeeee;
+  border: 3px dotted black;
+  padding-bottom: 10px;
 }
 
 .one-log {
@@ -65,7 +68,7 @@
   margin-top: 5px;
   display: inline;
   max-height: 90%;
-  transform:scale(80%)
+  transform: scale(80%)
 }
 
 @keyframes winner-pulse {
@@ -73,10 +76,12 @@
     box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
     border-color: gold;
   }
+
   70% {
     box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0);
     border-color: gold;
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
     border-color: gold;
@@ -101,7 +106,7 @@
 .image-wrapper img {
   display: inline-block;
   vertical-align: bottom;
-  max-width: 100%; 
+  max-width: 100%;
 }
 
 .champ-badge {
@@ -109,9 +114,9 @@
   top: 6px;
   left: -15px;
   width: 150px;
-  transform: rotate(-27deg); 
-  z-index: 10; 
-  pointer-events: none; 
+  transform: rotate(-27deg);
+  z-index: 10;
+  pointer-events: none;
 }
 
 .introduction {
@@ -138,19 +143,13 @@
 }
 
 .commentator-container {
-  position: fixed;
-  bottom: -10px;
-  right: 5px;
-  z-index: 1000;
-  pointer-events: none;
-  transform: translateY(100px);
-  animation: slideUpFadeIn 1s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+  display: inline;
 }
 
 .commentator-img {
-  max-height: 250px;
+  display: inline;
+  max-height: 180px;
   width: auto;
-  transform-origin: bottom center;
   border: 4px solid #000;
 }
 
@@ -165,10 +164,23 @@
 }
 
 @keyframes jimTalkBounce {
-  0%, 100% { transform: scaleY(1) translateY(0); }
-  25% { transform: scaleY(1.05) translateY(-5px); }
-  50% { transform: scaleY(0.95) translateY(2px); }
-  75% { transform: scaleY(1.02) translateY(-2px); }
+
+  0%,
+  100% {
+    transform: scaleY(1) translateY(0);
+  }
+
+  25% {
+    transform: scaleY(1.05) translateY(-5px);
+  }
+
+  50% {
+    transform: scaleY(0.95) translateY(2px);
+  }
+
+  75% {
+    transform: scaleY(1.02) translateY(-2px);
+  }
 }
 
 .betting-module {
@@ -219,6 +231,7 @@
   gap: 20px;
 }
 
+
 .bet-btn {
   flex: 1;
   padding: 6px;
@@ -239,12 +252,13 @@
   transform: scale(0.95);
 }
 
-.p1-bet { 
-  background-color: #834d4d; 
+.p1-bet {
+  background-color: #834d4d;
   border: 2px solid black;
 }
-.p2-bet { 
-  background-color: #94c6ff; 
+
+.p2-bet {
+  background-color: #94c6ff;
   color: black;
   border: 2px solid black;
 }
@@ -300,55 +314,74 @@
   position: absolute;
   top: -150px;
   animation: moneyFall 3s linear forwards;
-  filter: drop-shadow(0px 5px 5px rgba(0,0,0,0.5));
+  filter: drop-shadow(0px 5px 5px rgba(0, 0, 0, 0.5));
 }
 
 @keyframes payoutPopUp {
-  0% {opacity: 0; }
-  10% {opacity: 1; }
-  100% {opacity: 0; }
+  0% {
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes moneyFall {
-  0% { transform: translateY(0vh) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  0% {
+    transform: translateY(0vh) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
 }
 
-.bleachers-container {
-  position: absolute;
-  width: 1200px;
-  height: auto;
-  bottom: 0;   
-  z-index: -1; 
-  opacity: 0.85; 
+.current-action {
+  margin-top: 10px;
+  width: fit-content;
+  display: inline;
 }
 
-.bleachers-container.left {
-  right: -20%;
+.dialogue-pop {
+  animation: typeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
-.bleachers-container.right {
-  left: -20%; 
+@keyframes typeIn {
+  0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.bleacher-bg {
-  width: 100%;
-  height: auto;
-  display: block;
+.winner-reveal {
+  animation: grandReveal 0.8s ease-out forwards;
 }
 
-.bleacher-bg.flipped {
-  transform: scaleX(-1);
+@keyframes grandReveal {
+  0% { opacity: 0; transform: scale(0.8); filter: blur(4px); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
 }
 
-.crowd-portrait {
-  position: absolute;
-  width: 8%; 
-  aspect-ratio: 1/1;
-  background-color: white;
-  border: 3px solid #000;
-  border-radius: 4px;
-  box-shadow: 0px 4px 6px rgba(0,0,0,0.4);
-  object-fit: cover;
-  transform: rotate(calc(-10deg + 20deg * var(--random, 0.5)));
+.fade-in-down {
+  animation: fadeInDown 0.4s ease-out forwards;
 }
+
+@keyframes fadeInDown {
+  0% { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up-fade {
+  animation: slideUpFadeIn 0.5s ease-out forwards;
+}
+
+@keyframes slideUpFadeIn {
+  0% { opacity: 0; transform: translateY(50px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+

@@ -69,13 +69,15 @@ export default function Debug({user}) {
   const handleSave = async () => {
     setMessage("Saving character.");
     const payload = { ...formData };
-    try {
-      payload.stats = JSON.parse(formData.stats);
-      payload.titles = JSON.parse(formData.titles);
-    } catch (e) {
-      setMessage("Error: Invalid JSON format.");
-      console.log(e);
-      return;
+    if (editorTab === 'characters') {
+      try {
+        payload.stats = JSON.parse(formData.stats);
+        payload.titles = JSON.parse(formData.titles);
+      } catch (e) {
+        setMessage("Error: Invalid JSON format.");
+        console.log(e);
+        return;
+      }
     }
     const endpoint = editorTab === 'characters' 
         ? `${API_URL}/api/debug/character/${selectedItem.id}` 

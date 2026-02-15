@@ -26,7 +26,7 @@ function App() {
   const [payoutWon, setPayoutWon] = useState(0);
 
   const handleResult = (data) => {
-    // Takes data from a fight and places it in the correct places
+    //takes data from a fight and places it in the correct places
     setIntroState(data.introduction);
     console.log("RESULT ------")
     //in order to preview the new character name and description we used a mixed battle state
@@ -57,7 +57,7 @@ function App() {
     timeouts.current.forEach(clearTimeout);
     timeouts.current = [];
 
-    const LOG_DELAY = 1500 // 1.5 seconds between message
+    const LOG_DELAY = 3000 // 3 seconds between message
     data.log.forEach((log, index) => {
       const t = setTimeout(() => {
         setLogState(prev => [...prev, log]);
@@ -123,7 +123,7 @@ function App() {
 
   const handleAuthSuccess = (userData) => {
     localStorage.setItem("doodle_brawl_id", userData.id || userData.account_id);
-    // If it was a registration, we might need to fetch the full profile?
+    //if it was a registration, we might need to fetch the full profile?
     verifyLogin(userData.id || userData.account_id);
   };
 
@@ -148,9 +148,9 @@ function App() {
       }
     };
 
-  // Listen for and load battles from backend
+  //listen for and load battles from backend
   useEffect(() => {
-    // Register listeners
+    //register listeners
     socket.on('match_scheduled', handleSchedule);
     socket.on('timer_update', handleTimerUpdate);
     socket.on('match_result', handleResult);

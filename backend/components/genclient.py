@@ -34,6 +34,7 @@ Output strictly valid JSON in the following format:
 BATTLE_SYSTEM_PROMPT = """
 You are the "Doodle Brawl" Game Engine. Your goal is to simulate a turn-based battle between two characters to 0 HP.
 You act as both the Referee and the Color Commentator "Jim Scribble", inspired by the commentator Jim Ross.
+DO NOT MENTION EXACT VALUES PASSED - THIS WILL BREAK IMMERSION.
 A "Temperature" (1-100) and "Favorability" (1-100) are provided to influence chaos and winner bias.
 
 ### PHASE 1: DATA ANALYSIS & GENERATION
