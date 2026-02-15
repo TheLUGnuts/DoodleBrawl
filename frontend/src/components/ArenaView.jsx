@@ -30,35 +30,28 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
   }, [logState]);
 
   const handleBet = (fighterId, fighterName) => {
-    if (!user) {
-        alert("You must be logged in to place a bet!");
-        return;
-    }
-    if (betAmount > user.money) {
-        alert("You don't have enough money for that bet!");
-        return;
-    }
-    
-    setIsBetting(true);
-    socket.emit('place_bet', {
-        user_id: user.id,
-        fighter_id: fighterId,
-        amount: Number(betAmount)
-    }, (response) => {
-        setIsBetting(false);
-        if (response.status === 'success') {
-            setUser(prev => ({...prev, money: response.new_balance}));
-            const odds = matchOdds[fighterId] || 1.1; 
-            
-            setMyBet({
-              fighterId: fighterId,
-              fighterName: fighterName,
-              payout: Math.floor(betAmount * odds)
-            });
-        } else {
-            alert(response.message);
-        }
-    });
+      if (!user) { alert("You must be logged in to place a bet!"); return; }
+      if (betAmount > user.money) { alert("You don't have enough money for that bet!"); return; }
+      
+      setIsBetting(true);
+      socket.emit('place_bet', {
+          user_id: user.id,
+          fighter_id: fighterId,
+          amount: Number(betAmount)
+      }, (response) => {
+          setIsBetting(false);
+          if (response.status === 'success') {
+              setUser(prev => ({...prev, money: response.new_balance}));
+              const odds = matchOdds[fighterId] || 1.1; 
+              
+              setMyBet({ 
+                fighterId: fighterId, 
+                fighterName: fighterName, 
+                totalWagered: response.total_wagered,
+                payout: Math.floor(response.total_wagered * odds) 
+              });
+          } else { alert(response.message); }
+      });
   };
 
   if (!battleState || !battleState.fighters || battleState.fighters.length === 0) { return (
@@ -74,9 +67,9 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
     const base64 = decompressBase64Image(compressedBase64);
     return (
       <div className="image-wrapper">
-        <img src={`data:image/webp;base64,${base64}`} alt="Fighter Image" />
+        <img className="fighter-wrap" src={`data:image/webp;base64,${base64}`} alt="Fighter Image" />
         {titles && titles.map((title, index) => (
-          <img key={index} className="champ-badge" src="./champ.png" alt="Champion Badge" title={title} style={{ top: `${6 + (index * 20)}px`, left: `${-15 + (index * 15)}px`, zIndex: 10 - index }} />
+          <img key={index} className="champ-badge" src="./champ.png" alt="Champion Badge" title={title} style={{ top: `${3 + (index * 8)}px`, left: `${-18 + (index * 5)}px`, zIndex: 2 - index }} />
         ))}
       </div>
     );
@@ -96,6 +89,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
       case 'ATTACK': return 'action-attack';
       case 'DODGE': return 'action-dodge';
       case 'POWER': return 'action-power';
+      case 'RECOVER': return 'action-recover';
       case 'AGILITY': return 'action-agility';
       case 'ACROBATIC': return 'action-agility';
       default: return 'action-attack'; 
@@ -112,83 +106,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
   ////////////////////////////////
   return (
     <div className='root'>
-      <h2>Next match in: {timer}</h2>
-      
-      {/* ANIMATED PRE-MATCH AREA */}
-      <div className="pre-match-area">
-        {typeof timer == 'number' ? (
-          <div key="betting" className="betting-module fade-in-down">
-            <div className="pool-display">
-              <h3>Match Prize Pool: <span className="gold-text">${currentPool}</span></h3>
-            </div>
-            {user ? (
-              <div className="betting-controls">
-                <div className="bet-input-row">
-                  <label>Wager:</label>
-                  <input type="number" min="1" max={user.money} value={betAmount} onChange={(e) => setBetAmount(e.target.value)} disabled={myBet !== null}/><br/>
-                </div>
-                <div className="wallet">You have ${user.money}</div>
-                <div className="bet-buttons">
-                  <button disabled={isBetting || betAmount > user.money || betAmount < 1 || myBet !== null} onClick={() => handleBet(battleState.fighters[0].id, battleState.fighters[0].name)} className="bet-btn p1-bet">
-                    {myBet?.fighterId === battleState.fighters[0].id ? "Bet Placed!" : `Bet on ${battleState.fighters[0].name}`} <br/>
-                    <small>Pays {matchOdds[battleState.fighters[0].id]}x</small>
-                  </button>
-                  <button disabled={isBetting || betAmount > user.money || betAmount < 1 || myBet !== null} onClick={() => handleBet(battleState.fighters[1].id, battleState.fighters[1].name)} className="bet-btn p2-bet">
-                    {myBet?.fighterId === battleState.fighters[1].id ? "Bet Placed!" : `Bet on ${battleState.fighters[1].name}`} <br/>
-                    <small>Pays {matchOdds[battleState.fighters[1].id]}x</small>
-                  </button>
-                </div>
-              </div>
-            ) : ( <p className="login-prompt">Log in from the Account tab to place bets!</p> )}
-          </div>
-        ) : (
-          <div key="jim-scribble" className="commentator-container slide-up-fade">
-            <img 
-              src={commentatorSrc} 
-              alt="Jim Scribble" 
-              className={`commentator-img ${isTalking ? 'talking' : ''}`} 
-            />
-          </div>
-        )}
-      </div>
-
-      {/* ANIMATED DIALOGUE BOX BANNER */}
-      <div className="">
-        {lastWinner ? (
-          <div key="winner-screen" className="winner-reveal">
-            <h2><span className="action-green">WINNER</span>: {lastWinner}</h2>
-            <div dangerouslySetInnerHTML={{ __html: summaryState }} />
-          </div>
-        ) : latestLog ? (
-          <div key={latestLog.description} className="current-action dialogue-pop">
-            <span className="log-name">{latestLog.actor}</span>
-            <div dangerouslySetInnerHTML={{ __html: latestLog.description }} />
-          </div>
-        ) : (
-          <p key="intro-text" className='introduction dialogue-pop' dangerouslySetInnerHTML={{ __html: introState }} />
-        )}
-      </div>
-      
-      {lastWinner && (
-        <div className="logs-dropdown-section">
-          <button className="toggle-logs-btn" onClick={() => setShowAllLogs(!showAllLogs)}>
-            {showAllLogs ? "▲ Hide Full Battle Logs ▲" : "▼ Show Full Battle Logs ▼"}
-          </button>
-          {showAllLogs && (
-            <div className='logs expanded-logs'>
-              <ul>
-                {logState.map((log, index) => (
-                  <li className='one-log' key={index}>
-                    <span className='log-name'>{log.actor}</span>
-                    <div dangerouslySetInnerHTML={{ __html: log.description }} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-
+      <h2 className="next-match">Next match in: {timer}</h2>
       <div className='arena-floor'>
         <div className='row'>
           {/* FIGHTER 1 (LEFT) */}
@@ -238,6 +156,89 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
           </div>
         </div>
       </div>
+      {/* ANIMATED PRE-MATCH AREA */}
+      <div className="pre-match-area">
+        {typeof timer == 'number' ? (
+          <div key="betting" className="betting-module fade-in-down">
+            <div className="pool-display">
+              <h3>Match Prize Pool: <span className="gold-text">${currentPool}</span></h3>
+            </div>
+            {user ? (
+              <div className="betting-controls">
+                <div className="bet-input-row">
+                  <label>Wager:</label>
+                  <input type="number" min="1" max={user.money} value={betAmount} onChange={(e) => setBetAmount(e.target.value)}/><br/>
+                </div>
+                <div className="wallet">You have ${user.money}</div>
+                <div className="bet-buttons">
+                  <button 
+                    disabled={isBetting || betAmount > user.money || betAmount < 1 || (myBet && myBet.fighterId !== battleState.fighters[0].id)}
+                    onClick={() => handleBet(battleState.fighters[0].id, battleState.fighters[0].name)}
+                    className="bet-btn p1-bet"
+                  >
+                    {myBet?.fighterId === battleState.fighters[0].id ? `Add to Bet ($${myBet.totalWagered} total)` : `Bet on ${battleState.fighters[0].name}`} <br/>
+                    <small>Pays {matchOdds[battleState.fighters[0].id]}x</small>
+                  </button>
+                  
+                  <button 
+                    disabled={isBetting || betAmount > user.money || betAmount < 1 || (myBet && myBet.fighterId !== battleState.fighters[1].id)}
+                    onClick={() => handleBet(battleState.fighters[1].id, battleState.fighters[1].name)}
+                    className="bet-btn p2-bet"
+                  >
+                    {myBet?.fighterId === battleState.fighters[1].id ? `Add to Bet ($${myBet.totalWagered} total)` : `Bet on ${battleState.fighters[1].name}`} <br/>
+                    <small>Pays {matchOdds[battleState.fighters[1].id]}x</small>
+                  </button>
+                </div>
+              </div>
+            ) : ( <p className="login-prompt">Log in from the Account tab to place bets!</p> )}
+          </div>
+        ) : (
+          <div key="jim-scribble" className="commentator-container slide-up-fade">
+            <img 
+              src={commentatorSrc} 
+              alt="Jim Scribble" 
+              className={`commentator-img ${isTalking ? 'talking' : ''}`} 
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ANIMATED DIALOGUE BOX BANNER */}
+      <div className="">
+        {lastWinner ? (
+          <div key="winner-screen" className="winner-reveal">
+            <h2><span className="action-green">WINNER</span>: {lastWinner}</h2>
+            <div dangerouslySetInnerHTML={{ __html: summaryState }} />
+          </div>
+        ) : latestLog ? (
+          <div key={latestLog.description} className="current-action dialogue-pop">
+            <span className="log-name">{latestLog.actor}</span>
+            <div dangerouslySetInnerHTML={{ __html: latestLog.description }} />
+          </div>
+        ) : (
+          <p key="intro-text" className='introduction dialogue-pop' dangerouslySetInnerHTML={{ __html: introState }} />
+        )}
+      </div>
+
+        {lastWinner && (
+        <div className="logs-dropdown-section">
+          <button className="toggle-logs-btn" onClick={() => setShowAllLogs(!showAllLogs)}>
+            {showAllLogs ? "▲ Hide Full Battle Logs ▲" : "▼ Show Full Battle Logs ▼"}
+          </button>
+          {showAllLogs && (
+            <div className='logs expanded-logs'>
+              <ul>
+                {logState.map((log, index) => (
+                  <li className='one-log' key={index}>
+                    <span className='log-name'>{log.actor}</span>
+                    <div dangerouslySetInnerHTML={{ __html: log.description }} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {payoutWon > 0 && (
         <div className="confetti-container">
