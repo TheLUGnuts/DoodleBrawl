@@ -313,7 +313,7 @@ def schedule_next_match():
 
     #emit the card to clients
     socketio.emit('match_scheduled', {
-        'fighters': [c.to_dict() for c in NEXT_MATCH],
+        'fighters': [c.to_dict_display() for c in NEXT_MATCH],
         'starts_in': BATTLE_TIMER,
         'odds': MATCH_ODDS,
         'pool': CURRENT_POOL
@@ -424,7 +424,7 @@ def run_scheduled_battle():
     )
     #emit the result to clients
     socketio.emit('match_result', {
-        'fighters': [c.to_dict() for c in live_match],
+        'fighters': [c.to_dict_display() for c in live_match],
         'log': result.get('battle_log', []),
         'winner': winner_obj.name,
         'summary': result.get('summary', ''),
@@ -452,7 +452,7 @@ def return_current_card():
             'pool': 0
         })
     try:
-        fighters_data = [c.to_dict() for c in current_match]
+        fighters_data = [c.to_dict_display() for c in current_match]
         return jsonify({
             'fighters': fighters_data,
             'starts_in': BATTLE_TIMER,
@@ -479,7 +479,7 @@ def return_top_fighters():
     #just sorted by descending wins for now
     pagination = Character.query.filter_by(is_approved=True).order_by(wl_ratio.desc(), Character.wins.desc()).paginate(page=page, per_page=per_page, error_out=False)
     
-    return jsonify([c.to_dict() for c in pagination.items])
+    return jsonify([c.to_dict_display() for c in pagination.items])
 
 #returns a random assortment of user potraits to populate the bleachers in the arena
 @app.route('/api/crowd')

@@ -64,7 +64,7 @@ class Character(db.Model):
             return user.username if user else "None"
         return "None"
     
-    #return the db entry as a dict with everything we could need.
+    #general dict containing everything except for exact user/manager IDs
     def to_dict(self):
         return {
             "id": self.id,
@@ -84,6 +84,24 @@ class Character(db.Model):
             "titles": self.titles
         }
     
+    #dict used for displaying fighters. Doesn't include stats or IDs
+    #this should be used for roster and arena views so we don't accidentally reveal character stats.
+    def to_dict_display(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "wins": self.wins,
+            "losses": self.losses,
+            "description": self.description,
+            "image_file": self.image_file,
+            "creator_name": self.get_creator_name(),
+            "manager_name": self.get_manager_name(),
+            "popularity": self.popularity,
+            "alignment": self.alignment,
+            "titles": self.titles
+        }
+    
+    #dict with everything, including user/manager IDs
     def to_dict_debug(self):
         return {
             "id": self.id,
