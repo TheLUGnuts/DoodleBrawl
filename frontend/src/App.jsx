@@ -188,7 +188,7 @@ function App() {
     timeouts.current.forEach(clearTimeout);
     timeouts.current = [];
 
-    setLogState([{description: "The match will begin soon!"}]);
+    setLogState([]);
     setLastWinner("");
     setSummaryState("");
     setIntroState("");
