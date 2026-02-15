@@ -35,12 +35,14 @@ app.register_blueprint(account_bp, url_prefix='/api/account')
 db.init_app(app)
 
 #this is to add a new column to the user table.
+#this is used for safe migration of rows into the updated database.
 with app.app_context():
     db.create_all()
     try:
         db.session.execute(text("ALTER TABLE user ADD COLUMN last_submission FLOAT DEFAULT 0.0"))
+        db.session.execute(text("ALTER TABLE user ADD COLUMN last_login_bonus FLOAT DEFAULT 0.0"))
         db.session.commit()
-        print("!-- ADDED 'last_submission' COLUMN TO USER TABLE --!")
+        print("!-- ADDED COLUMNS TO USER TABLE --!")
     except Exception:
         db.session.rollback()
 
@@ -169,6 +171,7 @@ def debug_get_users():
         "money": u.money,
         "creation_time": u.creation_time,
         "last_submission": u.last_submission,
+        "last_login_bonus": u.last_login_bonus,
         "portrait": u.portrait
     } for u in users])
 
@@ -242,12 +245,17 @@ def handle_bet(data):
 def accept_new_character(data):
     if not data: return
     
+    #log in
     creator_id = data.get('creator_id')
     if not creator_id or creator_id == "Unknown":
         return {'status': 'error', 'message': 'You must be logged in to submit a fighter!'}
+    #valid user
     user = User.query.get(creator_id)
     if not user:
         return {'status': 'error', 'message': 'Invalid user account.'}
+    #pay up
+    if user.money < 100:
+        return {'status': 'error', 'message': 'Insufficient funds! Submitting a fighter costs $100.'}
     
     time_since_last = time.time() - user.last_submission
     if time_since_last < 300:
@@ -272,6 +280,8 @@ def accept_new_character(data):
     )
     
     user.last_submission = time.time()
+    user.money -= 100
+
     db.session.add(c)
     db.session.commit()
     

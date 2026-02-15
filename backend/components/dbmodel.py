@@ -18,7 +18,8 @@ class User(UserMixin, db.Model):
     portrait = db.Column(db.Text)                                            #User portrait, stored as a base64 text
     username = db.Column(db.String(32))                                      #Username of account
     money = db.Column(db.Integer, default=100)                               #how much money the user has
-    last_submission = db.Column(db.Float, default=0.0)
+    last_submission = db.Column(db.Float, default=0.0)                       #when did the user last submit a character, used for 5min cooldown
+    last_login_bonus = db.Column(db.Float, default=0.0)                      #timer for tracking login bonus reward
     #One user may manage many characters
     characters = db.relationship('Character', backref='manager', lazy=True)  #who this user 'manages'
 

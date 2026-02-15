@@ -51,6 +51,14 @@ def login_account():
         return jsonify({"error": "Account ID required"}), 400
     user = User.query.get(account_id)
     if user:
+        bonus_awarded = False
+        if time.time() - user.last_login_bonus >= 86400:
+            user.money += 200
+            user.last_login_bonus = time.time()
+            db.session.commit()
+            bonus_awarded = True
+            print(f"$-- DAILY BONUS: Awarded $200 to {user.username} --$")
+
         created_chars = Character.query.filter_by(creator_id=user.id).all()
         managed_chars = user.characters
 
@@ -61,6 +69,7 @@ def login_account():
             "money": user.money,
             "portrait": user.portrait,
             "creation_time": user.creation_time,
+            "bonus_awarded": bonus_awarded,
             "created_characters": [c.to_dict() for c in created_chars],
             "managed_characters": [c.to_dict() for c in managed_chars]
         })
