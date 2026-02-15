@@ -385,3 +385,69 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
+.acting-bounce {
+  animation: actionLunge 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  border-color: #3498db !important; 
+  box-shadow: 0 0 25px rgba(52, 152, 219, 0.8);
+  z-index: 2;
+}
+
+@keyframes actionLunge {
+  0% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.08) translateY(-15px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+.action-attack {
+  animation: actionLunge 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  border-color: #e74c3c !important; 
+  box-shadow: 0 0 25px rgba(231, 76, 60, 0.8);
+  z-index: 100; 
+}
+
+@keyframes actionLunge {
+  0% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.08) translateY(-15px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+.action-dodge {
+  animation: actionDodge 0.4s ease-out forwards;
+  border-color: #bdc3c7 !important;
+  box-shadow: 0 0 20px rgba(189, 195, 199, 0.5);
+}
+
+@keyframes actionDodge {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.85) rotate(-5deg); filter: blur(2px); }
+  100% { transform: scale(1) rotate(0deg); filter: blur(0); }
+}
+
+.action-power {
+  animation: actionPower 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  border-color: #8e44ad !important;
+  box-shadow: 0 0 35px rgba(142, 68, 173, 0.9);
+  z-index: 100;
+}
+
+@keyframes actionPower {
+  0% { transform: scale(1) translateY(0); }
+  40% { transform: scale(1.15) translateY(-25px) rotate(5deg); } 
+  50% { transform: scale(1.2) translateY(10px) rotate(-5deg); }  
+  100% { transform: scale(1) translateY(0) rotate(0); }
+}
+
+.action-agility {
+  animation: actionAgility 0.5s ease-in-out forwards;
+  border-color: #2ecc71 !important;
+  box-shadow: 0 0 20px rgba(46, 204, 113, 0.8);
+  z-index: 100;
+}
+
+@keyframes actionAgility {
+  0% { transform: translateY(0); }
+  30% { transform: translateY(-40px) scale(0.9); } 
+  70% { transform: translateY(-40px) scale(0.9); } 
+  100% { transform: translateY(0) scale(1); }
+}
+

@@ -107,6 +107,9 @@ export default function Account({user, onLogin, onLogout}) {
       });
       const data = await response.json();
       if (data.status === 'success') {
+        if (data.bonus_awarded) {
+            alert("Daily Login Bonus! You received $200!");
+        }
         onLogin(data); // Pass data up to App.jsx
       } else {
         setError(data.error || "Login Failed");

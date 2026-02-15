@@ -104,6 +104,21 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
 
   //latest log for immediate display
   const latestLog = logState.length > 0 ? logState[logState.length - 1] : null;
+  //who is currently acting
+  const p0Acting = latestLog && latestLog.actor === battleState.fighters[0].name;
+  const p1Acting = latestLog && latestLog.actor === battleState.fighters[1].name;
+
+  const getActionClass = (isActing) => {
+    if (!isActing || !latestLog || !latestLog.action) return '';
+    
+    switch (latestLog.action.toUpperCase()) {
+      case 'ATTACK': return 'action-attack';
+      case 'DODGE': return 'action-dodge';
+      case 'POWER': return 'action-power';
+      case 'AGILITY': return 'action-agility';
+      default: return 'action-attack';
+    }
+  };
 
   ////////////////////////////////
   //       HTML RENDERING       //
@@ -112,7 +127,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
     <div className='root'>
       <h2>Next match in: {timer}</h2>
       
-      {/* --- ANIMATED PRE-MATCH AREA --- */}
+      {/* ANIMATED PRE-MATCH AREA */}
       <div className="pre-match-area">
         {typeof timer == 'number' ? (
           <div key="betting" className="betting-module fade-in-down">
@@ -150,7 +165,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
         )}
       </div>
 
-      {/* --- ANIMATED DIALOGUE BOX BANNER --- */}
+      {/* ANIMATED DIALOGUE BOX BANNER */}
       <div className="">
         {lastWinner ? (
           <div key="winner-screen" className="winner-reveal">
@@ -198,9 +213,15 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
                 {battleState.fighters[0].titles.length !== 0 ? battleState.fighters[0].titles.join(", ") : battleState.fighters[0].alignment}
               </p>
             </div>
-            <div className='fighter-img' style={{ position: 'relative' }}>
+
+            <div 
+              className={`fighter-img ${getActionClass(p0Acting)}`} 
+              key={p0Acting ? latestLog.description : 'idle-1'}
+              style={{ position: 'relative' }}
+            >
               {battleState && <ImageViewer compressedBase64={battleState.fighters[0].image_file} isWinner={lastWinner && lastWinner === battleState.fighters[0].name} isLoser={lastWinner && lastWinner !== battleState.fighters[0].name} titles={battleState.fighters[0].titles} />} 
             </div>
+
             <div className='stats-footer'>
               <p>Wins: {battleState.fighters[0].wins} | Losses: {battleState.fighters[0].losses}</p>
             </div>
@@ -214,9 +235,15 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
                 {battleState.fighters[1].titles.length !== 0 ? battleState.fighters[1].titles.join(", ") : battleState.fighters[1].alignment}
               </p>
             </div>
-            <div className='fighter-img' style={{ position: 'relative' }}>
+
+            <div 
+              className={`fighter-img ${getActionClass(p1Acting)}`} 
+              key={p1Acting ? latestLog.description : 'idle-1'}
+              style={{ position: 'relative' }}
+            >
               {battleState && <ImageViewer compressedBase64={battleState.fighters[1].image_file} isWinner={lastWinner && lastWinner === battleState.fighters[1].name} isLoser={lastWinner && lastWinner !== battleState.fighters[1].name} titles={battleState.fighters[1].titles} />} 
             </div>
+
             <div className='stats-footer'>
               <p>Wins: {battleState.fighters[1].wins} | Losses: {battleState.fighters[1].losses}</p>
             </div>
