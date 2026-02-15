@@ -1,5 +1,7 @@
 .root {
   color: #000;
+  overflow-x: hidden;
+  position: relative;
 }
 
 .column {
@@ -41,6 +43,9 @@
 
 .logs {
   margin-top: 10px;
+  background-color: #eeeeee;
+  border: 3px dotted black;
+  padding-bottom: 10px;
 }
 
 .one-log {
@@ -63,7 +68,7 @@
   margin-top: 5px;
   display: inline;
   max-height: 90%;
-  transform:scale(80%)
+  transform: scale(80%)
 }
 
 @keyframes winner-pulse {
@@ -71,10 +76,12 @@
     box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
     border-color: gold;
   }
+
   70% {
     box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0);
     border-color: gold;
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
     border-color: gold;
@@ -99,7 +106,7 @@
 .image-wrapper img {
   display: inline-block;
   vertical-align: bottom;
-  max-width: 100%; 
+  max-width: 100%;
 }
 
 .champ-badge {
@@ -107,9 +114,9 @@
   top: 6px;
   left: -15px;
   width: 150px;
-  transform: rotate(-27deg); 
-  z-index: 10; 
-  pointer-events: none; 
+  transform: rotate(-27deg);
+  z-index: 10;
+  pointer-events: none;
 }
 
 .introduction {
@@ -117,38 +124,32 @@
   font-weight: bold;
 }
 
-.alignment-good {
+.good {
   color: #2ecc71;
   font-weight: bold;
   text-transform: capitalize;
 }
 
-.alignment-evil {
+.evil {
   color: #9b59b6;
   font-weight: bold;
   text-transform: capitalize;
 }
 
-.alignment-neutral {
+.neutral {
   color: #333333;
   font-weight: bold;
   text-transform: capitalize;
 }
 
 .commentator-container {
-  position: fixed;
-  bottom: -10px;
-  right: 5px;
-  z-index: 1000;
-  pointer-events: none;
-  transform: translateY(100px);
-  animation: slideUpFadeIn 1s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+  display: inline;
 }
 
 .commentator-img {
-  max-height: 250px;
+  display: inline;
+  max-height: 180px;
   width: auto;
-  transform-origin: bottom center;
   border: 4px solid #000;
 }
 
@@ -163,8 +164,224 @@
 }
 
 @keyframes jimTalkBounce {
-  0%, 100% { transform: scaleY(1) translateY(0); }
-  25% { transform: scaleY(1.05) translateY(-5px); }
-  50% { transform: scaleY(0.95) translateY(2px); }
-  75% { transform: scaleY(1.02) translateY(-2px); }
+
+  0%,
+  100% {
+    transform: scaleY(1) translateY(0);
+  }
+
+  25% {
+    transform: scaleY(1.05) translateY(-5px);
+  }
+
+  50% {
+    transform: scaleY(0.95) translateY(2px);
+  }
+
+  75% {
+    transform: scaleY(1.02) translateY(-2px);
+  }
 }
+
+.betting-module {
+  background: #ffffff;
+  border: 2px solid #444;
+  padding: 3px;
+  margin: 10px auto 30px auto;
+  max-width: 600px;
+  color: rgb(0, 0, 0);
+}
+
+.pool-display h3 {
+  margin: 0 0 15px 0;
+  text-align: center;
+  font-size: 1.5em;
+  letter-spacing: 1px;
+}
+
+.betting-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.bet-input-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  font-weight: bold;
+}
+
+.bet-input-row input {
+  padding: 8px;
+  font-size: 1.1em;
+  border: 1px solid #666;
+  width: 100px;
+  text-align: center;
+}
+
+.wallet {
+  color: #2ecc71;
+}
+
+.bet-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+
+.bet-btn {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  font-size: .8em;
+  font-weight: bold;
+  cursor: pointer;
+  color: white;
+}
+
+.bet-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.bet-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.p1-bet {
+  background-color: #834d4d;
+  border: 2px solid black;
+}
+
+.p2-bet {
+  background-color: #94c6ff;
+  color: black;
+  border: 2px solid black;
+}
+
+.bet-btn small {
+  display: block;
+  font-weight: normal;
+  font-size: 0.8em;
+  opacity: 0.9;
+  margin-top: 5px;
+}
+
+.login-prompt {
+  text-align: center;
+  color: #aaa;
+  font-style: italic;
+  margin: 0;
+}
+
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.payout-text {
+  position: absolute;
+  font-size: 6em;
+  color: #2ecc71;
+  animation: payoutPopUp 3.5s ease-out forwards;
+  z-index: 10000;
+  font-weight: bolder;
+}
+
+.lost-text {
+  position: absolute;
+  font-size: 6em;
+  color: #ff1212;
+  animation: payoutPopUp 3.5s ease-out forwards;
+  z-index: 10000;
+  font-weight: bolder;
+}
+
+.cash-confetti {
+  position: absolute;
+  top: -150px;
+  animation: moneyFall 3s linear forwards;
+  filter: drop-shadow(0px 5px 5px rgba(0, 0, 0, 0.5));
+}
+
+@keyframes payoutPopUp {
+  0% {
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes moneyFall {
+  0% {
+    transform: translateY(0vh) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.current-action {
+  margin-top: 10px;
+  width: fit-content;
+  display: inline;
+}
+
+.dialogue-pop {
+  animation: typeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes typeIn {
+  0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.winner-reveal {
+  animation: grandReveal 0.8s ease-out forwards;
+}
+
+@keyframes grandReveal {
+  0% { opacity: 0; transform: scale(0.8); filter: blur(4px); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+.fade-in-down {
+  animation: fadeInDown 0.4s ease-out forwards;
+}
+
+@keyframes fadeInDown {
+  0% { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up-fade {
+  animation: slideUpFadeIn 0.5s ease-out forwards;
+}
+
+@keyframes slideUpFadeIn {
+  0% { opacity: 0; transform: translateY(50px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+

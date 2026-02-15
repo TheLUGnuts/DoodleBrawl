@@ -20,9 +20,13 @@ function App() {
   const [introState, setIntroState] = useState("");
   const [user, setUser] = useState(null);
   const [log, setLoading] = useState(true);
+  const [matchOdds, setMatchOdds] = useState({});
+  const [currentPool, setCurrentPool] = useState(0);
+  const [myBet, setMyBet] = useState(null);
+  const [payoutWon, setPayoutWon] = useState(0);
 
   const handleResult = (data) => {
-    // Takes data from a fight and places it in the correct places
+    //takes data from a fight and places it in the correct places
     setIntroState(data.introduction);
     console.log("RESULT ------")
     //in order to preview the new character name and description we used a mixed battle state
@@ -36,7 +40,8 @@ function App() {
           ...newFighter,
           wins: oldFighter ? oldFighter.wins : newFighter.wins,
           losses: oldFighter ? oldFighter.losses : newFighter.losses,
-          titles: oldFighter ? oldFighter.titles : newFighter.titles
+          titles: oldFighter ? oldFighter.titles : newFighter.titles,
+          alignment: oldFighter ? oldFighter.alignment : newFighter.alignment
         };
       });
       return mixedState;
@@ -52,7 +57,7 @@ function App() {
     timeouts.current.forEach(clearTimeout);
     timeouts.current = [];
 
-    const LOG_DELAY = 1500 // 1.5 seconds between message
+    const LOG_DELAY = 3000 // 3 seconds between message
     data.log.forEach((log, index) => {
       const t = setTimeout(() => {
         setLogState(prev => [...prev, log]);
@@ -65,16 +70,24 @@ function App() {
       setLastWinner(data.winner);
       setSummaryState(data.summary);
       setBattleState(data); 
-      console.log("Battle finished.");
+      setMyBet(currentBet => {
+          if (currentBet && data.winner === currentBet.fighterName) {
+              setPayoutWon(currentBet.payout);
+          } else {
+            setPayoutWon(-1);
+          }
+          return currentBet; 
+      });
+      const savedID = localStorage.getItem("doodle_brawl_id"); //this refreshed the users login to update their money once the fight logs are done processing.
+      if (savedID) verifyLogin(savedID);
     }, totalTime);
     timeouts.current.push(tWinner);
   }
 
   function processFightData(data) {
     // Processes fighting data
-    console.log(data);
-
-    // Fighter images
+    if (data.odds) setMatchOdds(data.odds);
+    if (data.pool) setCurrentPool(data.pool);
     setBattleState(data);
   }
 
@@ -110,7 +123,7 @@ function App() {
 
   const handleAuthSuccess = (userData) => {
     localStorage.setItem("doodle_brawl_id", userData.id || userData.account_id);
-    // If it was a registration, we might need to fetch the full profile?
+    //if it was a registration, we might need to fetch the full profile?
     verifyLogin(userData.id || userData.account_id);
   };
 
@@ -135,13 +148,14 @@ function App() {
       }
     };
 
-  // Listen for and load battles from backend
+  //listen for and load battles from backend
   useEffect(() => {
-    // Register listeners
+    //register listeners
     socket.on('match_scheduled', handleSchedule);
     socket.on('timer_update', handleTimerUpdate);
     socket.on('match_result', handleResult);
     socket.on('character_added', handleCharacterAdded);
+    socket.on('pool_update', (data) => {setCurrentPool(data.pool)});
 
     // Get initial fighter info from scheduled battle
     fetch(`${API_URL}/api/card`)
@@ -164,7 +178,8 @@ function App() {
       socket.off('match_scheduled', handleSchedule);
       socket.off('timer_update', handleTimerUpdate);
       socket.off('match_result', handleResult);
-      socket.off('character_added', handleCharacterAdded)
+      socket.off('character_added', handleCharacterAdded);
+      socket.off('pool_update');
     }
   }, []);
 
@@ -178,10 +193,14 @@ function App() {
     setSummaryState("");
     setIntroState("");
     processFightData(data);
+    setMyBet(null);
+    if (data.odds) setMatchOdds(data.odds);
+    if (data.pool) setCurrentPool(data.pool);
+    setPayoutWon(0);
   }
 
   const handleTimerUpdate = (data) => {
-    console.log("TIMER UPDATE ------")
+    //console.log("TIMER UPDATE ------")
     if (data.time_left > 0) {
       setTimer(data.time_left);
     } 
@@ -191,7 +210,7 @@ function App() {
     else {
       setTimer("Scheduling...")
     }
-    console.log(data);
+    //console.log(data);
   }
 
   // Enables connected/disconnected status events
@@ -264,7 +283,7 @@ function App() {
 
         {activeTab === 'battleground' && (
         <div class='battleground'>
-          <ArenaView battleState={battleState} timer={timer} logState={logState} lastWinner={lastWinner} summaryState={summaryState} introState={introState}/>
+          <ArenaView battleState={battleState} timer={timer} logState={logState} lastWinner={lastWinner} summaryState={summaryState} introState={introState} user={user} setUser={setUser} matchOdds={matchOdds} currentPool={currentPool} myBet={myBet} setMyBet={setMyBet} payoutWon={payoutWon}/>
           <hr/>
         </div>
         )}

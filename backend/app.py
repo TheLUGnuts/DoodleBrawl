@@ -1,16 +1,16 @@
 #jfr, cwf, tjc
 #Created for the 2026 VCU 24HR Hackathon
 
-import os, re, time
+import os, re, time, random
 from flask_cors                                                    import CORS
-from sqlalchemy                                                    import text
 from components.genclient                                     import Genclient
+from sqlalchemy                                              import case, text
 from components.account                                      import account_bp
 from components.serverdata                                   import ServerData
 from dotenv                                                 import load_dotenv
 from sqlalchemy.orm.attributes                            import flag_modified
 from flask_socketio                                      import SocketIO, emit
-from components.dbmodel                      import db, Character, Match, User
+from components.dbmodel                             import db, Character, User
 from flask                     import Flask, render_template, jsonify, request
 
 
@@ -45,12 +45,15 @@ with app.app_context():
         db.session.rollback()
 
 #Global variables
-BATTLE_TIMER=180                                                        #3 minutes in seconds
-CURRENT_TIMER = BATTLE_TIMER                                            #global time tracker
-NEXT_MATCH = None                                                       #holds the [char1, char2] for upcoming fight.
-CLIENT = Genclient(os.getenv('GEMINI_API'))                             #genclient class for API calling
-DATA = ServerData(CLIENT)                                               #Data handling class
-FROZEN = False                                                          #For freezing the timer
+BATTLE_TIMER=180                            #3 minutes in seconds
+CURRENT_TIMER = BATTLE_TIMER                #global time tracker
+NEXT_MATCH = None                           #holds the [char1, char2] for upcoming fight.
+CLIENT = Genclient(os.getenv('GEMINI_API')) #genclient class for API calling
+DATA = ServerData(CLIENT)                   #Data handling class
+FROZEN = False                              #For freezing the timer
+CURRENT_BETS = []                           #List of dicts like so: {'user_id': id, 'fighter_id': id, 'amount': int}
+MATCH_ODDS = {}                             #dict: {fighter_id: float_odds}
+CURRENT_POOL = 0                            #the betting pool for this match
 
 def is_champion(status):
     if re.findall("Champion", status) and not re.findall("Former", status):
@@ -200,6 +203,39 @@ def debug_update_user(user_id):
 #        FRONTEND HANDLERS       #
 ##################################
 
+#handles a user placing a bet
+#a bet requires three things:
+#1. A consideration (your stake in the bet)
+#2. A risk (the chance)
+#3. A prize
+@socketio.on("place_bet")
+def handle_bet(data):
+    global CURRENT_POOL, CURRENT_BETS
+    user_id = data.get('user_id')
+    fighter_id = data.get('fighter_id')
+    amount = int(data.get('amount', 0))
+
+    #you wagered nothing or don't have enough money? get lost
+    if amount <= 0:
+        return {'status': 'error', 'message': 'Invalid bet amount.'}
+    user = User.query.get(user_id)
+    if not user or user.money < amount:
+        return {'status': 'error', 'message': 'Insufficient funds!'}
+    user.money -= amount
+
+    CURRENT_BETS.append({
+        'user_id': user_id,
+        'fighter_id': fighter_id,
+        'amount': amount
+    })
+
+    CURRENT_POOL += amount
+    db.session.commit()
+    #Potential problem, a server restart in the midst of a battle OR an API error with Gemini may cause people to lose their money.
+    print(f"$-- BET PLACED BY {user.username} OF {amount} ON {fighter_id}! --$")
+    emit('pool_update', {'pool': CURRENT_POOL}, broadcast=True)
+    return {'status': 'success', 'new_balance': user.money}
+
 #handles frontend submission of a new character
 #converts their information into JSON format using the character class
 @socketio.on('submit_character')
@@ -245,7 +281,7 @@ def accept_new_character(data):
 #chooses two random characters for the next match and schedules them to fight
 #prioritizes new characters
 def schedule_next_match():
-    global NEXT_MATCH
+    global NEXT_MATCH, CURRENT_POOL, MATCH_ODDS, CURRENT_BETS
     candidates = DATA.get_candidates_for_match()
     
     if not candidates:
@@ -256,10 +292,31 @@ def schedule_next_match():
     NEXT_MATCH = candidates
     print(f"!-- NEXT MATCH: {NEXT_MATCH[0].name} vs {NEXT_MATCH[1].name} --!")
 
+    p1 = DATA.get_character(NEXT_MATCH[0].id)
+    p2 = DATA.get_character(NEXT_MATCH[1].id)
+    #calculate the odds of either fighter winning
+    #this will be used in determining the *risk* of the bet
+    score1 = (p1.wins + 1.0) / (p1.losses + 1.0)
+    score2 = (p2.wins + 1.0) / (p2.losses + 1.0)
+    total_score = score1 + score2
+    odds1 = max(1.1, round(total_score / score1, 2))
+    odds2 = max(1.1, round(total_score / score2, 2))
+    MATCH_ODDS = {p1.id : odds1, p2.id : odds2}
+    
+    #initialize a starting pool of money
+    #we're going to create the starting pool by summing their popularities, then multiplying it by 10.
+    p1_popularity = p1.popularity if p1.popularity else 1
+    p2_popularity = p2.popularity if p2.popularity else 1
+    total_popularity = p1_popularity + p2_popularity
+    CURRENT_POOL = total_popularity * 100
+    CURRENT_BETS = []
+
     #emit the card to clients
     socketio.emit('match_scheduled', {
         'fighters': [c.to_dict() for c in NEXT_MATCH],
         'starts_in': BATTLE_TIMER,
+        'odds': MATCH_ODDS,
+        'pool': CURRENT_POOL
     })
 
 #conduct the battle between the selected fighters. Uses the genclient for the api call
@@ -344,6 +401,15 @@ def run_scheduled_battle():
 
     winner_obj.wins += 1
     loser_obj.losses += 1
+
+    #Resolving wagers
+    for bet in CURRENT_BETS:
+        if bet['fighter_id'] == winner_obj.id:
+            user = User.query.get(bet['user_id'])
+            if user:
+                payout = int(bet['amount'] * MATCH_ODDS[winner_obj.id])
+                user.money += payout
+                print(f"$-- USER {user.username} HAS WON ${payout}! --$")
     
     DATA.commit() #save all DB changes
 
@@ -375,20 +441,24 @@ def run_scheduled_battle():
 #Grabs the current card info
 @app.route('/api/card')
 def return_current_card():
-    global NEXT_MATCH
+    global NEXT_MATCH, MATCH_ODDS, CURRENT_POOL, CURRENT_TIMER
     current_match = NEXT_MATCH
     if current_match is None:
         return jsonify({
             'fighters': [],
             'starts_in': 0,
-            'status': 'waiting'
+            'status': 'waiting',
+            'odds': {},
+            'pool': 0
         })
     try:
         fighters_data = [c.to_dict() for c in current_match]
         return jsonify({
             'fighters': fighters_data,
             'starts_in': BATTLE_TIMER,
-            'status': 'scheduled'
+            'status': 'scheduled',
+            'odds': MATCH_ODDS,
+            'pool': CURRENT_POOL
         })
     except Exception as e:
         print(f"!-- ERROR SERVING CARD: {e} --!")
@@ -401,12 +471,32 @@ def return_top_fighters():
     data = request.get_json()
     page = data.get('page', 1)
     per_page = 10
-    
+
+    wl_ratio = case(
+        (Character.losses == 0, Character.wins * 1.0),
+        else_=(Character.wins * 1.0) / Character.losses
+    )
     #just sorted by descending wins for now
-    pagination = Character.query.filter_by(is_approved=True).order_by(Character.wins.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    pagination = Character.query.filter_by(is_approved=True).order_by(wl_ratio.desc(), Character.wins.desc()).paginate(page=page, per_page=per_page, error_out=False)
     
     return jsonify([c.to_dict() for c in pagination.items])
 
+#returns a random assortment of user potraits to populate the bleachers in the arena
+@app.route('/api/crowd')
+def return_crowd():
+    try:
+        #grab all user portraits 
+        users_with_portraits = User.query.filter(User.portrait != None).all()
+        
+        #randomly select up to 24 of them (12 for each side)
+        selected_users = random.sample(users_with_portraits, min(len(users_with_portraits), 12))
+        
+        #return a json of the image data
+        return jsonify([u.portrait for u in selected_users])
+    except Exception as e:
+        print(f"!-- ERROR FETCHING CROWD: {e} --!")
+        return jsonify([])
+    
 #Default app route
 @app.route('/')
 def index():
