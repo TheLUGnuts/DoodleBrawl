@@ -70,33 +70,13 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
     );
   }
 
-  function ImageViewer({ compressedBase64, isWinner, isLoser, titles }) {
-    let className = '';
+  function ImageViewer({ compressedBase64, titles }) {
     const base64 = decompressBase64Image(compressedBase64);
-
-    if (isWinner) className = 'winner-img';
-    if (isLoser) className = 'loser-img';
-
     return (
       <div className="image-wrapper">
-        <img
-          className={className}
-          src={`data:image/webp;base64,${base64}`}
-          alt="Fighter Image"
-        />
+        <img src={`data:image/webp;base64,${base64}`} alt="Fighter Image" />
         {titles && titles.map((title, index) => (
-          <img 
-            key={index}
-            className="champ-badge" 
-            src="./champ.png" 
-            alt="Champion Badge" 
-            title={title}
-            style={{
-              top: `${6 + (index * 20)}px`,
-              left: `${-15 + (index * 15)}px`,
-              zIndex: 10 - index
-            }}
-          />
+          <img key={index} className="champ-badge" src="./champ.png" alt="Champion Badge" title={title} style={{ top: `${6 + (index * 20)}px`, left: `${-15 + (index * 15)}px`, zIndex: 10 - index }} />
         ))}
       </div>
     );
@@ -109,6 +89,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
   const p1Acting = latestLog && latestLog.actor === battleState.fighters[1].name;
 
   const getActionClass = (isActing) => {
+    if (lastWinner) return ''; 
     if (!isActing || !latestLog || !latestLog.action) return '';
     
     switch (latestLog.action.toUpperCase()) {
@@ -116,8 +97,14 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
       case 'DODGE': return 'action-dodge';
       case 'POWER': return 'action-power';
       case 'AGILITY': return 'action-agility';
-      default: return 'action-attack';
+      case 'ACROBATIC': return 'action-agility';
+      default: return 'action-attack'; 
     }
+  };
+
+  const getMatchStatusClass = (fighterName) => {
+    if (!lastWinner) return '';
+    return lastWinner === fighterName ? 'winner-img' : 'loser-img';
   };
 
   ////////////////////////////////
@@ -197,7 +184,6 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
                   </li>
                 ))}
               </ul>
-              <p className='summary' dangerouslySetInnerHTML={{ __html: summaryState }} />
             </div>
           )}
         </div>
@@ -215,11 +201,12 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
             </div>
 
             <div 
-              className={`fighter-img ${getActionClass(p0Acting)}`} 
-              key={p0Acting ? latestLog.description : 'idle-1'}
+              className={`fighter-img ${getActionClass(p0Acting)} ${getMatchStatusClass(battleState.fighters[0].name)}`} 
+              key={p0Acting && !lastWinner ? latestLog.description : 'idle-1'}
               style={{ position: 'relative' }}
             >
-              {battleState && <ImageViewer compressedBase64={battleState.fighters[0].image_file} isWinner={lastWinner && lastWinner === battleState.fighters[0].name} isLoser={lastWinner && lastWinner !== battleState.fighters[0].name} titles={battleState.fighters[0].titles} />} 
+              {/* Removed isWinner and isLoser props from here */}
+              {battleState && <ImageViewer compressedBase64={battleState.fighters[0].image_file} titles={battleState.fighters[0].titles} />} 
             </div>
 
             <div className='stats-footer'>
@@ -237,11 +224,12 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
             </div>
 
             <div 
-              className={`fighter-img ${getActionClass(p1Acting)}`} 
-              key={p1Acting ? latestLog.description : 'idle-1'}
+              className={`fighter-img ${getActionClass(p1Acting)} ${getMatchStatusClass(battleState.fighters[1].name)}`} 
+              key={p1Acting && !lastWinner ? latestLog.description : 'idle-2'}
               style={{ position: 'relative' }}
             >
-              {battleState && <ImageViewer compressedBase64={battleState.fighters[1].image_file} isWinner={lastWinner && lastWinner === battleState.fighters[1].name} isLoser={lastWinner && lastWinner !== battleState.fighters[1].name} titles={battleState.fighters[1].titles} />} 
+              {/* Removed isWinner and isLoser props from here */}
+              {battleState && <ImageViewer compressedBase64={battleState.fighters[1].image_file} titles={battleState.fighters[1].titles} />} 
             </div>
 
             <div className='stats-footer'>

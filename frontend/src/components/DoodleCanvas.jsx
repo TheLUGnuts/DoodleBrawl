@@ -399,7 +399,7 @@ const DoodleCanvas = ({ isAccount, canvWidth, canvHeight, onCanvasChange, userID
                 className={`tool-button submit`}
                 style={{ opacity: !userID ? 0.5 : 1 }}
             >
-                {!userID ? "Login to Submit" : "Submit for Battle!"}
+                {!userID ? "Login to Submit" : "Submit for Battle! ($100)"}
             </button>
           )}
         </div>

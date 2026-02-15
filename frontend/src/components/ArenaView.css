@@ -5,19 +5,32 @@
 }
 
 .column {
-  float: left;
-  width: 50%;
-  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  width: auto; 
+}
+
+.row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  flex-wrap: wrap;       /* for wrapping in case of teams later on*/
+  gap: 60px;             /* space between each fighter */
+  margin-top: 20px;
+  padding-left: 30px;
+  padding-right: 30px;
+  padding-bottom: 20px;
 }
 
 .row::after {
-  content: "";
-  clear: both;
-  display: table;
+  display: none; 
 }
 
 .fighter-name {
-  font-size: 1.1em;
+  font-size: 1.3em;
+  font-weight: bolder;
+  margin: 0 0 5px 0;
 }
 
 .fighter-1 {
@@ -33,7 +46,9 @@
 }
 
 .fighter-img {
-  border: outset;
+  border: outset 3px;
+  background-color: white;
+  margin: 10px 10px 20px 10px;
 }
 
 .summary {
@@ -41,10 +56,19 @@
   font-size: 1.2em;
 }
 
+.logs-dropdown-section {
+  align-items: center;
+  margin-top: 5px;
+}
+
 .logs {
   margin-top: 10px;
+  width: fit-content;
+  margin-left: 25%;
+  margin-right: 25%;
   background-color: #eeeeee;
   border: 3px dotted black;
+  border-radius: 20px;
   padding-bottom: 10px;
 }
 
@@ -100,23 +124,28 @@
 
 .image-wrapper {
   position: relative;
-  display: inline-block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .image-wrapper img {
-  display: inline-block;
-  vertical-align: bottom;
-  max-width: 100%;
+  width: 350px;
+  height: 200px;
+  
+  object-fit: cover; 
+  display: block;
+  box-sizing: border-box; 
 }
 
 .champ-badge {
   position: absolute;
-  top: 6px;
+  top: -10px;
   left: -15px;
-  width: 150px;
-  transform: rotate(-27deg);
+  width: 100px; 
+  transform: rotate(-25deg);
   z-index: 10;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .introduction {
@@ -151,6 +180,7 @@
   max-height: 180px;
   width: auto;
   border: 4px solid #000;
+  margin-bottom: 5px;
 }
 
 .commentator-img.talking {
@@ -432,8 +462,8 @@
 
 @keyframes actionPower {
   0% { transform: scale(1) translateY(0); }
-  40% { transform: scale(1.15) translateY(-25px) rotate(5deg); } 
-  50% { transform: scale(1.2) translateY(10px) rotate(-5deg); }  
+  40% { transform: scale(1.10) translateY(-25px) rotate(5deg); } 
+  50% { transform: scale(1.15) translateY(10px) rotate(-5deg); }  
   100% { transform: scale(1) translateY(0) rotate(0); }
 }
 
