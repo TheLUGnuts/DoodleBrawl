@@ -1,54 +1,79 @@
 import { useState, useEffect } from 'react';
 import './ArenaView.css';
 import '../text_decor.css';
-import { socket, decompressBase64Image } from '../socket';
+import { decompressBase64Image, socket, API_URL } from '../socket';
 
-export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState, introState, user, setUser, currentPool, matchOdds}) {
-  //jim scribble is speaking
+export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState, introState, user, setUser, matchOdds, currentPool, myBet, setMyBet, payoutWon}) {
   const [isTalking, setIsTalking] = useState(false);
-  //betting stuff
   const [betAmount, setBetAmount] = useState(10);
   const [isBetting, setIsBetting] = useState(false);
+  const [crowd, setCrowd] = useState([]);
+  const [showAllLogs, setShowAllLogs] = useState(false);
 
+  //jim scribble is speaking
   useEffect(() => {
     if (logState && logState.length > 0) {
       setIsTalking(true);
-      const timerId = setTimeout(() => setIsTalking(false), 400); // Stop shaking after 400ms
+      const timerId = setTimeout(() => setIsTalking(false), 400);
       return () => clearTimeout(timerId);
     }
   }, [logState]);
 
-  const handleBet = (fighterId) => {
+  //make a new crowd to populate the bleachers
+  useEffect(() => {
+    if (battleState && battleState.fighters && battleState.fighters.length === 2) {
+      setShowAllLogs(false);
+      
+      fetch(`${API_URL}/api/crowd`)
+        .then(res => res.json())
+        .then(data => setCrowd(data))
+        .catch(e => console.error("Failed to fetch crowd:", e));
+    }
+  }, [battleState?.fighters?.[0]?.id]);
+
+  //divide the crowd array in half for the two bleachers
+  const leftCrowd = crowd.slice(0, 6);
+  const rightCrowd = crowd.slice(6, 12);
+
+  const seatPositions = [
+    { top: '15%', left: '10%' },
+    { top: '25%', left: '40%' },
+    { top: '35%', left: '75%' },
+    { top: '55%', left: '15%' },
+    { top: '65%', left: '50%' },
+    { top: '75%', left: '85%' }
+  ];
+
+  const handleBet = (fighterId, fighterName) => {
     if (!user) {
-      alert("You must be logged in to place a bet!");
-      return;
+        alert("You must be logged in to place a bet!");
+        return;
     }
     if (betAmount > user.money) {
-      alert("You don't have enough money for that bet!");
-      return;
+        alert("You don't have enough money for that bet!");
+        return;
     }
+    
     setIsBetting(true);
     socket.emit('place_bet', {
-      user_id: user.id,
-      fighter_id: fighterId,
-      amount: Number(betAmount)
+        user_id: user.id,
+        fighter_id: fighterId,
+        amount: Number(betAmount)
     }, (response) => {
-      setIsBetting(false);
-      if (response.status === 'success') {
-        setUser(prev => ({...prev, money: response.new_balance}));
-      } else {
-        console.log(response.message);
-        alert(response.message);
-      }
+        setIsBetting(false);
+        if (response.status === 'success') {
+            setUser(prev => ({...prev, money: response.new_balance}));
+            const odds = matchOdds[fighterId] || 1.1; 
+            
+            setMyBet({
+              fighterId: fighterId,
+              fighterName: fighterName,
+              payout: Math.floor(betAmount * odds)
+            });
+        } else {
+            alert(response.message);
+        }
     });
-  };
-
-  const getAlignmentClass = (alignment) => {
-    if (!alignment) return 'alignment-neutral';
-    const lower = alignment.toLowerCase();
-    if (lower === 'good') return 'alignment-good';
-    if (lower === 'evil') return 'alignment-evil';
-    return 'alignment-neutral';
   };
 
   if (!battleState || !battleState.fighters || battleState.fighters.length === 0) { return (
@@ -60,21 +85,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
     );
   }
 
-  const hasTitles = (fighter) => fighter.titles && fighter.titles.length > 0;
-
-  const isTitleFight = (
-    (hasTitles(battleState.fighters[0])) || 
-    (hasTitles(battleState.fighters[1]))
-  );
-
-  const shouldShowBelt = (fighter) => {
-    if (lastWinner && isTitleFight) {
-      return lastWinner === fighter.name;
-    }
-    return hasTitles(fighter);
-  };
-
-  function ImageViewer({ compressedBase64, isWinner, isLoser, isChampion }) {
+  function ImageViewer({ compressedBase64, isWinner, isLoser, titles }) {
     let className = '';
     const base64 = decompressBase64Image(compressedBase64);
 
@@ -88,21 +99,120 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
           src={`data:image/webp;base64,${base64}`}
           alt="Fighter Image"
         />
-        {isChampion && 
+        {titles && titles.map((title, index) => (
           <img 
+            key={index}
             className="champ-badge" 
             src="./champ.png" 
             alt="Champion Badge" 
+            title={title}
+            style={{
+              top: `${6 + (index * 20)}px`,
+              left: `${-15 + (index * 15)}px`,
+              zIndex: 10 - index
+            }}
           />
-        }
+        ))}
       </div>
     );
   }
 
+  //latest log for immediate display
+  const latestLog = logState.length > 0 ? logState[logState.length - 1] : null;
+
   return (
-    <div class='root'>
+    <div className='root'>
       <h2>Next match in: {timer}</h2>
-      {logState.length === 0 && battleState.fighters.length === 2 && (
+      <div className="active-log-banner">
+        {lastWinner ? (
+          <h2><span className="action-green">WINNER</span>: {lastWinner}</h2>
+        ) : latestLog ? (
+          <div className="current-action">
+            <span className="log-name">{latestLog.actor}</span>
+            <div dangerouslySetInnerHTML={{ __html: latestLog.description }} />
+          </div>
+        ) : (
+          <p className='introduction' dangerouslySetInnerHTML={{ __html: introState }} />
+        )}
+      </div>
+
+      {/* --- NEW: EXPANDABLE LOGS (Only visible after match ends) --- */}
+      {lastWinner && (
+        <div className="logs-dropdown-section">
+          <button className="toggle-logs-btn" onClick={() => setShowAllLogs(!showAllLogs)}>
+            {showAllLogs ? "▲ Hide Full Battle Logs ▲" : "▼ Show Full Battle Logs ▼"}
+          </button>
+          
+          {showAllLogs && (
+            <div className='logs expanded-logs'>
+              <ul>
+                {logState.map((log, index) => (
+                  <li className='one-log' key={index}>
+                    <span className='log-name'>{log.actor}</span>
+                    <div dangerouslySetInnerHTML={{ __html: log.description }} />
+                  </li>
+                ))}
+              </ul>
+              <p className='summary' dangerouslySetInnerHTML={{ __html: summaryState }} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* --- ARENA FLOOR (Anchors fighters and bleachers to the bottom) --- */}
+      <div className='arena-floor'>
+        <div className='row'>
+          
+          {/* FIGHTER 1 (LEFT) */}
+          <div className='column'>
+            <div className='stats-header'>
+              <p className='fighter-name fighter-1'>{battleState.fighters[0].name}</p>
+              <p>{battleState.fighters[0].titles.length === 0 ? battleState.fighters[0].alignment : ""}</p>
+            </div>
+            
+            <div className='fighter-img' style={{ position: 'relative' }}>
+              <div className="bleachers-container left">
+                 <img src="./bleacher.png" className="bleacher-bg" alt="bleachers" />
+                 {leftCrowd.map((portrait, i) => seatPositions[i] && (
+                    <img key={i} className="crowd-portrait" src={`data:image/webp;base64,${decompressBase64Image(portrait)}`} style={{ ...seatPositions[i], '--random': Math.random() }} alt="crowd member" />
+                 ))}
+              </div>
+              
+              {battleState && <ImageViewer compressedBase64={battleState.fighters[0].image_file} isWinner={lastWinner && lastWinner === battleState.fighters[0].name} isLoser={lastWinner && lastWinner !== battleState.fighters[0].name} titles={battleState.fighters[0].titles} />} 
+            </div>
+            
+            <div className='stats-footer'>
+              <p>Wins: {battleState.fighters[0].wins} | Losses: {battleState.fighters[0].losses}</p>
+            </div>
+          </div>
+
+          {/* FIGHTER 2 (RIGHT) */}
+          <div className='column'>
+            <div className='stats-header'>
+              <p className='fighter-name fighter-2'>{battleState.fighters[1].name}</p>
+              <p>{battleState.fighters[1].titles.length === 0 ? battleState.fighters[1].alignment : ""}</p>
+            </div>
+            
+            <div className='fighter-img' style={{ position: 'relative' }}>
+               <div className="bleachers-container right">
+                 <img src="./bleacher.png" className="bleacher-bg flipped" alt="bleachers" />
+                 {rightCrowd.map((portrait, i) => seatPositions[i] && (
+                    <img key={i} className="crowd-portrait" src={`data:image/webp;base64,${decompressBase64Image(portrait)}`} style={{ top: seatPositions[i].top, right: seatPositions[i].left, '--random': Math.random() }} alt="crowd member" />
+                 ))}
+              </div>
+              
+              {battleState && <ImageViewer compressedBase64={battleState.fighters[1].image_file} isWinner={lastWinner && lastWinner === battleState.fighters[1].name} isLoser={lastWinner && lastWinner !== battleState.fighters[1].name} titles={battleState.fighters[1].titles} />} 
+            </div>
+            
+            <div className='stats-footer'>
+              <p>Wins: {battleState.fighters[1].wins} | Losses: {battleState.fighters[1].losses}</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      
+      {typeof timer == 'number' && (
         <div className="betting-module">
           <div className="pool-display">
             <h3>Match Prize Pool: <span className="gold-text">${currentPool}</span></h3>
@@ -111,33 +221,33 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
           {user ? (
             <div className="betting-controls">
               <div className="bet-input-row">
-                <label>Your Wager:</label>
+                <label>Wager:</label>
                 <input 
                   type="number" 
                   min="1" 
                   max={user.money} 
                   value={betAmount} 
                   onChange={(e) => setBetAmount(e.target.value)} 
-                />
-                <span className="wallet">Wallet: ${user.money}</span>
+                  disabled={myBet !== null}
+                /><br/>
               </div>
-              
+              <div className="wallet">You have ${user.money}</div>
               <div className="bet-buttons">
                 <button 
-                  disabled={isBetting || betAmount > user.money || betAmount < 1}
-                  onClick={() => handleBet(battleState.fighters[0].id)}
+                  disabled={isBetting || betAmount > user.money || betAmount < 1 || myBet !== null}
+                  onClick={() => handleBet(battleState.fighters[0].id, battleState.fighters[0].name)}
                   className="bet-btn p1-bet"
                 >
-                  Bet on {battleState.fighters[0].name} <br/>
+                  {myBet?.fighterId === battleState.fighters[0].id ? "Bet Placed!" : `Bet on ${battleState.fighters[0].name}`} <br/>
                   <small>Pays {matchOdds[battleState.fighters[0].id]}x</small>
                 </button>
                 
                 <button 
-                  disabled={isBetting || betAmount > user.money || betAmount < 1}
-                  onClick={() => handleBet(battleState.fighters[1].id)}
+                  disabled={isBetting || betAmount > user.money || betAmount < 1 || myBet !== null}
+                  onClick={() => handleBet(battleState.fighters[1].id, battleState.fighters[1].name)}
                   className="bet-btn p2-bet"
                 >
-                  Bet on {battleState.fighters[1].name} <br/>
+                  {myBet?.fighterId === battleState.fighters[1].id ? "Bet Placed!" : `Bet on ${battleState.fighters[1].name}`} <br/>
                   <small>Pays {matchOdds[battleState.fighters[1].id]}x</small>
                 </button>
               </div>
@@ -147,55 +257,8 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
           )}
         </div>
       )}
-      <div class='row'>
 
-        {/* FIGHTER 1*/}
-        <div class='column'>
-          <p class='fighter-name fighter-1'>{battleState.fighters[0].name}</p>
-          <p className={getAlignmentClass(battleState.fighters[0].alignment)}>
-            {hasTitles(battleState.fighters[0]) 
-              ? battleState.fighters[0].titles.join(", ") 
-              : battleState.fighters[0].alignment}
-          </p>
-          <div class='fighter-img'>
-            {battleState && 
-            <ImageViewer compressedBase64={battleState.fighters[0].image_file} 
-              isWinner={lastWinner && lastWinner === battleState.fighters[0].name}
-              isLoser={lastWinner && lastWinner !== battleState.fighters[0].name}
-              isChampion={shouldShowBelt(battleState.fighters[0])}
-            />} 
-          </div>
-          <div class='stats'>
-            <p>Fighter Profile: <span dangerouslySetInnerHTML={{ __html: battleState.fighters[0].description }} /></p>
-            <p>Wins: {battleState.fighters[0].wins}</p>
-            <p>Losses: {battleState.fighters[0].losses}</p>
-          </div>
-        </div>
-
-        {/* FIGHTER 2*/}
-        <div class='column'>
-          <p class='fighter-name fighter-2'>{battleState.fighters[1].name}</p>
-          <p className={getAlignmentClass(battleState.fighters[1].alignment)}>
-            {hasTitles(battleState.fighters[1]) 
-              ? battleState.fighters[1].titles.join(", ") 
-              : battleState.fighters[1].alignment}
-          </p>
-          <div class='fighter-img'>
-            {battleState && 
-            <ImageViewer compressedBase64={battleState.fighters[1].image_file} 
-              isWinner={lastWinner && lastWinner === battleState.fighters[1].name}
-              isLoser={lastWinner && lastWinner !== battleState.fighters[1].name}
-              isChampion={shouldShowBelt(battleState.fighters[1])}
-            />} 
-          </div>
-          <div class='stats'>
-            <p>Fighter Profile: <span dangerouslySetInnerHTML={{ __html: battleState.fighters[1].description }} /></p>
-            <p>Wins: {battleState.fighters[1].wins}</p>
-            <p>Losses: {battleState.fighters[1].losses}</p>
-          </div>
-        </div>
-
-      </div>
+      {/* Jim Scribble Commentator */}
       <div className="commentator-container">
         <img 
           src="./js.png" 
@@ -203,23 +266,25 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
           className={`commentator-img ${isTalking ? 'talking' : ''}`} 
         />
       </div>
-        <p class='introduction' dangerouslySetInnerHTML={{ __html: introState }} />
-        <div class='logs'>
-          <ul>
-            {logState.map((log, index) => (
-              <li class='one-log' key={index}>
-                <span class='log-name'>
-                  {log.actor}
-                </span>
-                  <div dangerouslySetInnerHTML={{ __html: log.description }} />
-              </li>
-            ))}
-          </ul>
-          {lastWinner && (
-            <h2><span class="action-green">WINNER</span>: {lastWinner}</h2>
-          )}
-          <p class='summary' dangerouslySetInnerHTML={{ __html: summaryState }} />
+
+      {payoutWon > 0 && (
+        <div className="confetti-container">
+           <h1 className="payout-text">${payoutWon}</h1>
+           {[...Array(Math.floor(payoutWon/10))].map((_, i) => (
+              <img
+                 key={i}
+                 src="./cash.png"
+                 className="cash-confetti"
+                 alt="cash"
+                 style={{
+                    left: `${Math.random() * 100}vw`,
+                    animationDelay: `${Math.random() * 1.2}s`,
+                    width: `${40 + Math.random() * 30}px`
+                 }}
+              />
+           ))}
         </div>
+      )}
     </div>
   );
 }

@@ -22,6 +22,8 @@ function App() {
   const [log, setLoading] = useState(true);
   const [matchOdds, setMatchOdds] = useState({});
   const [currentPool, setCurrentPool] = useState(0);
+  const [myBet, setMyBet] = useState(null);
+  const [payoutWon, setPayoutWon] = useState(0);
 
   const handleResult = (data) => {
     // Takes data from a fight and places it in the correct places
@@ -68,7 +70,14 @@ function App() {
       setLastWinner(data.winner);
       setSummaryState(data.summary);
       setBattleState(data); 
-      console.log("Battle finished.");
+      setMyBet(currentBet => {
+          if (currentBet && data.winner === currentBet.fighterName) {
+              setPayoutWon(currentBet.payout);
+          } else {
+            setPayoutWon(-1);
+          }
+          return currentBet; 
+      });
       const savedID = localStorage.getItem("doodle_brawl_id"); //this refreshed the users login to update their money once the fight logs are done processing.
       if (savedID) verifyLogin(savedID);
     }, totalTime);
@@ -184,10 +193,14 @@ function App() {
     setSummaryState("");
     setIntroState("");
     processFightData(data);
+    setMyBet(null);
+    if (data.odds) setMatchOdds(data.odds);
+    if (data.pool) setCurrentPool(data.pool);
+    setPayoutWon(0);
   }
 
   const handleTimerUpdate = (data) => {
-    console.log("TIMER UPDATE ------")
+    //console.log("TIMER UPDATE ------")
     if (data.time_left > 0) {
       setTimer(data.time_left);
     } 
@@ -197,7 +210,7 @@ function App() {
     else {
       setTimer("Scheduling...")
     }
-    console.log(data);
+    //console.log(data);
   }
 
   // Enables connected/disconnected status events
@@ -270,7 +283,7 @@ function App() {
 
         {activeTab === 'battleground' && (
         <div class='battleground'>
-          <ArenaView battleState={battleState} timer={timer} logState={logState} lastWinner={lastWinner} summaryState={summaryState} introState={introState} user={user} setUser={setUser} matchOdds={matchOdds} currentPool={currentPool}/>
+          <ArenaView battleState={battleState} timer={timer} logState={logState} lastWinner={lastWinner} summaryState={summaryState} introState={introState} user={user} setUser={setUser} matchOdds={matchOdds} currentPool={currentPool} myBet={myBet} setMyBet={setMyBet} payoutWon={payoutWon}/>
           <hr/>
         </div>
         )}

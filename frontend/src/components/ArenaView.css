@@ -1,5 +1,7 @@
 .root {
   color: #000;
+  overflow-x: hidden; 
+  position: relative;
 }
 
 .column {
@@ -117,19 +119,19 @@
   font-weight: bold;
 }
 
-.alignment-good {
+.good {
   color: #2ecc71;
   font-weight: bold;
   text-transform: capitalize;
 }
 
-.alignment-evil {
+.evil {
   color: #9b59b6;
   font-weight: bold;
   text-transform: capitalize;
 }
 
-.alignment-neutral {
+.neutral {
   color: #333333;
   font-weight: bold;
   text-transform: capitalize;
@@ -202,7 +204,6 @@
 .bet-input-row input {
   padding: 8px;
   font-size: 1.1em;
-  border-radius: 4px;
   border: 1px solid #666;
   width: 100px;
   text-align: center;
@@ -261,4 +262,93 @@
   color: #aaa;
   font-style: italic;
   margin: 0;
+}
+
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.payout-text {
+  position: absolute;
+  font-size: 6em;
+  color: #2ecc71;
+  animation: payoutPopUp 3.5s ease-out forwards;
+  z-index: 10000;
+  font-weight: bolder;
+}
+
+.lost-text {
+  position: absolute;
+  font-size: 6em;
+  color: #ff1212;
+  animation: payoutPopUp 3.5s ease-out forwards;
+  z-index: 10000;
+  font-weight: bolder;
+}
+
+.cash-confetti {
+  position: absolute;
+  top: -150px;
+  animation: moneyFall 3s linear forwards;
+  filter: drop-shadow(0px 5px 5px rgba(0,0,0,0.5));
+}
+
+@keyframes payoutPopUp {
+  0% {opacity: 0; }
+  10% {opacity: 1; }
+  100% {opacity: 0; }
+}
+
+@keyframes moneyFall {
+  0% { transform: translateY(0vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+.bleachers-container {
+  position: absolute;
+  width: 1200px;
+  height: auto;
+  bottom: 0;   
+  z-index: -1; 
+  opacity: 0.85; 
+}
+
+.bleachers-container.left {
+  right: -20%;
+}
+
+.bleachers-container.right {
+  left: -20%; 
+}
+
+.bleacher-bg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.bleacher-bg.flipped {
+  transform: scaleX(-1);
+}
+
+.crowd-portrait {
+  position: absolute;
+  width: 8%; 
+  aspect-ratio: 1/1;
+  background-color: white;
+  border: 3px solid #000;
+  border-radius: 4px;
+  box-shadow: 0px 4px 6px rgba(0,0,0,0.4);
+  object-fit: cover;
+  transform: rotate(calc(-10deg + 20deg * var(--random, 0.5)));
 }

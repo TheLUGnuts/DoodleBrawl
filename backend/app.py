@@ -1,16 +1,16 @@
 #jfr, cwf, tjc
 #Created for the 2026 VCU 24HR Hackathon
 
-import os, re, time
+import os, re, time, random
 from flask_cors                                                    import CORS
-from sqlalchemy                                                    import text
 from components.genclient                                     import Genclient
+from sqlalchemy                                              import case, text
 from components.account                                      import account_bp
 from components.serverdata                                   import ServerData
 from dotenv                                                 import load_dotenv
 from sqlalchemy.orm.attributes                            import flag_modified
 from flask_socketio                                      import SocketIO, emit
-from components.dbmodel                      import db, Character, Match, User
+from components.dbmodel                             import db, Character, User
 from flask                     import Flask, render_template, jsonify, request
 
 
@@ -471,12 +471,32 @@ def return_top_fighters():
     data = request.get_json()
     page = data.get('page', 1)
     per_page = 10
-    
+
+    wl_ratio = case(
+        (Character.losses == 0, Character.wins * 1.0),
+        else_=(Character.wins * 1.0) / Character.losses
+    )
     #just sorted by descending wins for now
-    pagination = Character.query.filter_by(is_approved=True).order_by(Character.wins.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    pagination = Character.query.filter_by(is_approved=True).order_by(wl_ratio.desc(), Character.wins.desc()).paginate(page=page, per_page=per_page, error_out=False)
     
     return jsonify([c.to_dict() for c in pagination.items])
 
+#returns a random assortment of user potraits to populate the bleachers in the arena
+@app.route('/api/crowd')
+def return_crowd():
+    try:
+        #grab all user portraits 
+        users_with_portraits = User.query.filter(User.portrait != None).all()
+        
+        #randomly select up to 24 of them (12 for each side)
+        selected_users = random.sample(users_with_portraits, min(len(users_with_portraits), 12))
+        
+        #return a json of the image data
+        return jsonify([u.portrait for u in selected_users])
+    except Exception as e:
+        print(f"!-- ERROR FETCHING CROWD: {e} --!")
+        return jsonify([])
+    
 #Default app route
 @app.route('/')
 def index():
