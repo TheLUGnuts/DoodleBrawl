@@ -213,31 +213,59 @@ def debug_update_user(user_id):
 #3. A prize
 @socketio.on("place_bet")
 def handle_bet(data):
-    global CURRENT_POOL, CURRENT_BETS
+    global CURRENT_POOL, CURRENT_BETS, MATCH_ODDS
     user_id = data.get('user_id')
     fighter_id = data.get('fighter_id')
     amount = int(data.get('amount', 0))
 
-    #you wagered nothing or don't have enough money? get lost
     if amount <= 0:
         return {'status': 'error', 'message': 'Invalid bet amount.'}
     user = User.query.get(user_id)
     if not user or user.money < amount:
         return {'status': 'error', 'message': 'Insufficient funds!'}
-    user.money -= amount
+    
+    odds = MATCH_ODDS.get(fighter_id, 1.1)
 
-    CURRENT_BETS.append({
-        'user_id': user_id,
-        'fighter_id': fighter_id,
-        'amount': amount
-    })
+    #liability is how much we must payout. We have to calculate this so nobody goes over the pool and loses money.
+    current_fighter_liability = sum(b['amount'] for b in CURRENT_BETS if b['fighter_id'] == fighter_id) * odds
+    new_total_liability = current_fighter_liability + (amount * odds)
+    #bets must NOT make us exceed total liability
+    if new_total_liability > (CURRENT_POOL + amount):
+        safe_divisor = max(0.1, odds - 1.0) #prevent division by zero
+        max_add = int((CURRENT_POOL - current_fighter_liability) / safe_divisor)
+        return {
+            'status': 'error', 
+            'message': f'The prize pool is too small to cover that payout! Maximum additional wager: ${max(0, max_add)}'
+        }
+
+    #apply bet
+    existing_bet = next((b for b in CURRENT_BETS if b['user_id'] == user_id), None)
+    
+    if existing_bet:
+        # prevent "hedging" the bet
+        if existing_bet['fighter_id'] != fighter_id:
+            return {'status': 'error', 'message': 'You cannot bet on both fighters!'}
+        user.money -= amount
+        existing_bet['amount'] += amount
+        total_bet_amount = existing_bet['amount']
+    else:
+        user.money -= amount
+        CURRENT_BETS.append({
+            'user_id': user.id,
+            'fighter_id': fighter_id,
+            'amount': amount
+        })
+        total_bet_amount = amount
 
     CURRENT_POOL += amount
     db.session.commit()
-    #Potential problem, a server restart in the midst of a battle OR an API error with Gemini may cause people to lose their money.
     print(f"$-- BET PLACED BY {user.username} OF {amount} ON {fighter_id}! --$")
     emit('pool_update', {'pool': CURRENT_POOL}, broadcast=True)
-    return {'status': 'success', 'new_balance': user.money}
+    return {
+        'status': 'success', 
+        'new_balance': user.money, 
+        'total_wagered': total_bet_amount 
+    }
 
 #handles frontend submission of a new character
 #converts their information into JSON format using the character class
