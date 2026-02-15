@@ -39,8 +39,8 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
     try:
-        db.session.execute(text("ALTER TABLE user ADD COLUMN last_submission FLOAT DEFAULT 0.0"))
         db.session.execute(text("ALTER TABLE user ADD COLUMN last_login_bonus FLOAT DEFAULT 0.0"))
+        db.session.execute(text("ALTER TABLE user ADD COLUMN last_submission FLOAT DEFAULT 0.0"))
         db.session.commit()
         print("!-- ADDED COLUMNS TO USER TABLE --!")
     except Exception:
