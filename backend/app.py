@@ -211,6 +211,8 @@ def debug_update_user(user_id):
 #1. A consideration (your stake in the bet)
 #2. A risk (the chance)
 #3. A prize
+#We are using the pari-mutuel sportsbook style.
+#this means we have a starting house pool, then the pool largens as people place bets.
 @socketio.on("place_bet")
 def handle_bet(data):
     global CURRENT_POOL, CURRENT_BETS, MATCH_ODDS
@@ -465,6 +467,7 @@ def run_scheduled_battle():
         'fighters': [c.to_dict_display() for c in live_match],
         'log': result.get('battle_log', []),
         'winner': winner_obj.name,
+        'winner_id': winner_obj.id,
         'summary': result.get('summary', ''),
         'introduction': result.get('introduction', '')
     })
