@@ -91,6 +91,7 @@
     width: 250px;
     text-align: center;
     transition: border-color 0.2s;
+    background-color: #feffed;
     color:#000;
 }
 
@@ -255,15 +256,16 @@
     margin-top: 30px;
     width: 100%;
     padding: 15px;
-    background: #ff6b6b;
-    color: white;
+    background: #ffcfcb;
+    color: rgb(0, 0, 0);
     border: none;
     font-size: 1.1em;
     cursor: pointer;
+    border: 1px solid black;
 }
 
 .logout-button:hover {
-    background: #ff5252;
+    background: #ff8484;
 }
 
 .character-list-image {
