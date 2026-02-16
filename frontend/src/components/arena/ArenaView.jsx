@@ -3,6 +3,7 @@ import { decompressBase64Image } from '../../socket';
 import Betting from './Betting';
 import Commentator from './Commentator';
 import Payout from './Payout';
+import Logs from './Logs';
 import './ArenaView.css';
 import '../../text_decor.css';
 
@@ -148,26 +149,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
       </div>
 
       {/* BATTLE LOGS */}
-      {lastWinner && (
-        <div className="logs-dropdown-section">
-          <button className="toggle-logs-btn" onClick={() => setShowAllLogs(!showAllLogs)}>
-            {showAllLogs ? "▲ Hide Full Battle Logs ▲" : "▼ Show Full Battle Logs ▼"}
-          </button>
-          {showAllLogs && (
-            <div className='logs expanded-logs'>
-              <ul>
-                {logState.map((log, index) => (
-                  <li className='one-log' key={index}>
-                    <span className='log-name'>{log.actor}</span>
-                    <div dangerouslySetInnerHTML={{ __html: log.description }} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-
+      {lastWinner && (<Logs showAllLogs={showAllLogs} setShowAllLogs={setShowAllLogs} logState={logState}/>)}
       {/* PAYOUT EFFECT */}
       {payoutWon > 0 && (<Payout payoutWon={payoutWon}/>)}
       </div>

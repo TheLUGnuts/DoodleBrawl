@@ -1,5 +1,5 @@
 // the payout effect of money confetti. 1 dollar per 10 won.
-
+import "./Payout.css"
 export default function Payout({ payoutWon }) {
 
     return (
