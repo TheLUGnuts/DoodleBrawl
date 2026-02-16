@@ -1,0 +1,183 @@
+.profile-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.profile-card {
+  background: #faf3e2;
+  border: 3px outset #acacac;
+  width: 90%;
+  max-width: 500px;
+  padding: 0px 15px 15px 15px;
+  color: rgb(0, 0, 0);
+  position: relative;
+  box-shadow: 0 10px 60px rgba(0,0,0,0.8);
+}
+
+.pop-in {
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #dd5b4d;
+  color: white;
+  border: 1px solid rgb(0, 0, 0);
+  width: 20px;
+  height: 20px;
+  font-weight: bold;
+  font-size: .8em;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.close-btn:hover { background: #c0392b; }
+
+.profile-header {
+  display: inline;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-portrait {
+  width: 150px;
+  height: 150px;
+  border: 3px solid rgb(0, 0, 0);
+  object-fit: cover;
+  background: #333;
+}
+
+.profile-portrait.placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 3em;
+  color: #777;
+}
+
+.profile-info h2 { 
+    margin: 0 0 5px 0; 
+    font-weight: bolder;
+    color: #000000; 
+}
+
+.profile-info p { 
+    margin: 2px 0; 
+    font-weight: bold; 
+}
+
+.profile-info .wallet { 
+    color: #2ecc71; 
+}
+
+.profile-info .join-date { 
+    color: #aaa; 
+    font-size: 0.9em; 
+    font-style: italic; 
+}
+
+.profile-card h3 { 
+    text-align: center;
+    margin-top: 10px; 
+}
+
+.profile-roster {
+  border-top: 2px solid black;
+  border-bottom: 2px solid black;
+  display: grid;
+  padding: 2px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.profile-roster::-webkit-scrollbar {
+    display: none;
+}
+
+.mini-fighter-card {
+  position: relative;
+  border: 2px solid #000000;
+  text-align: center;
+  height: 120px; 
+  padding: 0; 
+  overflow: hidden; 
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.image-wrapper-tiny {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.fighter-wrap-tiny {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: white;
+}
+
+.mini-fighter-info {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.733);
+  padding: 5px;
+  border-top: 1px solid #000;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mini-fighter-info strong { 
+    display: block; 
+    margin-bottom: 2px; 
+    font-size: .8em;
+    color: #000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini-fighter-info p { 
+    margin: 0; 
+}
+
+.mini-stats { 
+    font-size: 0.6em; 
+    color: #2c2c2c; 
+    margin-top: 2px !important; 
+    font-weight: bold;
+}
+
+.champ-badge-tiny {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  width: 60px; 
+  transform: rotate(-25deg);
+  z-index: 10;
+  pointer-events: auto;
+}

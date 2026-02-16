@@ -5,24 +5,26 @@
 .column {
   display: flex;
   flex-direction: column;
-  align-items: center; 
-  width: auto; 
+  align-items: center;
+  width: auto;
+  position: relative;
 }
 
 .row {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  flex-wrap: wrap;       /* for wrapping in case of teams later on*/
-  gap: 60px;             /* space between each fighter */
-  margin-top: 20px;
+  flex-wrap: wrap;
+  /* for wrapping in case of teams later on*/
+  gap: 60px;
+  /* space between each fighter */
   padding-left: 30px;
   padding-right: 30px;
   padding-bottom: 20px;
 }
 
 .row::after {
-  display: none; 
+  display: none;
 }
 
 .fighter-name {
@@ -134,16 +136,16 @@
 .fighter-wrap {
   width: 350px;
   height: 200px;
-  object-fit: cover; 
+  object-fit: cover;
   display: block;
-  box-sizing: border-box; 
+  box-sizing: border-box;
 }
 
 .champ-badge {
   position: absolute;
   top: -10px;
   left: 15px;
-  width: 140px; 
+  width: 140px;
   transform: rotate(-30deg);
   z-index: 10;
   pointer-events: auto;
@@ -194,8 +196,15 @@
 }
 
 @keyframes typeIn {
-  0% { opacity: 0; transform: translateY(10px) scale(0.95); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .winner-reveal {
@@ -203,8 +212,17 @@
 }
 
 @keyframes grandReveal {
-  0% { opacity: 0; transform: scale(0.8); filter: blur(4px); }
-  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+    filter: blur(4px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
 }
 
 .fade-in-down {
@@ -212,8 +230,15 @@
 }
 
 @keyframes fadeInDown {
-  0% { opacity: 0; transform: translateY(-20px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .slide-up-fade {
@@ -221,34 +246,57 @@
 }
 
 @keyframes slideUpFadeIn {
-  0% { opacity: 0; transform: translateY(50px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .acting-bounce {
   animation: actionLunge 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  border-color: #3498db !important; 
+  border-color: #3498db !important;
   box-shadow: 0 0 25px rgba(52, 152, 219, 0.8);
   z-index: 2;
 }
 
 @keyframes actionLunge {
-  0% { transform: scale(1) translateY(0); }
-  50% { transform: scale(1.08) translateY(-15px); }
-  100% { transform: scale(1) translateY(0); }
+  0% {
+    transform: scale(1) translateY(0);
+  }
+
+  50% {
+    transform: scale(1.08) translateY(-15px);
+  }
+
+  100% {
+    transform: scale(1) translateY(0);
+  }
 }
 
 .action-attack {
   animation: actionLunge 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  border-color: #e74c3c !important; 
+  border-color: #e74c3c !important;
   box-shadow: 0 0 25px rgba(231, 76, 60, 0.8);
-  z-index: 100; 
+  z-index: 100;
 }
 
 @keyframes actionLunge {
-  0% { transform: scale(1) translateY(0); }
-  50% { transform: scale(1.08) translateY(-15px); }
-  100% { transform: scale(1) translateY(0); }
+  0% {
+    transform: scale(1) translateY(0);
+  }
+
+  50% {
+    transform: scale(1.08) translateY(-15px);
+  }
+
+  100% {
+    transform: scale(1) translateY(0);
+  }
 }
 
 .action-dodge {
@@ -258,9 +306,19 @@
 }
 
 @keyframes actionDodge {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.85) rotate(-5deg); filter: blur(2px); }
-  100% { transform: scale(1) rotate(0deg); filter: blur(0); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.85) rotate(-5deg);
+    filter: blur(2px);
+  }
+
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: blur(0);
+  }
 }
 
 .action-recover {
@@ -270,9 +328,19 @@
 }
 
 @keyframes actionRecover {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.85); filter:hue-rotate(180deg)}
-  100% { transform: scale(1); filter:hue-rotate(180deg)}
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.85);
+    filter: hue-rotate(180deg)
+  }
+
+  100% {
+    transform: scale(1);
+    filter: hue-rotate(180deg)
+  }
 }
 
 .action-power {
@@ -283,10 +351,21 @@
 }
 
 @keyframes actionPower {
-  0% { transform: scale(1) translateY(0); }
-  40% { transform: scale(1.10) translateY(-25px) rotate(5deg); } 
-  50% { transform: scale(1.15) translateY(10px) rotate(-5deg); }  
-  100% { transform: scale(1) translateY(0) rotate(0); }
+  0% {
+    transform: scale(1) translateY(0);
+  }
+
+  40% {
+    transform: scale(1.10) translateY(-25px) rotate(5deg);
+  }
+
+  50% {
+    transform: scale(1.15) translateY(10px) rotate(-5deg);
+  }
+
+  100% {
+    transform: scale(1) translateY(0) rotate(0);
+  }
 }
 
 .action-agility {
@@ -297,9 +376,71 @@
 }
 
 @keyframes actionAgility {
-  0% { transform: translateY(0); }
-  30% { transform: translateY(-40px) scale(0.9); } 
-  70% { transform: translateY(-40px) scale(0.9); } 
-  100% { transform: translateY(0) scale(1); }
+  0% {
+    transform: translateY(0);
+  }
+
+  30% {
+    transform: translateY(-40px) scale(0.9);
+  }
+
+  70% {
+    transform: translateY(-40px) scale(0.9);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
 }
 
+.creator-portrait-container {
+  position: absolute;
+  top: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 5;
+}
+
+.creator-portrait-container:hover {
+  transform: scale(1.1) translateY(-5px);
+}
+
+.creator-portrait-container.left {
+  right: 100%;
+}
+
+.creator-portrait-container.right {
+  left: 100%;
+}
+
+.creator-portrait-img {
+  width: 80px;
+  height: 80px;
+  border: 3px solid #000;
+  object-fit: cover;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.creator-label {
+  margin-bottom: 5px;
+  background: #ffffff;
+  color: rgb(0, 0, 0);
+  padding: 4px 10px;
+  z-index: 2;
+  text-align: center;
+  font-size: 0.85em;
+  border: 2px solid #000000;
+  white-space: nowrap;
+}
+
+.creator-label span {
+  display: block;
+  font-size: 0.75em;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}

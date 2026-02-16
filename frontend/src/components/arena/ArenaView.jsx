@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { decompressBase64Image } from '../../socket';
 import Betting from './Betting';
 import Commentator from './Commentator';
@@ -7,7 +7,43 @@ import Logs from './Logs';
 import './ArenaView.css';
 import '../../text_decor.css';
 
-export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState, introState, user, setUser, matchOdds, currentPool, myBet, setMyBet, payoutWon}) {
+//grabs a creators portrait
+const CreatorPortrait = memo(function CreatorPortrait({ fighter, align, onProfileClick }) {
+  console.log(fighter.creator_name);
+  //unknown has no portrait
+  if (!fighter.creator_name || fighter.creator_name === "Unknown" || !fighter.creator_portrait) return null;
+
+  return (
+    <div 
+      className={`creator-portrait-container ${align}`} 
+      onClick={() => onProfileClick && onProfileClick(fighter.creator_name)}
+    >
+      <div className="creator-label">
+        <span>Manager</span>
+        <strong>{fighter.creator_name}</strong>
+      </div>
+      <img 
+        src={`data:image/webp;base64,${decompressBase64Image(fighter.creator_portrait)}`} 
+        alt={`${fighter.creator_name}'s portrait`} 
+        className="creator-portrait-img"
+      />
+    </div>
+  );
+});
+
+const ImageViewer = memo(function ImageViewer({ compressedBase64, titles }) {
+  const base64 = decompressBase64Image(compressedBase64);
+  return (
+    <div className="image-wrapper">
+      <img className="fighter-wrap" src={`data:image/webp;base64,${base64}`} alt="Fighter Image" />
+      {titles && titles.map((title, index) => (
+        <img key={index} className="champ-badge" src="./champ.png" alt="Champion Badge" title={title} style={{ top: `${3 + (index * 8)}px`, left: `${-18 + (index * 5)}px`, zIndex: 2 - index }} />
+      ))}
+    </div>
+  );
+});
+
+export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState, introState, user, setUser, matchOdds, currentPool, myBet, setMyBet, payoutWon, onProfileClick}) {
   //controls the collapsable logs
   const [showAllLogs, setShowAllLogs] = useState(false);
 
@@ -17,18 +53,6 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
           <img className="throbber" src="./RatJohnson.gif"></img>
           <h1>Waiting for Next Match...</h1>
           {timer && <h2>Next Match in: {timer}</h2>}
-      </div>
-    );
-  }
-
-  function ImageViewer({ compressedBase64, titles }) {
-    const base64 = decompressBase64Image(compressedBase64);
-    return (
-      <div className="image-wrapper">
-        <img className="fighter-wrap" src={`data:image/webp;base64,${base64}`} alt="Fighter Image" />
-        {titles && titles.map((title, index) => (
-          <img key={index} className="champ-badge" src="./champ.png" alt="Champion Badge" title={title} style={{ top: `${3 + (index * 8)}px`, left: `${-18 + (index * 5)}px`, zIndex: 2 - index }} />
-        ))}
       </div>
     );
   }
@@ -68,6 +92,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
         <div className='row'>
           {/* FIGHTER 1 (LEFT) */}
           <div className='column'>
+            <CreatorPortrait fighter={battleState.fighters[0]} align="left" onProfileClick={onProfileClick} />
             <div className='stats-header'>
               <p className='fighter-name fighter-1'>{battleState.fighters[0].name}</p>
               <p className={(battleState.fighters[0].alignment.toLowerCase())}>
@@ -84,13 +109,13 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
             </div>
 
             <div className='stats-footer'>
-              <p className="fighter-desc">{battleState.fighters[0].description}</p>
               <p>Wins: {battleState.fighters[0].wins} | Losses: {battleState.fighters[0].losses}</p>
             </div>
           </div>
 
           {/* FIGHTER 2 (RIGHT) */}
           <div className='column'>
+            <CreatorPortrait fighter={battleState.fighters[1]} align="right" onProfileClick={onProfileClick} />
             <div className='stats-header'>
               <p className='fighter-name fighter-2'>{battleState.fighters[1].name}</p>
               <p className={(battleState.fighters[1].alignment.toLowerCase())}>
@@ -107,7 +132,6 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
             </div>
 
             <div className='stats-footer'>
-              <p className="fighter-desc">{battleState.fighters[1].description}</p>
               <p>Wins: {battleState.fighters[1].wins} | Losses: {battleState.fighters[1].losses}</p>
             </div>
           </div>
