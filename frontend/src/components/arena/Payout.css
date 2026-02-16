@@ -1,0 +1,64 @@
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.payout-text {
+  position: absolute;
+  font-size: 6em;
+  color: #2ecc71;
+  animation: payoutPopUp 3.5s ease-out forwards;
+  z-index: 10000;
+  font-weight: bolder;
+}
+
+.lost-text {
+  position: absolute;
+  font-size: 6em;
+  color: #ff1212;
+  animation: payoutPopUp 3.5s ease-out forwards;
+  z-index: 10000;
+  font-weight: bolder;
+}
+
+.cash-confetti {
+  position: absolute;
+  top: -150px;
+  animation: moneyFall 3s linear forwards;
+  filter: drop-shadow(0px 5px 5px rgba(0, 0, 0, 0.5));
+}
+
+@keyframes payoutPopUp {
+  0% {
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes moneyFall {
+  0% {
+    transform: translateY(0vh) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}

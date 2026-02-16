@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { socket, API_URL } from './socket.js';
 import './App.css'
 import DoodleCanvas from './components/DoodleCanvas';
-import ArenaView from './components/ArenaView';
+import ArenaView from './components/arena/ArenaView';
 import RosterView from './components/RosterView';
 import ArenaMini from './components/ArenaMini';
 import Account from './components/Account';
@@ -16,6 +16,7 @@ function App() {
   const timeouts = useRef([]);
   const [logState, setLogState] = useState([]);
   const [lastWinner, setLastWinner] = useState("");
+  const [lastWinnerId, setLastWinnerId] = useState("");
   const [summaryState, setSummaryState] = useState("");
   const [introState, setIntroState] = useState("");
   const [user, setUser] = useState(null);
@@ -68,10 +69,11 @@ function App() {
     const totalTime = (data.log.length + 1) * LOG_DELAY;
     const tWinner = setTimeout(() => {
       setLastWinner(data.winner);
+      setLastWinnerId(data.winner_id);
       setSummaryState(data.summary);
       setBattleState(data); 
       setMyBet(currentBet => {
-          if (currentBet && data.winner === currentBet.fighterName) {
+          if ((currentBet && data.winner === currentBet.fighterName) || (currentBet && data.winner_id === currentBet.fighterId)) {
               setPayoutWon(currentBet.payout);
           } else {
             setPayoutWon(-1);
