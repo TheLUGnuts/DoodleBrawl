@@ -92,5 +92,5 @@ def get_public_profile(username):
         "portrait": user.portrait,
         "creation_time": user.creation_time,
         "money": user.money,
-        "characters": [c.to_dict_light() for c in public_chars] 
+        "characters": [c.to_dict_display() for c in public_chars] 
     })

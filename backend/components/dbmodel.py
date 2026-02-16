@@ -53,11 +53,18 @@ class Character(db.Model):
     #flags
     is_approved = db.Column(db.Boolean, default=False)
 
+    #return the username of who created this character
     def get_creator_name(self):
         if self.creator_id and self.creator_id != "Unknown":
             user = User.query.get(self.creator_id)
             return user.username if user else "Unknown"
         return "Unknown"
+    #return the portrait of the creator of this character
+    def get_creator_portrait(self):
+        if self.creator_id and self.creator_id != "Unknown":
+            user = User.query.get(self.creator_id)
+            return user.portrait if user else None
+        return None
 
     def get_manager_name(self):
         if self.manager_id and self.manager_id != "None":
@@ -96,6 +103,7 @@ class Character(db.Model):
             "description": self.description,
             "image_file": self.image_file,
             "creator_name": self.get_creator_name(),
+            "creator_portrait": self.get_creator_portrait(),
             "manager_name": self.get_manager_name(),
             "popularity": self.popularity,
             "alignment": self.alignment,
