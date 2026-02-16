@@ -75,3 +75,22 @@ def login_account():
         })
     else:
         return jsonify({"error": "Invalid Account ID"}), 401
+
+#returns a publicly viewable profile to avoid sending any IDs
+@account_bp.route('/profile/<username>', methods=['GET'])
+def get_public_profile(username):
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+        
+    #only return approved characters
+    public_chars = Character.query.filter_by(creator_id=user.id, is_approved=True).all()
+    
+    return jsonify({
+        "status": "success",
+        "username": user.username,
+        "portrait": user.portrait,
+        "creation_time": user.creation_time,
+        "money": user.money,
+        "characters": [c.to_dict_light() for c in public_chars] 
+    })

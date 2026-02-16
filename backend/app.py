@@ -363,7 +363,7 @@ def schedule_next_match():
 def run_scheduled_battle():
     global NEXT_MATCH
     if not NEXT_MATCH:
-        return
+        return 0 
     
     p1 = DATA.get_character(NEXT_MATCH[0].id)
     p2 = DATA.get_character(NEXT_MATCH[1].id)
@@ -474,6 +474,8 @@ def run_scheduled_battle():
     
     print(f"$-- MATCH FINISHED - WINNER {winner_obj.name} --$")
     NEXT_MATCH = None
+    #return the number of logs to the server so we can allocate enough time for the match to play out.
+    return len(result.get('battle_log', []))
 
 ##################################
 #        SERVER HANDLERS         #
@@ -522,18 +524,14 @@ def return_top_fighters():
     
     return jsonify([c.to_dict_display() for c in pagination.items])
 
-#returns a random assortment of user potraits to populate the bleachers in the arena
+#returns a random assortment of user potraits
 @app.route('/api/crowd')
 def return_crowd():
     try:
-        #grab all user portraits 
         users_with_portraits = User.query.filter(User.portrait != None).all()
-        
-        #randomly select up to 24 of them (12 for each side)
         selected_users = random.sample(users_with_portraits, min(len(users_with_portraits), 12))
-        
-        #return a json of the image data
-        return jsonify([u.portrait for u in selected_users])
+        #returns username and portrait, making the portrait clickable
+        return jsonify([{"username": u.username, "portrait": u.portrait} for u in selected_users])
     except Exception as e:
         print(f"!-- ERROR FETCHING CROWD: {e} --!")
         return jsonify([])
@@ -562,11 +560,14 @@ def server_loop():
                 with app.app_context():
                     CURRENT_TIMER = 0
                     socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
-                    run_scheduled_battle() #run the match
-                    socketio.sleep(60)     #so we see the throbber for one minute
+                    log_count = run_scheduled_battle() #run the match
+                    if log_count is None: log_count = 0
+                    #7 is for the duration of the introduction, three seconds for each log in the match, then 30 seconds to see the result.
+                    animation_duration = 7 + (log_count * 3) + 30
+                    socketio.sleep(animation_duration)     #so we see the throbber for one minute
                     CURRENT_TIMER = -1
                     socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
-                    socketio.sleep(60)     #then scheduling announcement
+                    socketio.sleep(10)     #then scheduling announcement
                     schedule_next_match()  #schedule the next match
                 CURRENT_TIMER = BATTLE_TIMER
 
