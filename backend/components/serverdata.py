@@ -31,6 +31,15 @@ class ServerData:
     def get_queue(self):
         """Returns all unapproved characters."""
         return Character.query.filter_by(is_approved=False).all()
+        if os.path.exists(REJECTED_FILE):
+            try:
+                with open(REJECTED_FILE, 'r') as f:
+                    rejected_data = json.load(f)
+                # Ignore them if they are in the rejected ledger
+                queue = [c for c in queue if str(c.id) not in rejected_data]
+            except Exception as e:
+                print(f"!-- ERROR READING REJECTED LIST: {e} --!")
+        return queue
 
     def get_candidates_for_match(self):
         """
@@ -101,14 +110,12 @@ class ServerData:
                 character.is_approved = True
                 print(f"$-- APPROVED: {char_id} --$")
             else:
-                # Rejected - Delete from DB and Log
+                # Rejected
                 reason = decision.get('reason', 'Unknown')
                 print(f"!-- REJECTED: {char_id} - Reason: {reason} --!")
                 self.log_rejection(char_id, character, reason)
-                db.session.delete(character)
-            
+                character.description = f"REJECTED BY MODERATION: {reason}"
             ids_processed.append(char_id)
-
         self.commit()
 
     #########################
