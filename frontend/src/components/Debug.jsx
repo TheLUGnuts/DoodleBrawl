@@ -72,9 +72,7 @@ export default function Debug({user}) {
     } catch (e) {
         setMessage("Error: Invalid JSON format."); return;
     }
-    
     const endpoint = `${API_URL}/api/debug/${typeMap[editorTab]}/${selectedItem.id}`;
-
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -135,6 +133,7 @@ export default function Debug({user}) {
             <button onClick={() => triggerAction('rematch')}>New Matchup</button>
             <button onClick={() => triggerAction('freeze')}>Toggle Timer Freeze</button>
             <button onClick={() => triggerAction('randomize_alignments')}>Randomize Alignments</button>
+            <button onClick={() => triggerAction('test_actions')}>Mock UI Animations</button>
         </div>
       </div>
 
@@ -207,7 +206,9 @@ export default function Debug({user}) {
                     <label>Personality: <input type="text" name="personality" value={formData.personality || ""} onChange={handleChange} /></label>
                     <label>Wins: <input type="number" name="wins" value={formData.wins || 0} onChange={handleChange} /></label>
                     <label>Losses: <input type="number" name="losses" value={formData.losses || 0} onChange={handleChange} /></label>
+                    <label>Status: <input type="text" name="status" value={formData.status || ""} onChange={handleChange} /></label>
                     <label>Creator ID: <input type="text" name="creator_id" value={formData.creator_id || ""} onChange={handleChange} /></label>
+                    <label>Manager ID: <input type="text" name="manager_id" value={formData.manager_id || ""} onChange={handleChange} /></label>
                     <label>Creation Time (Unix): <input type="number" step="0.01" name="creation_time" value={formData.creation_time || 0} onChange={handleChange} /></label>
                   </div>
                   

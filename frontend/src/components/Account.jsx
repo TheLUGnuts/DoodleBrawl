@@ -10,6 +10,7 @@ export default function Account({user, onLogin, onLogout}) {
   const [inputID, setInputID] = useState("");
   const [generatedID, setGeneratedID] = useState(null);
   const [portraitData, setPortraitData] = useState(null); 
+  const [expandedFighter, setExpandedFighter] = useState(null);
   const [error, setError] = useState("");
 
   function ImageViewer({compressedBase64}) {
@@ -22,10 +23,6 @@ export default function Account({user, onLogin, onLogout}) {
       />
     );
   }
-
-  useEffect(() => {
-      
-    }, []);
   
 
   //dashboard view
@@ -71,13 +68,38 @@ export default function Account({user, onLogin, onLogout}) {
           </div>
           <div className="list-section">
             <h3>Managed Fighters</h3>
+            <p className="hint-text">Click a fighter to view their secret combat stats!</p>
+              <div className="managed-roster-grid">
             {user.managed_characters && user.managed_characters.length > 0 ? (
-              <ul>
-                {user.managed_characters.map(char => (
-                  <li key={char.id}>{char.name} ({char.wins}W - {char.losses}L)</li>
-                ))}
-              </ul>
-            ) : <p>Coming Soon.</p>}
+              user.managed_characters.map(fighter => (
+                <div 
+                  key={fighter.id} 
+                  className={`managed-card ${expandedFighter === fighter.id ? 'expanded' : ''}`}
+                  onClick={() => setExpandedFighter(expandedFighter === fighter.id ? null : fighter.id)}
+                >
+                   <img src={`data:image/webp;base64,${decompressBase64Image(fighter.image_file)}`} alt={fighter.name} />
+                   <div className="managed-info">
+                     <h4>{fighter.name}</h4>
+                     <p className={`status-badge ${fighter.status}`}>{fighter.status}</p>
+                   </div>
+                   
+                   {/* Hidden Stats that reveal on click */}
+                   {expandedFighter === fighter.id && fighter.stats && (
+                     <div className="secret-stats">
+                        <hr/>
+                        <p><strong>HP:</strong> {fighter.stats.hp || "???"}</p>
+                        <p><strong>Power:</strong> {fighter.stats.power || "???"}</p>
+                        <p><strong>Agility:</strong> {fighter.stats.agility || "???"}</p>
+                        <p><strong>Popularity:</strong> {fighter.popularity}</p>
+                        <p><strong>Alignment:</strong> {fighter.alignment}</p>
+                     </div>
+                   )}
+                </div>
+              ))
+            ) : (
+              <p>You aren't managing any fighters yet!</p>
+            )}
+          </div>
           </div>
         </div>
 

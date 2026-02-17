@@ -141,19 +141,17 @@ function App() {
   const handleCharacterAdded = (data) => {
       if (data.status === 'success') {
         alert(`Success! ${data.character.name} has been added to the approval queue!`);
-        console.log("New character verified by server:", data.character);
 
         setUser(prevUser => {
           if (!prevUser) return prevUser;
-          
           return {
             ...prevUser,
-            created_characters: [...prevUser.created_characters, data.character]
+            created_characters: [...prevUser.created_characters, data.character],
+            managed_characters: [...prevUser.managed_characters, data.character] 
           };
         });
       }
     };
-
   //listen for and load battles from backend
   useEffect(() => {
     //register listeners
