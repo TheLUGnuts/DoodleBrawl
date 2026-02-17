@@ -1,45 +1,41 @@
 import { useState, useEffect } from 'react';
 import './Debug.css'
-import { API_URL } from '../socket.js';
-import { decompressBase64Image } from '../socket';
+import { API_URL, decompressBase64Image } from '../socket';
 
 export default function Debug({user}) {
   const [editorTab, setEditorTab] = useState('characters');
-  const [isLocal, setIsLocal] = useState(false);
   const [characters, setCharacters] = useState([]);
   const [users, setUsers] = useState([]);
+  const [matches, setMatches] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [formData, setFormData] = useState(null);
   const [message, setMessage] = useState("");
   const [showPreview, setShowPreview] = useState("");
 
+  // Helper map to route plural tabs to singular backend API paths
+  const typeMap = { characters: 'character', users: 'user', matches: 'match' };
+
   useEffect(() => {
     if (editorTab === 'characters') fetchCharacters();
     if (editorTab === 'users') fetchUsers();
+    if (editorTab === 'matches') fetchMatches();
   }, [editorTab]);
 
-  const fetchCharacters = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/debug/characters`, {
-        headers: { 'X-User-ID': user?.id || '' }
-      });
-      const data = await res.json();
-      setCharacters(data);
-    } catch (e) {
-      console.log(e);
-    }
+  const fetchCharacters = async () => { 
+    const res = await fetch(`${API_URL}/api/debug/characters`, { headers: { 'X-User-ID': user?.id || '' } });
+    setCharacters(await res.json());
   };
-
-  const fetchUsers = async () => {
+  const fetchUsers = async () => {  
+    const res = await fetch(`${API_URL}/api/debug/users`, { headers: { 'X-User-ID': user?.id || '' } });
+    setUsers(await res.json());
+  };
+  
+  //fetch match history
+  const fetchMatches = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/debug/users`, {
-        headers: { 'X-User-ID': user?.id || '' }
-      });
-      const data = await res.json();
-      setUsers(data);
-    } catch (e) {
-      console.error("Failed to fetch debug users", e);
-    }
+      const res = await fetch(`${API_URL}/api/debug/matches`, { headers: { 'X-User-ID': user?.id || '' } });
+      setMatches(await res.json());
+    } catch (e) { console.error(e); }
   };
 
   const handleSelect = (item) => {
@@ -47,11 +43,9 @@ export default function Debug({user}) {
     setShowPreview(false);
     
     if (editorTab === 'characters') {
-      setFormData({
-        ...item,
-        stats: JSON.stringify(item.stats, null, 2),
-        titles: JSON.stringify(item.titles, null, 2)
-      });
+      setFormData({ ...item, stats: JSON.stringify(item.stats, null, 2), titles: JSON.stringify(item.titles, null, 2) });
+    } else if (editorTab === 'matches') {
+      setFormData({ ...item, match_data: JSON.stringify(item.match_data, null, 2) });
     } else {
       setFormData({ ...item });
     }
@@ -60,69 +54,72 @@ export default function Debug({user}) {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSave = async () => {
-    setMessage("Saving character.");
+    setMessage("Saving to DB...");
     const payload = { ...formData };
-    if (editorTab === 'characters') {
-      try {
-        payload.stats = JSON.parse(formData.stats);
-        payload.titles = JSON.parse(formData.titles);
-      } catch (e) {
-        setMessage("Error: Invalid JSON format.");
-        console.log(e);
-        return;
-      }
+    
+    try {
+        if (editorTab === 'characters') {
+          payload.stats = JSON.parse(formData.stats);
+          payload.titles = JSON.parse(formData.titles);
+        }
+        if (editorTab === 'matches') {
+          payload.match_data = JSON.parse(formData.match_data);
+        }
+    } catch (e) {
+        setMessage("Error: Invalid JSON format."); return;
     }
-    const endpoint = editorTab === 'characters' 
-        ? `${API_URL}/api/debug/character/${selectedItem.id}` 
-        : `${API_URL}/api/debug/user/${selectedItem.id}`;
+    
+    const endpoint = `${API_URL}/api/debug/${typeMap[editorTab]}/${selectedItem.id}`;
 
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-User-ID': user?.id || '' 
-        },
+        headers: { 'Content-Type': 'application/json', 'X-User-ID': user?.id || '' },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (data.status === 'success'){
         setMessage("Database updated.");
-        editorTab === 'characters' ? fetchCharacters() : fetchUsers();
-      } else {
-        setMessage(`Error: ${data.error}`);
-      }
-    } catch (e) {
-      setMessage("Error upating database");
-      console.log(e);
-    }
+        if (editorTab === 'characters') fetchCharacters();
+        if (editorTab === 'users') fetchUsers();
+        if (editorTab === 'matches') fetchMatches();
+      } else { setMessage(`Error: ${data.error}`); }
+    } catch (e) { setMessage("Error updating database"); }
   };
 
-  //handles all general endpoint API calls
-  const triggerAction = async (endpoint) => {
-    await fetch(`${API_URL}/api/debug/${endpoint}`, { 
-      method: 'POST',
-      headers: { 'X-User-ID': user?.id || '' }
-    });
-  };
-
-  //show the image in the DB editor window
-  //FIXME - refer to the `app.py` /api/debug/characters route for more info
-  const getPreviewSource = (base64Str) => {
-    //console.log(base64Str);
-    if (!base64Str) return null;
+  //handle deletions from the DB
+  const handleDelete = async () => {
+    if(!window.confirm("WARNING: Are you sure you want to permanently delete this row? This cannot be undone!")) return;
+    
+    setMessage("Deleting row...");
+    const endpoint = `${API_URL}/api/debug/${typeMap[editorTab]}/${selectedItem.id}`;
     try {
-      return `data:image/webp;base64,${decompressBase64Image(base64Str)}`;
-    } catch (e) {
-      return null;
-    }
+      const res = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: { 'X-User-ID': user?.id || '' }
+      });
+      const data = await res.json();
+      if (data.status === 'success'){
+        setMessage("Row deleted.");
+        setSelectedItem(null); // Clear the editor
+        if (editorTab === 'characters') fetchCharacters();
+        if (editorTab === 'users') fetchUsers();
+        if (editorTab === 'matches') fetchMatches();
+      } else { setMessage(`Error: ${data.error}`); }
+    } catch (e) { setMessage("Error deleting row."); }
+  };
+
+  const triggerAction = async (endpoint) => { /* [Keep exactly the same] */ 
+    await fetch(`${API_URL}/api/debug/${endpoint}`, { method: 'POST', headers: { 'X-User-ID': user?.id || '' }});
+  };
+
+  const getPreviewSource = (base64Str) => { /* [Keep exactly the same] */ 
+    if (!base64Str) return null;
+    try { return `data:image/webp;base64,${decompressBase64Image(base64Str)}`; } catch (e) { return null; }
   };
 
   return (
@@ -131,6 +128,7 @@ export default function Debug({user}) {
       
       {/* SERVER CONTROLS */}
       <div className="debug-server-controls">
+        {/* ... [Keep server control buttons same] ... */}
         <h3>Server Actions</h3>
         <div className="button-group">
             <button onClick={() => triggerAction('skip')}>Skip Timer to 5s</button>
@@ -151,6 +149,8 @@ export default function Debug({user}) {
           <div className="editor-tabs">
             <button className={editorTab === 'characters' ? 'active' : ''} onClick={() => {setEditorTab('characters'); setSelectedItem(null);}}>Characters</button>
             <button className={editorTab === 'users' ? 'active' : ''} onClick={() => {setEditorTab('users'); setSelectedItem(null);}}>Users</button>
+            {/* NEW TAB */}
+            <button className={editorTab === 'matches' ? 'active' : ''} onClick={() => {setEditorTab('matches'); setSelectedItem(null);}}>Matches</button>
           </div>
           <ul>
             {editorTab === 'characters' && characters.map(char => (
@@ -163,8 +163,14 @@ export default function Debug({user}) {
                 {u.username}
               </li>
             ))}
+            {/* NEW LIST MAPPING */}
+            {editorTab === 'matches' && matches.map(m => (
+              <li key={m.id} className={selectedItem?.id === m.id ? 'selected' : ''} onClick={() => handleSelect(m)}>
+                Match #{m.id} ({m.winner_name} wins)
+              </li>
+            ))}
           </ul>
-          <button onClick={editorTab === 'characters' ? fetchCharacters : fetchUsers} className="refresh-btn">Refresh List</button>
+          <button onClick={() => { if(editorTab==='characters') fetchCharacters(); if(editorTab==='users') fetchUsers(); if(editorTab==='matches') fetchMatches(); }} className="refresh-btn">Refresh List</button>
         </div>
 
         {/* EDITING WINDOW */}
@@ -174,19 +180,17 @@ export default function Debug({user}) {
           ) : (
             <div className="debug-form">
               <div className="form-header">
-                <h4>Editing: {editorTab === 'characters' ? selectedItem.name : selectedItem.username}</h4>
+                <h4>Editing: {editorTab === 'characters' ? selectedItem.name : editorTab === 'users' ? selectedItem.username : `Match #${selectedItem.id}`}</h4>
                 <p className="id-subtext">ID: {selectedItem.id}</p>
                 
-                <button className="preview-toggle-btn" onClick={() => setShowPreview(!showPreview)}>
-                  {showPreview ? "Hide Image Preview" : "Show Image Preview"}
-                </button>
-                {showPreview && (
+                {editorTab !== 'matches' && (
+                  <button className="preview-toggle-btn" onClick={() => setShowPreview(!showPreview)}>
+                    {showPreview ? "Hide Image Preview" : "Show Image Preview"}
+                  </button>
+                )}
+                {showPreview && editorTab !== 'matches' && (
                   <div className="preview-box">
-                    <img 
-                       src={getPreviewSource(editorTab === 'characters' ? formData.image_file : formData.portrait)} 
-                       alt="Preview" 
-                       onError={(e) => {e.target.style.display='none'; setMessage("Error rendering image. Corrupt Base64.");}}
-                    />
+                    <img src={getPreviewSource(editorTab === 'characters' ? formData.image_file : formData.portrait)} alt="Preview" onError={(e) => {e.target.style.display='none'; setMessage("Error rendering image. Corrupt Base64.");}} />
                   </div>
                 )}
               </div>
@@ -194,7 +198,6 @@ export default function Debug({user}) {
               {message && <div className="debug-message">{message}</div>}
 
               {/* EDITOR FORMS*/}
-              {/* CHARACTER FORM*/}
               {editorTab === 'characters' ? (
                 <>
                   <div className="form-grid">
@@ -223,7 +226,7 @@ export default function Debug({user}) {
                     <label>Titles (JSON Array):<textarea name="titles" value={formData.titles} onChange={handleChange} rows="4" className="code-font" /></label>
                   </div>
                 </>
-              ) : (
+              ) : editorTab === 'users' ? (
                 <>
                   {/* USER FORM */}
                   <div className="form-grid">
@@ -233,9 +236,37 @@ export default function Debug({user}) {
                     <label>Last Submission (Unix): <input type="number" step="0.01" name="last_submission" value={formData.last_submission || 0} onChange={handleChange} /></label>
                   </div>
                 </>
+              ) : (
+                <>
+                  {/* MATCH FORM */}
+                  <div className="form-grid">
+                    <label>Match Type: <input type="text" name="match_type" value={formData.match_type || ""} onChange={handleChange} /></label>
+                    <label>Winner Name: <input type="text" name="winner_name" value={formData.winner_name || ""} onChange={handleChange} /></label>
+                    <label>Winner ID: <input type="text" name="winner_id" value={formData.winner_id || ""} onChange={handleChange} /></label>
+                    <label>Title Exchanged: <input type="text" name="title_exchanged" value={formData.title_exchanged || ""} onChange={handleChange} /></label>
+                  </div>
+                  
+                  <label className="checkbox-label">
+                    <input type="checkbox" name="is_title_bout" checked={formData.is_title_bout || false} onChange={handleChange} />
+                    Is Title Bout
+                  </label>
+          
+                  <label className="full-width">
+                    Summary:
+                    <textarea name="summary" value={formData.summary || ""} onChange={handleChange} rows="3" />
+                  </label>
+          
+                  <div className="json-editors">
+                    <label>Match Data (JSON):<textarea name="match_data" value={formData.match_data || "{}"} onChange={handleChange} rows="6" className="code-font" /></label>
+                  </div>
+                </>
               )}
 
-              <button className="save-btn" onClick={handleSave}>Save Changes to DB</button>
+              {/* ACTION BUTTONS */}
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <button className="save-btn" onClick={handleSave}>Save Changes to DB</button>
+                <button className="delete-btn" onClick={handleDelete}>Delete Row</button>
+              </div>
             </div>
           )}
         </div>
