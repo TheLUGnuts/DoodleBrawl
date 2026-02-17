@@ -4,6 +4,9 @@
 import os, re, time, random
 from flask_cors                                                    import CORS
 from components.genclient                                     import Genclient
+from components.public                                        import public_bp
+from components.account                                      import account_bp
+from components.serverdata                                   import ServerData
 from sqlalchemy                                              import case, text
 from components.account                                      import account_bp
 from components.serverdata                                   import ServerData
@@ -11,6 +14,7 @@ from dotenv                                                 import load_dotenv
 from sqlalchemy.orm.attributes                            import flag_modified
 from flask_socketio                                      import SocketIO, emit
 from components.dbmodel                      import db, Character, User, Match
+from components.debug                     import debug_bp, is_admin_authorized
 from flask                     import Flask, render_template, jsonify, request
 
 
@@ -31,7 +35,10 @@ socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", f"{API_U
 #SQLite database initialitzation
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///doodlebrawl.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+#Initialize our flask blueprints for API decomposition
 app.register_blueprint(account_bp, url_prefix='/api/account')
+app.register_blueprint(debug_bp, url_prefix='/api/debug')
+app.register_blueprint(public_bp, url_prefix='/api')
 db.init_app(app)
 
 #this is to add a new column to the user table.
@@ -67,17 +74,6 @@ def is_champion(status):
 #         DEBUG HANDLERS         #
 ##################################
 
-#see if an incoming debug api request is from an admin
-def is_admin_authorized():
-    #if local development, bypass this
-    if app.debug or "localhost" in API_URL:
-        return True
-        
-    admin_ids = [i.strip() for i in os.getenv('ADMIN_IDS', '').split(',') if i.strip()]
-    user_id = request.headers.get('X-User-ID')
-    
-    return user_id and user_id in admin_ids
-
 @app.route('/api/debug/skip', methods=['POST'])
 def debug_skip_timer():
     if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
@@ -107,151 +103,6 @@ def debug_randomize_alignments():
     if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
     count = DATA.randomize_alignments()
     return jsonify({"status": "success", "count": count, "message": "Alignments randomized!"})
-
-#returns all characters, approved or not.
-@app.route('/api/debug/characters', methods=['GET'])
-def debug_get_characters():
-    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
-    chars = Character.query.all()
-    #FIXME
-    #THIS MAY BE VERY INEFFICIENT
-    #this returns the base64 image of every single character in the roster
-    #if we have a lot of fighters, this may be extremely bloated.
-    return jsonify([c.to_dict_debug() for c in chars])
-
-#edit the database entry of any character
-@app.route('/api/debug/character/<char_id>', methods=['POST'])
-def debug_update_character(char_id):
-    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
-    data = request.get_json()
-    char = Character.query.get(char_id)
-    
-    if not char:
-        return jsonify({"error": "Character not found"}), 404
-        
-    try:
-        if 'name' in data: char.name = data['name']
-        if 'description' in data: char.description = data['description']
-        if 'alignment' in data: char.alignment = data['alignment']
-        if 'popularity' in data: char.popularity = int(data['popularity'])
-        if 'wins' in data: char.wins = int(data['wins'])
-        if 'losses' in data: char.losses = int(data['losses'])
-        if 'personality' in data: char.personality = data['personality']
-        if 'is_approved' in data: char.is_approved = bool(data['is_approved'])
-        if 'creator_id' in data: char.creator_id = data['creator_id']
-        if 'creation_time' in data: char.creation_time = float(data['creation_time'])
-        
-        # Handle JSON fields explicitly
-        if 'stats' in data: 
-            char.stats = data['stats']
-            flag_modified(char, "stats")
-        if 'titles' in data:
-            char.titles = data['titles']
-            flag_modified(char, "titles")
-
-        db.session.commit()
-        print(f"!-- DEBUG: UPDATED CHARACTER {char.name} --!")
-        return jsonify({"status": "success", "message": f"Updated {char.name}"})
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"!-- DEBUG UPDATE ERROR: {e} --!")
-        return jsonify({"error": str(e)}), 500
-
-#grabs all user accounts for the debug editor
-@app.route('/api/debug/users', methods=['GET'])
-def debug_get_users():
-    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403 
-    users = User.query.all()
-    #No to_dict method, so we just build it right here.
-    #NOTE - It'd be simple to just add a to_dict to User.
-    return jsonify([{
-        "id": u.id,
-        "username": u.username,
-        "money": u.money,
-        "creation_time": u.creation_time,
-        "last_submission": u.last_submission,
-        "last_login_bonus": u.last_login_bonus,
-        "portrait": u.portrait
-    } for u in users])
-
-#update a users database row
-@app.route('/api/debug/user/<user_id>', methods=['POST'])
-def debug_update_user(user_id):
-    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403 
-    data = request.get_json()
-    u = User.query.get(user_id)
-    
-    if not u:
-        return jsonify({"error": "User not found"}), 404
-        
-    try:
-        if 'username' in data: u.username = data['username']
-        if 'money' in data: u.money = int(data['money'])
-        if 'creation_time' in data: u.creation_time = float(data['creation_time'])
-        if 'last_submission' in data: u.last_submission = float(data['last_submission'])
-        if 'portrait' in data: u.portrait = data['portrait']
-
-        db.session.commit()
-        print(f"!-- DEBUG: UPDATED USER {u.username} --!")
-        return jsonify({"status": "success", "message": f"Updated {u.username}"})
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"!-- DEBUG UPDATE ERROR: {e} --!")
-        return jsonify({"error": str(e)}), 500
-
-#grab matches from the matches table in the database
-@app.route('/api/debug/matches', methods=['GET'])
-def debug_get_matches():
-    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
-    matches = Match.query.order_by(Match.timestamp.desc()).all()
-    return jsonify([m.to_dict_debug() for m in matches])
-
-#grab information from a match in the match table
-@app.route('/api/debug/match/<match_id>', methods=['POST'])
-def debug_update_match(match_id):
-    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
-    data = request.get_json()
-    m = Match.query.get(match_id)
-    if not m: return jsonify({"error": "Match not found"}), 404
-    try:
-        if 'summary' in data: m.summary = data['summary']
-        if 'winner_name' in data: m.winner_name = data['winner_name']
-        if 'winner_id' in data: m.winner_id = data['winner_id']
-        if 'match_type' in data: m.match_type = data['match_type']
-        if 'is_title_bout' in data: m.is_title_bout = bool(data['is_title_bout'])
-        if 'title_exchanged' in data: m.title_exchanged = data['title_exchanged']
-        
-        if 'match_data' in data:
-            m.match_data = data['match_data']
-            flag_modified(m, "match_data")
-            
-        db.session.commit()
-        return jsonify({"status": "success", "message": f"Updated Match {m.id}"})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/debug/<table_type>/<item_id>', methods=['DELETE'])
-def debug_delete_item(table_type, item_id):
-    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
-    try:
-        #route deletion to correct database table
-        if table_type == 'character': item = Character.query.get(item_id)
-        elif table_type == 'user': item = User.query.get(item_id)
-        elif table_type == 'match': item = Match.query.get(item_id)
-        else: return jsonify({"error": "Invalid table type"}), 400
-
-        if not item: return jsonify({"error": "Item not found"}), 404
-        
-        db.session.delete(item)
-        db.session.commit()
-        print(f"!-- DEBUG: DELETED {table_type.upper()} {item_id} --!")
-        return jsonify({"status": "success", "message": f"Deleted {table_type} {item_id}"})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
 
 ##################################
 #        FRONTEND HANDLERS       #
@@ -557,35 +408,6 @@ def return_current_card():
     except Exception as e:
         print(f"!-- ERROR SERVING CARD: {e} --!")
         return jsonify({'error': str(e)}), 500
-
-#Creates a leaderboard by sorting the top three fighters
-@app.route('/api/roster', methods=['POST'])
-def return_top_fighters():
-    #pagination query
-    data = request.get_json()
-    page = data.get('page', 1)
-    per_page = 10
-
-    wl_ratio = case(
-        (Character.losses == 0, Character.wins * 1.0),
-        else_=(Character.wins * 1.0) / Character.losses
-    )
-    #just sorted by descending wins for now
-    pagination = Character.query.filter_by(is_approved=True).order_by(wl_ratio.desc(), Character.wins.desc()).paginate(page=page, per_page=per_page, error_out=False)
-    
-    return jsonify([c.to_dict_display() for c in pagination.items])
-
-#returns a random assortment of user potraits
-@app.route('/api/crowd')
-def return_crowd():
-    try:
-        users_with_portraits = User.query.filter(User.portrait != None).all()
-        selected_users = random.sample(users_with_portraits, min(len(users_with_portraits), 12))
-        #returns username and portrait, making the portrait clickable
-        return jsonify([{"username": u.username, "portrait": u.portrait} for u in selected_users])
-    except Exception as e:
-        print(f"!-- ERROR FETCHING CROWD: {e} --!")
-        return jsonify([])
     
 #Default app route
 @app.route('/')
