@@ -39,7 +39,7 @@
 }
 
 .debug-roster-list {
-    width: 250px;
+    width: 280px;
     background: #ffffff;
     color: #000;
     border: 1px solid #3c3c3c;
@@ -171,17 +171,6 @@
     color: #000000 !important;
 }
 
-.save-btn { 
-    background: #6b946c; 
-    color: white; 
-    border: 1px solid #000; 
-    padding: 12px 24px; 
-    font-size: 1.1em;
-    cursor: pointer; 
-    width: 100%; 
-    font-weight: bold; 
-}
-
 .save-btn:hover { 
     background: #45a049; 
 }
@@ -237,4 +226,26 @@
 .preview-box img {
     max-width: 100%;
     max-height: 200px;
+}
+
+.delete-btn {
+    background: #d68a8a; 
+    color: white; 
+    border: 1px solid #000; 
+    padding: 12px 24px; 
+    font-size: 1.1em;
+    cursor: pointer; 
+    width: 100%; 
+    font-weight: bold; 
+}
+
+.save-btn { 
+    background: #6b946c; 
+    color: white; 
+    border: 1px solid #000; 
+    padding: 12px 24px; 
+    font-size: 1.1em;
+    cursor: pointer; 
+    width: 100%; 
+    font-weight: bold; 
 }

@@ -129,7 +129,6 @@ export default function RosterView() {
                 <div className="stats">
                   <b className={getAlignmentClass(item.alignment)}>{item.name}</b>
                   <b className="roster-titles">{item.titles.join(", ")}</b>
-                  <b className="fighter-status">{item.status}</b>
                   <p className="description"><span dangerouslySetInnerHTML={{ __html: item.description }} /></p>
                   <p>Wins: {item.wins}</p>
                   <p>Losses: {item.losses}</p>

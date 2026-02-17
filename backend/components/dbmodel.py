@@ -18,7 +18,8 @@ class User(UserMixin, db.Model):
     portrait = db.Column(db.Text)                                            #User portrait, stored as a base64 text
     username = db.Column(db.String(32))                                      #Username of account
     money = db.Column(db.Integer, default=100)                               #how much money the user has
-    last_submission = db.Column(db.Float, default=0.0)
+    last_submission = db.Column(db.Float, default=0.0)                       #when did the user last submit a character, used for 5min cooldown
+    last_login_bonus = db.Column(db.Float, default=0.0)                      #timer for tracking login bonus reward
     #One user may manage many characters
     characters = db.relationship('Character', backref='manager', lazy=True)  #who this user 'manages'
 
@@ -30,19 +31,20 @@ class User(UserMixin, db.Model):
 class Character(db.Model):
     #identifiers/meta
     id = db.Column(db.String(36), primary_key=True)                          #UUID
-    name = db.Column(db.String(64), nullable=False)                          #name of this character
+    name = db.Column(db.String(64), nullable=False, unique=True)                          #name of this character
     creation_time = db.Column(db.Float, default=time.time)                   #time the character was created
     image_file = db.Column(db.Text, nullable=False)                          #the drawing of the character.
     #who made this
     creator_id = db.Column(db.String(16), nullable=True, default="Unknown")
 
     #bio
-    description = db.Column(db.Text, default="Mysterious Challenger!")       #description of character
-    personality = db.Column(db.String(16), default="Unknown")                
-    alignment = db.Column(db.String(20), default="Unknown") 
-    titles = db.Column(JSON, default=list)                                   #list of strings
-    manager_id = db.Column(db.String(16), db.ForeignKey('user.id'), nullable=True, default="None")
-    popularity = db.Column(db.Integer, default=1)
+    description = db.Column(db.Text, default="Mysterious Challenger!")                              #description of character
+    personality = db.Column(db.String(16), default="Unknown")                                       #how this character conducts themselves
+    alignment = db.Column(db.String(20), default="Unknown")                                         #what titles do they hold
+    titles = db.Column(JSON, default=list)                                                          #list of strings
+    manager_id = db.Column(db.String(16), db.ForeignKey('user.id'), nullable=True, default="None")  #who is their manager?
+    popularity = db.Column(db.Integer, default=1)                                                   #how popular is this character (based on generated stats, not influenced by humans yet)
+    status = db.Column(db.String(16), default="active")                                             #what is the status of this character? active, retired, injurec
 
     #combat stats, stored as a json still
     stats = db.Column(JSON, default=dict)
@@ -52,11 +54,18 @@ class Character(db.Model):
     #flags
     is_approved = db.Column(db.Boolean, default=False)
 
+    #return the username of who created this character
     def get_creator_name(self):
         if self.creator_id and self.creator_id != "Unknown":
             user = User.query.get(self.creator_id)
             return user.username if user else "Unknown"
         return "Unknown"
+    #return the portrait of the creator of this character
+    def get_creator_portrait(self):
+        if self.creator_id and self.creator_id != "Unknown":
+            user = User.query.get(self.creator_id)
+            return user.portrait if user else None
+        return None
 
     def get_manager_name(self):
         if self.manager_id and self.manager_id != "None":
@@ -64,7 +73,7 @@ class Character(db.Model):
             return user.username if user else "None"
         return "None"
     
-    #return the db entry as a dict with everything we could need.
+    #general dict containing everything except for exact user/manager IDs
     def to_dict(self):
         return {
             "id": self.id,
@@ -73,6 +82,7 @@ class Character(db.Model):
             "stats": self.stats,
             "wins": self.wins,
             "losses": self.losses,
+            "status": self.status,
             "description": self.description,
             "personality": self.personality,
             "image_file": self.image_file,
@@ -84,6 +94,27 @@ class Character(db.Model):
             "titles": self.titles
         }
     
+    #dict used for displaying fighters. Doesn't include stats or IDs
+    #this should be used for roster and arena views so we don't accidentally reveal character stats.
+    def to_dict_display(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "wins": self.wins,
+            "losses": self.losses,
+            "status": self.status,
+            "is_approved": self.is_approved,
+            "description": self.description,
+            "image_file": self.image_file,
+            "creator_name": self.get_creator_name(),
+            "creator_portrait": self.get_creator_portrait(),
+            "manager_name": self.get_manager_name(),
+            "popularity": self.popularity,
+            "alignment": self.alignment,
+            "titles": self.titles
+        }
+    
+    #dict with everything, including user/manager IDs
     def to_dict_debug(self):
         return {
             "id": self.id,
@@ -92,6 +123,7 @@ class Character(db.Model):
             "stats": self.stats,
             "wins": self.wins,
             "losses": self.losses,
+            "status": self.status,
             "description": self.description,
             "personality": self.personality,
             "image_file": self.image_file,
@@ -115,6 +147,30 @@ class Match(db.Model):
     is_title_bout = db.Column(db.Boolean, default=False)        #was this for a title?
     title_exchanged = db.Column(db.String(36), nullable=True)   #what title was exchanged, if one was?
 
+    def to_dict_display(self):
+        return {
+            "id": self.id,
+            "timestamp": self.timestamp,
+            "match_type": self.match_type,
+            "summary": self.summary,
+            "winner_name": self.winner_name,
+            "winner_id": self.winner_id,
+            "is_title_bout": self.is_title_bout,
+            "title_exchanged": self.title_exchanged
+        }
+
+    def to_dict_debug(self):
+        return {
+            "id": self.id,
+            "timestamp": self.timestamp,
+            "match_type": self.match_type,
+            "summary": self.summary,
+            "winner_name": self.winner_name,
+            "winner_id": self.winner_id,
+            "match_data": self.match_data,
+            "is_title_bout": self.is_title_bout,
+            "title_exchanged": self.title_exchanged
+        }
 
 
 

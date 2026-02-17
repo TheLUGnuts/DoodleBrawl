@@ -2,7 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 from components.dbmodel import db, User, Character
-import secrets, time
+import secrets, time, re
 
 account_bp = Blueprint('account', __name__)
 
@@ -12,7 +12,13 @@ def create_account():
     if not data:
         return jsonify({"error": "No data provided"}), 400
     
-    username = data.get('username')
+    username = data.get('username', "")
+    if not re.match(r"^[a-zA-Z0-9]+$", username):
+        return jsonify({"error": "Username can only contain letters and numbers!"}), 400
+    #make sure the username isn't already being used.
+    existing_user = User.query.filter_by(username=username).first()
+    if existing_user:
+        return jsonify({"error": "That username is already taken! Please choose another."}), 400
     portrait = data.get('portrait') #expecting a base64 string
     if not username or not portrait:
         return jsonify({"error": "Username and Portrait are required."}), 400
@@ -51,6 +57,14 @@ def login_account():
         return jsonify({"error": "Account ID required"}), 400
     user = User.query.get(account_id)
     if user:
+        bonus_awarded = False
+        if time.time() - user.last_login_bonus >= 86400:
+            user.money += 200
+            user.last_login_bonus = time.time()
+            db.session.commit()
+            bonus_awarded = True
+            print(f"$-- DAILY BONUS: Awarded $200 to {user.username} --$")
+
         created_chars = Character.query.filter_by(creator_id=user.id).all()
         managed_chars = user.characters
 
@@ -61,8 +75,28 @@ def login_account():
             "money": user.money,
             "portrait": user.portrait,
             "creation_time": user.creation_time,
-            "created_characters": [c.to_dict() for c in created_chars],
+            "bonus_awarded": bonus_awarded,
+            "created_characters": [c.to_dict_display() for c in created_chars],
             "managed_characters": [c.to_dict() for c in managed_chars]
         })
     else:
         return jsonify({"error": "Invalid Account ID"}), 401
+
+#returns a publicly viewable profile to avoid sending any IDs
+@account_bp.route('/profile/<username>', methods=['GET'])
+def get_public_profile(username):
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+        
+    #only return approved characters
+    public_chars = Character.query.filter_by(creator_id=user.id, is_approved=True).all()
+    
+    return jsonify({
+        "status": "success",
+        "username": user.username,
+        "portrait": user.portrait,
+        "creation_time": user.creation_time,
+        "money": user.money,
+        "characters": [c.to_dict_display() for c in public_chars] 
+    })

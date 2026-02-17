@@ -51,7 +51,7 @@ If a fighter has 0 fights, you MUST generate their full profile based on their i
 
 **B. EXISTING FIGHTERS (Fight Count > 0)**
 If a fighter is established, you must NOT change their Combat Stats.
-1.  **Backfill Data:** If Height, Weight, Personality, Status are "Unknown", generate them.
+1.  **Backfill Data:** If Personality is "Unknown", generate it.
 2.  **Alignment Evolution:** With a VERY HIGH temperature (>80) You *may* change their `alignment` based on match behavior.
     * **good:** Honorable, crowd favorite, plays by the rules.
     * **evil:** Dirty fighter, cheats, insults the crowd, arrogant.

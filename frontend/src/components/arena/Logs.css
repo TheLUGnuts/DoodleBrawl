@@ -1,0 +1,23 @@
+.logs-dropdown-section {
+  align-items: center;
+  margin-top: 5px;
+}
+
+.logs {
+  margin-top: 10px;
+  width: fit-content;
+  margin-left: 30%;
+  margin-right: 30%;
+  background-color: #eeeeee;
+  border: 3px dotted black;
+  border-radius: 20px;
+  padding-bottom: 10px;
+}
+
+.one-log {
+  margin-bottom: 20px;
+}
+
+.log-name {
+  font-weight: bold;
+}

@@ -13,8 +13,8 @@ export default function ArenaMini({ battleState, timer, lastWinner}) {
     let className = '';
     const base64 = decompressBase64Image(compressedBase64);
 
-    if (isWinner) className = 'winner-img';
-    if (isLoser) className = 'loser-img';
+    if (isWinner) className = 'winner-img-mini';
+    if (isLoser) className = 'loser-img-mini';
     return (
       <img
         className="thumbnail-img"
@@ -38,8 +38,8 @@ export default function ArenaMini({ battleState, timer, lastWinner}) {
     <div className='root-mini'>
       <div className='row-mini'>
         <div className='column-mini'>
-          <p className='fighter-name-mini fighter-1'>{battleState.fighters[0].name}</p>
-          <div className='fighter-img'>
+          <p className='fighter-name-mini-left fighter-1'>{battleState.fighters[0].name}</p>
+          <div className='fighter-img-mini'>
             {battleState && 
             <ImageViewer compressedBase64={battleState.fighters[0].image_file} 
               isWinner={lastWinner && lastWinner === battleState.fighters[0].name}
@@ -54,8 +54,8 @@ export default function ArenaMini({ battleState, timer, lastWinner}) {
         </div>
 
         <div className='column-mini'>
-          <p className='fighter-name-mini fighter-2'>{battleState.fighters[1].name}</p>
-          <div className='fighter-img'>
+          <p className='fighter-name-mini-right fighter-2'>{battleState.fighters[1].name}</p>
+          <div className='fighter-img-mini'>
             {battleState && 
             <ImageViewer compressedBase64={battleState.fighters[1].image_file} 
               isWinner={lastWinner && lastWinner === battleState.fighters[1].name}

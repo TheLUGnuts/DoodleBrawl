@@ -4,13 +4,17 @@
 import os, re, time, random
 from flask_cors                                                    import CORS
 from components.genclient                                     import Genclient
+from components.public                                        import public_bp
+from components.account                                      import account_bp
+from components.serverdata                                   import ServerData
 from sqlalchemy                                              import case, text
 from components.account                                      import account_bp
 from components.serverdata                                   import ServerData
 from dotenv                                                 import load_dotenv
 from sqlalchemy.orm.attributes                            import flag_modified
 from flask_socketio                                      import SocketIO, emit
-from components.dbmodel                             import db, Character, User
+from components.dbmodel                      import db, Character, User, Match
+from components.debug                     import debug_bp, is_admin_authorized
 from flask                     import Flask, render_template, jsonify, request
 
 
@@ -31,18 +35,32 @@ socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", f"{API_U
 #SQLite database initialitzation
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///doodlebrawl.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+#Initialize our flask blueprints for API decomposition
 app.register_blueprint(account_bp, url_prefix='/api/account')
+app.register_blueprint(debug_bp, url_prefix='/api/debug')
+app.register_blueprint(public_bp, url_prefix='/api')
 db.init_app(app)
 
 #this is to add a new column to the user table.
+#this is used for safe migration of rows into the updated database.
 with app.app_context():
     db.create_all()
     try:
+        #NOTE - Whenever a new column is added make sure it GOES ON TOP! Otherwise it'll throw a normally harmless "duplicate column" error and never add the next ones.
+        db.session.execute(text("ALTER TABLE character ADD COLUMN status VARCHAR(16) DEFAULT 'active'"))
+        db.session.execute(text("ALTER TABLE user ADD COLUMN last_login_bonus FLOAT DEFAULT 0.0"))
         db.session.execute(text("ALTER TABLE user ADD COLUMN last_submission FLOAT DEFAULT 0.0"))
         db.session.commit()
-        print("!-- ADDED 'last_submission' COLUMN TO USER TABLE --!")
+        print("!-- ADDED COLUMNS TO TABLES --!")
     except Exception:
         db.session.rollback()
+    try:
+        db.session.execute(text("UPDATE character SET manager_id = creator_id WHERE manager_id = 'None' OR manager_id IS NULL"))
+        db.session.commit()
+        print("!-- BACKFILLED MANAGER IDs FOR EXISTING CHARACTERS --!")
+    except Exception as e:
+        db.session.rollback()
+        print(f"!-- ERROR BACKFILLING MANAGERS: {e} --!")
 
 #Global variables
 BATTLE_TIMER=180                            #3 minutes in seconds
@@ -55,26 +73,9 @@ CURRENT_BETS = []                           #List of dicts like so: {'user_id': 
 MATCH_ODDS = {}                             #dict: {fighter_id: float_odds}
 CURRENT_POOL = 0                            #the betting pool for this match
 
-def is_champion(status):
-    if re.findall("Champion", status) and not re.findall("Former", status):
-        return True
-    else:
-        return False
-
 ##################################
 #         DEBUG HANDLERS         #
 ##################################
-
-#see if an incoming debug api request is from an admin
-def is_admin_authorized():
-    #if local development, bypass this
-    if app.debug or "localhost" in API_URL:
-        return True
-        
-    admin_ids = [i.strip() for i in os.getenv('ADMIN_IDS', '').split(',') if i.strip()]
-    user_id = request.headers.get('X-User-ID')
-    
-    return user_id and user_id in admin_ids
 
 @app.route('/api/debug/skip', methods=['POST'])
 def debug_skip_timer():
@@ -106,98 +107,37 @@ def debug_randomize_alignments():
     count = DATA.randomize_alignments()
     return jsonify({"status": "success", "count": count, "message": "Alignments randomized!"})
 
-#returns all characters, approved or not.
-@app.route('/api/debug/characters', methods=['GET'])
-def debug_get_characters():
+#test all actions
+@app.route('/api/debug/test_actions', methods=['POST'])
+def debug_test_actions():
     if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
-    chars = Character.query.all()
-    #FIXME
-    #THIS MAY BE VERY INEFFICIENT
-    #this returns the base64 image of every single character in the roster
-    #if we have a lot of fighters, this may be extremely bloated.
-    return jsonify([c.to_dict_debug() for c in chars])
-
-#edit the database entry of any character
-@app.route('/api/debug/character/<char_id>', methods=['POST'])
-def debug_update_character(char_id):
-    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
-    data = request.get_json()
-    char = Character.query.get(char_id)
-    
-    if not char:
-        return jsonify({"error": "Character not found"}), 404
-        
-    try:
-        if 'name' in data: char.name = data['name']
-        if 'description' in data: char.description = data['description']
-        if 'alignment' in data: char.alignment = data['alignment']
-        if 'popularity' in data: char.popularity = int(data['popularity'])
-        if 'wins' in data: char.wins = int(data['wins'])
-        if 'losses' in data: char.losses = int(data['losses'])
-        if 'personality' in data: char.personality = data['personality']
-        if 'is_approved' in data: char.is_approved = bool(data['is_approved'])
-        if 'creator_id' in data: char.creator_id = data['creator_id']
-        if 'creation_time' in data: char.creation_time = float(data['creation_time'])
-        
-        # Handle JSON fields explicitly
-        if 'stats' in data: 
-            char.stats = data['stats']
-            flag_modified(char, "stats")
-        if 'titles' in data:
-            char.titles = data['titles']
-            flag_modified(char, "titles")
-
-        db.session.commit()
-        print(f"!-- DEBUG: UPDATED CHARACTER {char.name} --!")
-        return jsonify({"status": "success", "message": f"Updated {char.name}"})
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"!-- DEBUG UPDATE ERROR: {e} --!")
-        return jsonify({"error": str(e)}), 500
-
-#grabs all user accounts for the debug editor
-@app.route('/api/debug/users', methods=['GET'])
-def debug_get_users():
-    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403 
-    users = User.query.all()
-    #No to_dict method, so we just build it right here.
-    #NOTE - It'd be simple to just add a to_dict to User.
-    return jsonify([{
-        "id": u.id,
-        "username": u.username,
-        "money": u.money,
-        "creation_time": u.creation_time,
-        "last_submission": u.last_submission,
-        "portrait": u.portrait
-    } for u in users])
-
-#update a users database row
-@app.route('/api/debug/user/<user_id>', methods=['POST'])
-def debug_update_user(user_id):
-    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403 
-    data = request.get_json()
-    u = User.query.get(user_id)
-    
-    if not u:
-        return jsonify({"error": "User not found"}), 404
-        
-    try:
-        if 'username' in data: u.username = data['username']
-        if 'money' in data: u.money = int(data['money'])
-        if 'creation_time' in data: u.creation_time = float(data['creation_time'])
-        if 'last_submission' in data: u.last_submission = float(data['last_submission'])
-        if 'portrait' in data: u.portrait = data['portrait']
-
-        db.session.commit()
-        print(f"!-- DEBUG: UPDATED USER {u.username} --!")
-        return jsonify({"status": "success", "message": f"Updated {u.username}"})
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"!-- DEBUG UPDATE ERROR: {e} --!")
-        return jsonify({"error": str(e)}), 500
-
+    #grab any two approved fighters
+    chars = Character.query.filter_by(is_approved=True).limit(2).all()
+    if len(chars) < 2:
+        return jsonify({"error": "Need at least 2 fighters in DB."}), 400
+    p1, p2 = chars[0], chars[1]
+    #pause the arena timer momentarily
+    global FROZEN
+    FROZEN = True
+    #scripted sequence to showcase all actions
+    test_log = [
+        { "actor": p1.name, "action": "ATTACK", "description": f"{p1.name} throws a basic <span class='action-red'>attack</span>!" },
+        { "actor": p2.name, "action": "DODGE", "description": f"{p2.name} swiftly <span class='action-blue'>dodges</span> the attack!" },
+        { "actor": p1.name, "action": "RECOVER", "description": f"{p1.name} steps back to <span class='action-green'>recover</span> HP." },
+        { "actor": p2.name, "action": "POWER", "description": f"{p2.name} winds up a <span class='action-purple'>powerful</span> strike!" },
+        { "actor": p1.name, "action": "AGILITY", "description": f"{p1.name} performs an <span class='action-orange'>acrobatic</span> flip!" },
+        { "actor": p2.name, "action": "ULTIMATE", "description": f"{p2.name} channels raw magical energy for an <span class='action-rainbow'>ULTIMATE</span> attack!" }
+    ]
+    #emit to clients.
+    socketio.emit('match_result', {
+        'fighters': [p1.to_dict_display(), p2.to_dict_display()],
+        'log': test_log,
+        'winner': p2.name,
+        'winner_id': p2.id,
+        'summary': "This was a simulated debug showcase of all combat animations!",
+        'introduction': "Welcome to the Action Animation Showcase!"
+    })
+    return jsonify({"status": "success", "message": "Triggered UI Action Showcase. Timer frozen."})
 
 ##################################
 #        FRONTEND HANDLERS       #
@@ -208,33 +148,63 @@ def debug_update_user(user_id):
 #1. A consideration (your stake in the bet)
 #2. A risk (the chance)
 #3. A prize
+#We are using the pari-mutuel sportsbook style.
+#this means we have a starting house pool, then the pool largens as people place bets.
 @socketio.on("place_bet")
 def handle_bet(data):
-    global CURRENT_POOL, CURRENT_BETS
+    global CURRENT_POOL, CURRENT_BETS, MATCH_ODDS
     user_id = data.get('user_id')
     fighter_id = data.get('fighter_id')
     amount = int(data.get('amount', 0))
 
-    #you wagered nothing or don't have enough money? get lost
     if amount <= 0:
         return {'status': 'error', 'message': 'Invalid bet amount.'}
     user = User.query.get(user_id)
     if not user or user.money < amount:
         return {'status': 'error', 'message': 'Insufficient funds!'}
-    user.money -= amount
+    
+    odds = MATCH_ODDS.get(fighter_id, 1.1)
 
-    CURRENT_BETS.append({
-        'user_id': user_id,
-        'fighter_id': fighter_id,
-        'amount': amount
-    })
+    #liability is how much we must payout. We have to calculate this so nobody goes over the pool and loses money.
+    current_fighter_liability = sum(b['amount'] for b in CURRENT_BETS if b['fighter_id'] == fighter_id) * odds
+    new_total_liability = current_fighter_liability + (amount * odds)
+    #bets must NOT make us exceed total liability
+    if new_total_liability > (CURRENT_POOL + amount):
+        safe_divisor = max(0.1, odds - 1.0) #prevent division by zero
+        max_add = int((CURRENT_POOL - current_fighter_liability) / safe_divisor)
+        return {
+            'status': 'error', 
+            'message': f'The prize pool is too small to cover that payout! Maximum additional wager: ${max(0, max_add)}'
+        }
+
+    #apply bet
+    existing_bet = next((b for b in CURRENT_BETS if b['user_id'] == user_id), None)
+    
+    if existing_bet:
+        # prevent "hedging" the bet
+        if existing_bet['fighter_id'] != fighter_id:
+            return {'status': 'error', 'message': 'You cannot bet on both fighters!'}
+        user.money -= amount
+        existing_bet['amount'] += amount
+        total_bet_amount = existing_bet['amount']
+    else:
+        user.money -= amount
+        CURRENT_BETS.append({
+            'user_id': user.id,
+            'fighter_id': fighter_id,
+            'amount': amount
+        })
+        total_bet_amount = amount
 
     CURRENT_POOL += amount
     db.session.commit()
-    #Potential problem, a server restart in the midst of a battle OR an API error with Gemini may cause people to lose their money.
     print(f"$-- BET PLACED BY {user.username} OF {amount} ON {fighter_id}! --$")
     emit('pool_update', {'pool': CURRENT_POOL}, broadcast=True)
-    return {'status': 'success', 'new_balance': user.money}
+    return {
+        'status': 'success', 
+        'new_balance': user.money, 
+        'total_wagered': total_bet_amount 
+    }
 
 #handles frontend submission of a new character
 #converts their information into JSON format using the character class
@@ -242,12 +212,17 @@ def handle_bet(data):
 def accept_new_character(data):
     if not data: return
     
+    #log in
     creator_id = data.get('creator_id')
     if not creator_id or creator_id == "Unknown":
         return {'status': 'error', 'message': 'You must be logged in to submit a fighter!'}
+    #valid user
     user = User.query.get(creator_id)
     if not user:
         return {'status': 'error', 'message': 'Invalid user account.'}
+    #pay up
+    if user.money < 100:
+        return {'status': 'error', 'message': 'Insufficient funds! Submitting a fighter costs $100.'}
     
     time_since_last = time.time() - user.last_submission
     if time_since_last < 300:
@@ -268,10 +243,14 @@ def accept_new_character(data):
         image_file=image_base,
         name=name,
         creator_id=creator_id if creator_id else "Unknown",
+        manager_id=creator_id if creator_id else "None", 
+        status="active",
         is_approved=False #is_approved=False means it will be put into the approval queue.
     )
     
     user.last_submission = time.time()
+    user.money -= 100
+
     db.session.add(c)
     db.session.commit()
     
@@ -313,7 +292,7 @@ def schedule_next_match():
 
     #emit the card to clients
     socketio.emit('match_scheduled', {
-        'fighters': [c.to_dict() for c in NEXT_MATCH],
+        'fighters': [c.to_dict_display() for c in NEXT_MATCH],
         'starts_in': BATTLE_TIMER,
         'odds': MATCH_ODDS,
         'pool': CURRENT_POOL
@@ -323,7 +302,7 @@ def schedule_next_match():
 def run_scheduled_battle():
     global NEXT_MATCH
     if not NEXT_MATCH:
-        return
+        return 0 
     
     p1 = DATA.get_character(NEXT_MATCH[0].id)
     p2 = DATA.get_character(NEXT_MATCH[1].id)
@@ -424,15 +403,18 @@ def run_scheduled_battle():
     )
     #emit the result to clients
     socketio.emit('match_result', {
-        'fighters': [c.to_dict() for c in live_match],
+        'fighters': [c.to_dict_display() for c in live_match],
         'log': result.get('battle_log', []),
         'winner': winner_obj.name,
+        'winner_id': winner_obj.id,
         'summary': result.get('summary', ''),
         'introduction': result.get('introduction', '')
     })
     
     print(f"$-- MATCH FINISHED - WINNER {winner_obj.name} --$")
     NEXT_MATCH = None
+    #return the number of logs to the server so we can allocate enough time for the match to play out.
+    return len(result.get('battle_log', []))
 
 ##################################
 #        SERVER HANDLERS         #
@@ -452,7 +434,7 @@ def return_current_card():
             'pool': 0
         })
     try:
-        fighters_data = [c.to_dict() for c in current_match]
+        fighters_data = [c.to_dict_display() for c in current_match]
         return jsonify({
             'fighters': fighters_data,
             'starts_in': BATTLE_TIMER,
@@ -463,39 +445,6 @@ def return_current_card():
     except Exception as e:
         print(f"!-- ERROR SERVING CARD: {e} --!")
         return jsonify({'error': str(e)}), 500
-
-#Creates a leaderboard by sorting the top three fighters
-@app.route('/api/roster', methods=['POST'])
-def return_top_fighters():
-    #pagination query
-    data = request.get_json()
-    page = data.get('page', 1)
-    per_page = 10
-
-    wl_ratio = case(
-        (Character.losses == 0, Character.wins * 1.0),
-        else_=(Character.wins * 1.0) / Character.losses
-    )
-    #just sorted by descending wins for now
-    pagination = Character.query.filter_by(is_approved=True).order_by(wl_ratio.desc(), Character.wins.desc()).paginate(page=page, per_page=per_page, error_out=False)
-    
-    return jsonify([c.to_dict() for c in pagination.items])
-
-#returns a random assortment of user potraits to populate the bleachers in the arena
-@app.route('/api/crowd')
-def return_crowd():
-    try:
-        #grab all user portraits 
-        users_with_portraits = User.query.filter(User.portrait != None).all()
-        
-        #randomly select up to 24 of them (12 for each side)
-        selected_users = random.sample(users_with_portraits, min(len(users_with_portraits), 12))
-        
-        #return a json of the image data
-        return jsonify([u.portrait for u in selected_users])
-    except Exception as e:
-        print(f"!-- ERROR FETCHING CROWD: {e} --!")
-        return jsonify([])
     
 #Default app route
 @app.route('/')
@@ -521,11 +470,14 @@ def server_loop():
                 with app.app_context():
                     CURRENT_TIMER = 0
                     socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
-                    run_scheduled_battle() #run the match
-                    socketio.sleep(60)     #so we see the throbber for one minute
+                    log_count = run_scheduled_battle() #run the match
+                    if log_count is None: log_count = 0
+                    #7 is for the duration of the introduction, three seconds for each log in the match, then 30 seconds to see the result.
+                    animation_duration = 7 + (log_count * 3) + 30
+                    socketio.sleep(animation_duration)     #so we see the throbber for one minute
                     CURRENT_TIMER = -1
                     socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
-                    socketio.sleep(60)     #then scheduling announcement
+                    socketio.sleep(10)     #then scheduling announcement
                     schedule_next_match()  #schedule the next match
                 CURRENT_TIMER = BATTLE_TIMER
 

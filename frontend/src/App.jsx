@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { socket, API_URL } from './socket.js';
 import './App.css'
 import DoodleCanvas from './components/DoodleCanvas';
-import ArenaView from './components/ArenaView';
+import ArenaView from './components/arena/ArenaView';
+import ProfileCard from './components/ProfileCard';
 import RosterView from './components/RosterView';
 import ArenaMini from './components/ArenaMini';
 import Account from './components/Account';
 import Debug from './components/Debug';
+
 
 function App() {
   const [timer, setTimer] = useState(null);
@@ -16,6 +18,7 @@ function App() {
   const timeouts = useRef([]);
   const [logState, setLogState] = useState([]);
   const [lastWinner, setLastWinner] = useState("");
+  const [lastWinnerId, setLastWinnerId] = useState("");
   const [summaryState, setSummaryState] = useState("");
   const [introState, setIntroState] = useState("");
   const [user, setUser] = useState(null);
@@ -24,6 +27,7 @@ function App() {
   const [currentPool, setCurrentPool] = useState(0);
   const [myBet, setMyBet] = useState(null);
   const [payoutWon, setPayoutWon] = useState(0);
+  const [selectedProfile, setSelectedProfile] = useState(null);
 
   const handleResult = (data) => {
     //takes data from a fight and places it in the correct places
@@ -58,20 +62,22 @@ function App() {
     timeouts.current = [];
 
     const LOG_DELAY = 3000 // 3 seconds between message
+    const INTRO_DELAY = 7000 // 7 seconds for the introduction
     data.log.forEach((log, index) => {
       const t = setTimeout(() => {
         setLogState(prev => [...prev, log]);
-      }, (index + 1) * LOG_DELAY);
+      }, INTRO_DELAY + (index * LOG_DELAY));
       timeouts.current.push(t);
     });
     //totalTime is how long to wait before the winner text and summary is displayed. Calculated by the amount of logs times the log delay
-    const totalTime = (data.log.length + 1) * LOG_DELAY;
+    const totalTime = INTRO_DELAY + (data.log.length * LOG_DELAY);
     const tWinner = setTimeout(() => {
       setLastWinner(data.winner);
+      setLastWinnerId(data.winner_id);
       setSummaryState(data.summary);
       setBattleState(data); 
       setMyBet(currentBet => {
-          if (currentBet && data.winner === currentBet.fighterName) {
+          if ((currentBet && data.winner === currentBet.fighterName) || (currentBet && data.winner_id === currentBet.fighterId)) {
               setPayoutWon(currentBet.payout);
           } else {
             setPayoutWon(-1);
@@ -135,19 +141,17 @@ function App() {
   const handleCharacterAdded = (data) => {
       if (data.status === 'success') {
         alert(`Success! ${data.character.name} has been added to the approval queue!`);
-        console.log("New character verified by server:", data.character);
 
         setUser(prevUser => {
           if (!prevUser) return prevUser;
-          
           return {
             ...prevUser,
-            created_characters: [...prevUser.created_characters, data.character]
+            created_characters: [...prevUser.created_characters, data.character],
+            managed_characters: [...prevUser.managed_characters, data.character] 
           };
         });
       }
     };
-
   //listen for and load battles from backend
   useEffect(() => {
     //register listeners
@@ -188,7 +192,7 @@ function App() {
     timeouts.current.forEach(clearTimeout);
     timeouts.current = [];
 
-    setLogState([{description: "The match will begin soon!"}]);
+    setLogState([]);
     setLastWinner("");
     setSummaryState("");
     setIntroState("");
@@ -263,6 +267,13 @@ function App() {
         <hr/>
       </div>
 
+      {/* PROFILE RENDERER */}
+      {selectedProfile && (
+        <ProfileCard 
+          username={selectedProfile} 
+          onClose={() => setSelectedProfile(null)} 
+        />
+      )}
 
       {/* These are all of our tabs at the top of the website */}
       <div className="main-content">
@@ -283,7 +294,22 @@ function App() {
 
         {activeTab === 'battleground' && (
         <div class='battleground'>
-          <ArenaView battleState={battleState} timer={timer} logState={logState} lastWinner={lastWinner} summaryState={summaryState} introState={introState} user={user} setUser={setUser} matchOdds={matchOdds} currentPool={currentPool} myBet={myBet} setMyBet={setMyBet} payoutWon={payoutWon}/>
+          <ArenaView 
+          battleState={battleState} 
+          timer={timer} 
+          logState={logState} 
+          lastWinner={lastWinner} 
+          summaryState={summaryState} 
+          introState={introState} 
+          user={user} 
+          setUser={setUser} 
+          matchOdds={matchOdds} 
+          currentPool={currentPool} 
+          myBet={myBet} 
+          setMyBet={setMyBet} 
+          payoutWon={payoutWon}
+          onProfileClick={setSelectedProfile}
+          />
           <hr/>
         </div>
         )}

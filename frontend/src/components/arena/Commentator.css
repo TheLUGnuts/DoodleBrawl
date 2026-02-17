@@ -1,0 +1,32 @@
+.commentator-container {
+  display: inline;
+}
+
+.commentator-img {
+  display: inline;
+  max-height: 160px;
+  width: auto;
+  border: 4px solid #000;
+  margin-bottom: 5px;
+}
+
+.commentator-img.talking {
+  animation: jimTalkBounce 0.4s ease-in-out;
+}
+
+.slide-up-fade {
+  animation: slideUpFadeIn 0.5s ease-out forwards;
+}
+
+@keyframes slideUpFadeIn {
+  0% { opacity: 0; transform: translateY(50px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes jimTalkBounce {
+  0%,
+  100% { transform: scaleY(1) translateY(0); }
+  25% { transform: scaleY(1.05) translateY(-5px); }
+  50% { transform: scaleY(0.95) translateY(2px); }
+  75% { transform: scaleY(1.02) translateY(-2px); }
+}
