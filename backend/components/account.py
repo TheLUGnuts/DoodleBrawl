@@ -2,7 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 from components.dbmodel import db, User, Character
-import secrets, time
+import secrets, time, re
 
 account_bp = Blueprint('account', __name__)
 
@@ -15,6 +15,10 @@ def create_account():
     username = data.get('username', "")
     if not re.match(r"^[a-zA-Z0-9]+$", username):
         return jsonify({"error": "Username can only contain letters and numbers!"}), 400
+    #make sure the username isn't already being used.
+    existing_user = User.query.filter_by(username=username).first()
+    if existing_user:
+        return jsonify({"error": "That username is already taken! Please choose another."}), 400
     portrait = data.get('portrait') #expecting a base64 string
     if not username or not portrait:
         return jsonify({"error": "Username and Portrait are required."}), 400

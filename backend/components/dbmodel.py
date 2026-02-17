@@ -31,7 +31,7 @@ class User(UserMixin, db.Model):
 class Character(db.Model):
     #identifiers/meta
     id = db.Column(db.String(36), primary_key=True)                          #UUID
-    name = db.Column(db.String(64), nullable=False)                          #name of this character
+    name = db.Column(db.String(64), nullable=False, unique=True)                          #name of this character
     creation_time = db.Column(db.Float, default=time.time)                   #time the character was created
     image_file = db.Column(db.Text, nullable=False)                          #the drawing of the character.
     #who made this
