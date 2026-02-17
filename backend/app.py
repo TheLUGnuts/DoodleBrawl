@@ -10,7 +10,7 @@ from components.serverdata                                   import ServerData
 from dotenv                                                 import load_dotenv
 from sqlalchemy.orm.attributes                            import flag_modified
 from flask_socketio                                      import SocketIO, emit
-from components.dbmodel                             import db, Character, User
+from components.dbmodel                      import db, Character, User, Match
 from flask                     import Flask, render_template, jsonify, request
 
 
@@ -201,6 +201,57 @@ def debug_update_user(user_id):
         print(f"!-- DEBUG UPDATE ERROR: {e} --!")
         return jsonify({"error": str(e)}), 500
 
+#grab matches from the matches table in the database
+@app.route('/api/debug/matches', methods=['GET'])
+def debug_get_matches():
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
+    matches = Match.query.order_by(Match.timestamp.desc()).all()
+    return jsonify([m.to_dict_debug() for m in matches])
+
+#grab information from a match in the match table
+@app.route('/api/debug/match/<match_id>', methods=['POST'])
+def debug_update_match(match_id):
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
+    data = request.get_json()
+    m = Match.query.get(match_id)
+    if not m: return jsonify({"error": "Match not found"}), 404
+    try:
+        if 'summary' in data: m.summary = data['summary']
+        if 'winner_name' in data: m.winner_name = data['winner_name']
+        if 'winner_id' in data: m.winner_id = data['winner_id']
+        if 'match_type' in data: m.match_type = data['match_type']
+        if 'is_title_bout' in data: m.is_title_bout = bool(data['is_title_bout'])
+        if 'title_exchanged' in data: m.title_exchanged = data['title_exchanged']
+        
+        if 'match_data' in data:
+            m.match_data = data['match_data']
+            flag_modified(m, "match_data")
+            
+        db.session.commit()
+        return jsonify({"status": "success", "message": f"Updated Match {m.id}"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/debug/<table_type>/<item_id>', methods=['DELETE'])
+def debug_delete_item(table_type, item_id):
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
+    try:
+        #route deletion to correct database table
+        if table_type == 'character': item = Character.query.get(item_id)
+        elif table_type == 'user': item = User.query.get(item_id)
+        elif table_type == 'match': item = Match.query.get(item_id)
+        else: return jsonify({"error": "Invalid table type"}), 400
+
+        if not item: return jsonify({"error": "Item not found"}), 404
+        
+        db.session.delete(item)
+        db.session.commit()
+        print(f"!-- DEBUG: DELETED {table_type.upper()} {item_id} --!")
+        return jsonify({"status": "success", "message": f"Deleted {table_type} {item_id}"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 ##################################
 #        FRONTEND HANDLERS       #
