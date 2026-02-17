@@ -233,9 +233,12 @@ export default function Account({user, onLogin, onLogout}) {
         <input 
           type="text" 
           value={username} 
-          onChange={(e) => setUsername(e.target.value)} 
-          placeholder="Username"
-          maxLength="16"
+          onChange={(e) => {
+            const sanitizedValue = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+            setUsername(sanitizedValue);
+          }} 
+          placeholder="Enter username..."
+          maxLength={32}
         />
       </div>
 

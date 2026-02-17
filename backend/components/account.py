@@ -12,7 +12,9 @@ def create_account():
     if not data:
         return jsonify({"error": "No data provided"}), 400
     
-    username = data.get('username')
+    username = data.get('username', "")
+    if not re.match(r"^[a-zA-Z0-9]+$", username):
+        return jsonify({"error": "Username can only contain letters and numbers!"}), 400
     portrait = data.get('portrait') #expecting a base64 string
     if not username or not portrait:
         return jsonify({"error": "Username and Portrait are required."}), 400
