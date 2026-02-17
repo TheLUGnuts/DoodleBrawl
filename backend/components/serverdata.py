@@ -25,11 +25,11 @@ class ServerData:
         return Character.query.get(char_id)
 
     def get_roster(self):
-        """Returns all approved characters."""
+        #returns all approved characters
         return Character.query.filter_by(is_approved=True).all()
     
     def get_queue(self):
-        """Returns all unapproved characters."""
+        #returns all unapproved characters
         return Character.query.filter_by(is_approved=False).all()
         if os.path.exists(REJECTED_FILE):
             try:
@@ -42,11 +42,7 @@ class ServerData:
         return queue
 
     def get_candidates_for_match(self):
-        """
-        Smart logic to find fighters for the next match.
-        Prioritizes fresh meat (0 fights).
-        """
-        #find fresh meat
+        #find fresh meat (fighters with 0 total fights)
         fresh_meat = Character.query.filter_by(is_approved=True).filter(
             (Character.wins + Character.losses) == 0
         ).all()

@@ -72,7 +72,7 @@ def login_account():
             "portrait": user.portrait,
             "creation_time": user.creation_time,
             "bonus_awarded": bonus_awarded,
-            "created_characters": [c.to_dict() for c in created_chars],
+            "created_characters": [c.to_dict_display() for c in created_chars],
             "managed_characters": [c.to_dict() for c in managed_chars]
         })
     else:

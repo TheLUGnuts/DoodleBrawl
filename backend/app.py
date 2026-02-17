@@ -46,12 +46,21 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
     try:
+        #NOTE - Whenever a new column is added make sure it GOES ON TOP! Otherwise it'll throw a normally harmless "duplicate column" error and never add the next ones.
+        db.session.execute(text("ALTER TABLE character ADD COLUMN status VARCHAR(16) DEFAULT 'active'"))
         db.session.execute(text("ALTER TABLE user ADD COLUMN last_login_bonus FLOAT DEFAULT 0.0"))
         db.session.execute(text("ALTER TABLE user ADD COLUMN last_submission FLOAT DEFAULT 0.0"))
         db.session.commit()
-        print("!-- ADDED COLUMNS TO USER TABLE --!")
+        print("!-- ADDED COLUMNS TO TABLES --!")
     except Exception:
         db.session.rollback()
+    try:
+        db.session.execute(text("UPDATE character SET manager_id = creator_id WHERE manager_id = 'None' OR manager_id IS NULL"))
+        db.session.commit()
+        print("!-- BACKFILLED MANAGER IDs FOR EXISTING CHARACTERS --!")
+    except Exception as e:
+        db.session.rollback()
+        print(f"!-- ERROR BACKFILLING MANAGERS: {e} --!")
 
 #Global variables
 BATTLE_TIMER=180                            #3 minutes in seconds
@@ -63,12 +72,6 @@ FROZEN = False                              #For freezing the timer
 CURRENT_BETS = []                           #List of dicts like so: {'user_id': id, 'fighter_id': id, 'amount': int}
 MATCH_ODDS = {}                             #dict: {fighter_id: float_odds}
 CURRENT_POOL = 0                            #the betting pool for this match
-
-def is_champion(status):
-    if re.findall("Champion", status) and not re.findall("Former", status):
-        return True
-    else:
-        return False
 
 ##################################
 #         DEBUG HANDLERS         #
@@ -103,6 +106,38 @@ def debug_randomize_alignments():
     if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
     count = DATA.randomize_alignments()
     return jsonify({"status": "success", "count": count, "message": "Alignments randomized!"})
+
+#test all actions
+@app.route('/api/debug/test_actions', methods=['POST'])
+def debug_test_actions():
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
+    #grab any two approved fighters
+    chars = Character.query.filter_by(is_approved=True).limit(2).all()
+    if len(chars) < 2:
+        return jsonify({"error": "Need at least 2 fighters in DB."}), 400
+    p1, p2 = chars[0], chars[1]
+    #pause the arena timer momentarily
+    global FROZEN
+    FROZEN = True
+    #scripted sequence to showcase all actions
+    test_log = [
+        { "actor": p1.name, "action": "ATTACK", "description": f"{p1.name} throws a basic <span class='action-red'>attack</span>!" },
+        { "actor": p2.name, "action": "DODGE", "description": f"{p2.name} swiftly <span class='action-blue'>dodges</span> the attack!" },
+        { "actor": p1.name, "action": "RECOVER", "description": f"{p1.name} steps back to <span class='action-green'>recover</span> HP." },
+        { "actor": p2.name, "action": "POWER", "description": f"{p2.name} winds up a <span class='action-purple'>powerful</span> strike!" },
+        { "actor": p1.name, "action": "AGILITY", "description": f"{p1.name} performs an <span class='action-orange'>acrobatic</span> flip!" },
+        { "actor": p2.name, "action": "ULTIMATE", "description": f"{p2.name} channels raw magical energy for an <span class='action-rainbow'>ULTIMATE</span> attack!" }
+    ]
+    #emit to clients.
+    socketio.emit('match_result', {
+        'fighters': [p1.to_dict_display(), p2.to_dict_display()],
+        'log': test_log,
+        'winner': p2.name,
+        'winner_id': p2.id,
+        'summary': "This was a simulated debug showcase of all combat animations!",
+        'introduction': "Welcome to the Action Animation Showcase!"
+    })
+    return jsonify({"status": "success", "message": "Triggered UI Action Showcase. Timer frozen."})
 
 ##################################
 #        FRONTEND HANDLERS       #
@@ -208,6 +243,8 @@ def accept_new_character(data):
         image_file=image_base,
         name=name,
         creator_id=creator_id if creator_id else "Unknown",
+        manager_id=creator_id if creator_id else "None", 
+        status="active",
         is_approved=False #is_approved=False means it will be put into the approval queue.
     )
     

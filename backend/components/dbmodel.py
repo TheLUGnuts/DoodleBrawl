@@ -38,12 +38,13 @@ class Character(db.Model):
     creator_id = db.Column(db.String(16), nullable=True, default="Unknown")
 
     #bio
-    description = db.Column(db.Text, default="Mysterious Challenger!")       #description of character
-    personality = db.Column(db.String(16), default="Unknown")                
-    alignment = db.Column(db.String(20), default="Unknown") 
-    titles = db.Column(JSON, default=list)                                   #list of strings
-    manager_id = db.Column(db.String(16), db.ForeignKey('user.id'), nullable=True, default="None")
-    popularity = db.Column(db.Integer, default=1)
+    description = db.Column(db.Text, default="Mysterious Challenger!")                              #description of character
+    personality = db.Column(db.String(16), default="Unknown")                                       #how this character conducts themselves
+    alignment = db.Column(db.String(20), default="Unknown")                                         #what titles do they hold
+    titles = db.Column(JSON, default=list)                                                          #list of strings
+    manager_id = db.Column(db.String(16), db.ForeignKey('user.id'), nullable=True, default="None")  #who is their manager?
+    popularity = db.Column(db.Integer, default=1)                                                   #how popular is this character (based on generated stats, not influenced by humans yet)
+    status = db.Column(db.String(16), default="active")                                             #what is the status of this character? active, retired, injurec
 
     #combat stats, stored as a json still
     stats = db.Column(JSON, default=dict)
@@ -81,6 +82,7 @@ class Character(db.Model):
             "stats": self.stats,
             "wins": self.wins,
             "losses": self.losses,
+            "status": self.status,
             "description": self.description,
             "personality": self.personality,
             "image_file": self.image_file,
@@ -100,6 +102,8 @@ class Character(db.Model):
             "name": self.name,
             "wins": self.wins,
             "losses": self.losses,
+            "status": self.status,
+            "is_approved": self.is_approved,
             "description": self.description,
             "image_file": self.image_file,
             "creator_name": self.get_creator_name(),
@@ -119,6 +123,7 @@ class Character(db.Model):
             "stats": self.stats,
             "wins": self.wins,
             "losses": self.losses,
+            "status": self.status,
             "description": self.description,
             "personality": self.personality,
             "image_file": self.image_file,

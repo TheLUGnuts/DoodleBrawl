@@ -43,7 +43,9 @@ def debug_update_character(char_id):
         if 'losses' in data: char.losses = int(data['losses'])
         if 'personality' in data: char.personality = data['personality']
         if 'is_approved' in data: char.is_approved = bool(data['is_approved'])
+        if 'status' in data: char.status = data['status']
         if 'creator_id' in data: char.creator_id = data['creator_id']
+        if 'manager_id' in data: char.manager_id = data['manager_id']
         if 'creation_time' in data: char.creation_time = float(data['creation_time'])
         if 'stats' in data: 
             char.stats = data['stats']
