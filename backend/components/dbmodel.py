@@ -142,6 +142,30 @@ class Match(db.Model):
     is_title_bout = db.Column(db.Boolean, default=False)        #was this for a title?
     title_exchanged = db.Column(db.String(36), nullable=True)   #what title was exchanged, if one was?
 
+    def to_dict_display(self):
+        return {
+            "id": self.id,
+            "timestamp": self.timestamp,
+            "match_type": self.match_type,
+            "summary": self.summary,
+            "winner_name": self.winner_name,
+            "winner_id": self.winner_id,
+            "is_title_bout": self.is_title_bout,
+            "title_exchanged": self.title_exchanged
+        }
+
+    def to_dict_debug(self):
+        return {
+            "id": self.id,
+            "timestamp": self.timestamp,
+            "match_type": self.match_type,
+            "summary": self.summary,
+            "winner_name": self.winner_name,
+            "winner_id": self.winner_id,
+            "match_data": self.match_data,
+            "is_title_bout": self.is_title_bout,
+            "title_exchanged": self.title_exchanged
+        }
 
 
 
