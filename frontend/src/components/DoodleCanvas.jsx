@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { socket, encodeImageURL } from '../socket.js';
 import './DoodleCanvas.css';
+import { useAlert } from './Alert';
 
 
 const DoodleCanvas = ({ isAccount, canvWidth, canvHeight, onCanvasChange, userID }) => {
@@ -13,6 +14,7 @@ const DoodleCanvas = ({ isAccount, canvWidth, canvHeight, onCanvasChange, userID
   const [history, setHistory] = useState([]);
   const [historyStep, setHistoryStep] = useState(-1);
   const [drawingName, setDrawingName] = useState("");
+  const showAlert = useAlert();
   //key for local storage of the canvas
   const storageKey = isAccount ? 'doodle_account_canvas' : 'doodle_main_canvas';
 
@@ -266,7 +268,7 @@ const DoodleCanvas = ({ isAccount, canvWidth, canvHeight, onCanvasChange, userID
 
   const sendImageOverSocket = () => {
     if (!userID) {
-      alert("You must be logged in to submit a fighter! Please go to the Account tab.");
+      showAlert("You must be logged in to submit a fighter! Please go to the Account tab.");
       return;
     }
 
@@ -284,7 +286,7 @@ const DoodleCanvas = ({ isAccount, canvWidth, canvHeight, onCanvasChange, userID
       creator_id: userID
     }, (response) => {
       if (response && response.status === 'error') {
-        alert(response.message); 
+        showAlert(response.message); 
       } else {
         localStorage.removeItem(storageKey);
         setDrawingName("");

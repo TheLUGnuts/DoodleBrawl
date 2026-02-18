@@ -1,0 +1,81 @@
+.custom-alert-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 999999; 
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 20px;
+}
+
+.custom-alert-card {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 300px;
+  max-width: 80%;
+  padding: 15px 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
+  border: 2px solid #000;
+  background: #fff;
+  color: #000;
+}
+
+.custom-alert-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.custom-alert-content p {
+  margin: 0;
+  font-size: 1.1em;
+}
+
+.custom-alert-icon {
+  font-size: 1.5em;
+}
+
+.custom-alert-close {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.2em;
+  cursor: pointer;
+  opacity: 0.6;
+  margin-left: 20px;
+}
+
+.custom-alert-close:hover { 
+  opacity: 1; 
+}
+
+.custom-alert-card.success { 
+  background-color: #ffffff; 
+  border-color: #16d142; 
+  color: #000000; 
+}
+
+.custom-alert-card.error { 
+  background-color: #ffffff; 
+  border-color: #dc3545; 
+  color: #000000; 
+}
+
+.custom-alert-card.info { 
+  background-color: #ffffff; 
+  border-color: #146bc9; 
+  color: #000000; 
+}
+
+.slide-down {
+  animation: slideDownAlert 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes slideDownAlert {
+  0% { transform: translateY(-50px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}

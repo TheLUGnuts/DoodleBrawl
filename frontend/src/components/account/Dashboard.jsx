@@ -2,17 +2,19 @@
 import { useState } from 'react';
 import { decompressBase64Image, API_URL, isProfane } from '../../socket';
 import './Dashboard.css';
+import { useAlert } from '../Alert';
 
 export default function Dashboard({ user, onLogin, onLogout }) {
   const [expandedFighter, setExpandedFighter] = useState(null);
   const [teamInput, setTeamInput] = useState("");
+  const showAlert = useAlert();
 
   const executeManagementAction = async (fighterId, actionType, teamName = "") => {
     if (actionType === 'retire' && !window.confirm("WARNING: Retiring a fighter is permanent! They will never fight again. Are you sure?")) return;
     if (actionType === 'release' && !window.confirm("WARNING: Releasing a fighter will give up your managerial rights to them! Are you sure?")) return;
 
     if (actionType === 'team' && isProfane(teamName)) {
-        alert("Please choose a more appropriate team name.");
+        showAlert("Please choose a more appropriate team name.");
         return;
     }
 
@@ -24,11 +26,11 @@ export default function Dashboard({ user, onLogin, onLogout }) {
       });
       const data = await res.json();
       if (data.status === 'success') {
-         alert("Action applied!");
+         showAlert("Done!");
          onLogin(user); //force App.jsx to refresh
          setTeamInput("");
-      } else { alert(data.error); }
-    } catch (e) { alert("Network Error"); }
+      } else { showAlert(data.error); }
+    } catch (e) { showAlert("Network Error"); }
   };
 
   const joinDate = new Date(user.creation_time * 1000).toLocaleDateString();
@@ -94,7 +96,6 @@ export default function Dashboard({ user, onLogin, onLogout }) {
                    
                    {expandedFighter === fighter.id && (
                      <div className="secret-stats">
-                        <hr/>
                         <div className="stat-grid">
                             <p><strong>HP:</strong> {fighter.stats?.hp || "???"}</p>
                             <p><strong>Power:</strong> {fighter.stats?.power || "???"}</p>

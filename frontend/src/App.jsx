@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { socket, API_URL } from './socket.js';
 import './App.css'
+import { useAlert } from './components/Alert.jsx';
 import DoodleCanvas from './components/DoodleCanvas';
 import ArenaView from './components/arena/ArenaView';
 import ProfileCard from './components/ProfileCard';
@@ -28,6 +29,7 @@ function App() {
   const [myBet, setMyBet] = useState(null);
   const [payoutWon, setPayoutWon] = useState(0);
   const [selectedProfile, setSelectedProfile] = useState(null);
+  const showAlert = useAlert();
 
   const handleResult = (data) => {
     //takes data from a fight and places it in the correct places
@@ -140,7 +142,7 @@ function App() {
 
   const handleCharacterAdded = (data) => {
       if (data.status === 'success') {
-        alert(`Success! ${data.character.name} has been added to the approval queue!`);
+        showAlert(`Success! ${data.character.name} has been added to the approval queue!`);
 
         setUser(prevUser => {
           if (!prevUser) return prevUser;
