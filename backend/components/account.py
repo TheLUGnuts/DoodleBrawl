@@ -100,3 +100,39 @@ def get_public_profile(username):
         "money": user.money,
         "characters": [c.to_dict_display() for c in public_chars] 
     })
+
+#perform managerial actions on managed fighters
+@account_bp.route('/manage_fighter', methods=['POST'])
+def manage_fighter():
+    data = request.get_json()
+    account_id = data.get('account_id')
+    fighter_id = data.get('fighter_id')
+    action = data.get('action')
+
+    user = User.query.get(account_id)
+    fighter = Character.query.get(fighter_id)
+
+    if not user or not fighter: return jsonify({"error": "Invalid user or fighter"}), 400
+    if fighter.manager_id != user.id: return jsonify({"error": "You do not manage this fighter."}), 403
+
+    #Current actions:
+    #'pull' - Pull them from being able to fight
+    #'activate' - Put them back into the active roster
+    #'retire' - Permanently take them out of the active roster.
+    #'release' - Revoke your managerial status over a character, making them a free-agent.
+    #'team' - Assign the fighter to a team to employ them in multi-man battles.
+    if action == 'pull': fighter.status = 'inactive'
+    elif action == 'activate': fighter.status = 'active'
+    elif action == 'retire': fighter.status = 'retired'
+    elif action == 'release': 
+        fighter.manager_id = 'None'
+        fighter.status = 'active' # free agents are active by default
+    elif action == 'team':
+        team = data.get('team_name', '').strip()
+        # strip weird characters just in case
+        fighter.team_name = re.sub(r"[^a-zA-Z0-9 ]", "", team)[:32] 
+    else:
+        return jsonify({"error": "Invalid action."}), 400
+
+    db.session.commit()
+    return jsonify({"status": "success", "message": f"Action '{action}' applied successfully!"})
