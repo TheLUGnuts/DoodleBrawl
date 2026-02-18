@@ -7,25 +7,25 @@ import Logs from './Logs';
 import './ArenaView.css';
 import '../../text_decor.css';
 
-//grabs a creators portrait
-const CreatorPortrait = memo(function CreatorPortrait({ fighter, align, onProfileClick }) {
-  console.log(fighter.creator_name);
+//grabs a managers portrait
+const ManagerPortrait = memo(function ManagerPortrait({ fighter, align, onProfileClick }) {
+  console.log(fighter.manager_name);
   //unknown has no portrait
-  if (!fighter.creator_name || fighter.creator_name === "Unknown" || !fighter.creator_portrait) return null;
+  if (!fighter.manager_name || fighter.manager_name === "Unknown" || !fighter.manager_portrait) return null;
 
   return (
     <div 
-      className={`creator-portrait-container ${align}`} 
-      onClick={() => onProfileClick && onProfileClick(fighter.creator_name)}
+      className={`manager-portrait-container ${align}`} 
+      onClick={() => onProfileClick && onProfileClick(fighter.manager_name)}
     >
-      <div className="creator-label">
+      <div className="manager-label">
         <span>Manager</span>
-        <strong>{fighter.creator_name}</strong>
+        <strong>{fighter.manager_name}</strong>
       </div>
       <img 
-        src={`data:image/webp;base64,${decompressBase64Image(fighter.creator_portrait)}`} 
-        alt={`${fighter.creator_name}'s portrait`} 
-        className="creator-portrait-img"
+        src={`data:image/webp;base64,${decompressBase64Image(fighter.manager_portrait)}`} 
+        alt={`${fighter.manager_name}'s portrait`} 
+        className="manager-portrait-img"
       />
     </div>
   );
@@ -92,7 +92,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
         <div className='row'>
           {/* FIGHTER 1 (LEFT) */}
           <div className='column'>
-            <CreatorPortrait fighter={battleState.fighters[0]} align="left" onProfileClick={onProfileClick} />
+            <ManagerPortrait fighter={battleState.fighters[0]} align="left" onProfileClick={onProfileClick} />
             <div className='stats-header'>
               <p className='fighter-name fighter-1'>{battleState.fighters[0].name}</p>
               <p className={(battleState.fighters[0].alignment.toLowerCase())}>
@@ -115,7 +115,7 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
 
           {/* FIGHTER 2 (RIGHT) */}
           <div className='column'>
-            <CreatorPortrait fighter={battleState.fighters[1]} align="right" onProfileClick={onProfileClick} />
+            <ManagerPortrait fighter={battleState.fighters[1]} align="right" onProfileClick={onProfileClick} />
             <div className='stats-header'>
               <p className='fighter-name fighter-2'>{battleState.fighters[1].name}</p>
               <p className={(battleState.fighters[1].alignment.toLowerCase())}>
