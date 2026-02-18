@@ -5,8 +5,6 @@ import { gzip, ungzip } from 'pako';   // gzip compression package
 import { Filter } from 'bad-words';    // bad word filter package
 import { fromByteArray, toByteArray } from 'base64-js';
 
-
-// EDIT THIS TO CHANGE BETWEEN SERVER DEPLOYMENT AND LOCAL DEV ENVIRONMENT
 const API_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
 const socket = io(
     API_URL,
