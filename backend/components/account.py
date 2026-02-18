@@ -123,7 +123,9 @@ def manage_fighter():
     #'team' - Assign the fighter to a team to employ them in multi-man battles.
     if action == 'pull': fighter.status = 'inactive'
     elif action == 'activate': fighter.status = 'active'
-    elif action == 'retire': fighter.status = 'retired'
+    elif action == 'retire': 
+        fighter.status = 'retired'
+        fighter.manager_id = 'None'
     elif action == 'release': 
         fighter.manager_id = 'None'
         fighter.status = 'active' # free agents are active by default

@@ -80,20 +80,11 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
-.close-expanded-btn {
-  display: none;
-  position: absolute;
-  top: 5px; right: 5px;
-  background: red; color: white;
-  border: none; border-radius: 50%;
-  width: 25px; height: 25px; cursor: pointer;
-}
-
 .managed-card { 
     position: relative; 
 }
 
-.managed-card.expanded .close-expanded-btn { 
+.managed-card.expanded { 
     display: block; 
 }
 

@@ -15,7 +15,7 @@ export default function Dashboard({ user, onLogin, onLogout }) {
         alert("Please choose a more appropriate team name.");
         return;
     }
-    
+
     try {
       const res = await fetch(`${API_URL}/api/account/manage_fighter`, {
         method: 'POST',
@@ -85,7 +85,6 @@ export default function Dashboard({ user, onLogin, onLogout }) {
                   className={`managed-card ${expandedFighter === fighter.id ? 'expanded' : ''}`}
                   onClick={() => setExpandedFighter(expandedFighter === fighter.id ? null : fighter.id)}
                 >
-                   <button className="close-expanded-btn" onClick={(e) => { e.stopPropagation(); setExpandedFighter(null); }}>✖</button>
                    <img src={`data:image/webp;base64,${decompressBase64Image(fighter.image_file)}`} alt={fighter.name} />
                    <div className="managed-info">
                      <h4>{fighter.name}</h4>
