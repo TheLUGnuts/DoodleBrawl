@@ -47,6 +47,7 @@ with app.app_context():
     db.create_all()
     try:
         #NOTE - Whenever a new column is added make sure it GOES ON TOP! Otherwise it'll throw a normally harmless "duplicate column" error and never add the next ones.
+        db.session.execute(text("ALTER TABLE character ADD COLUMN team_name VARCHAR(32) DEFAULT ''"))
         db.session.execute(text("ALTER TABLE character ADD COLUMN status VARCHAR(16) DEFAULT 'active'"))
         db.session.execute(text("ALTER TABLE user ADD COLUMN last_login_bonus FLOAT DEFAULT 0.0"))
         db.session.execute(text("ALTER TABLE user ADD COLUMN last_submission FLOAT DEFAULT 0.0"))
@@ -54,13 +55,6 @@ with app.app_context():
         print("!-- ADDED COLUMNS TO TABLES --!")
     except Exception:
         db.session.rollback()
-    try:
-        db.session.execute(text("UPDATE character SET manager_id = creator_id WHERE manager_id = 'None' OR manager_id IS NULL"))
-        db.session.commit()
-        print("!-- BACKFILLED MANAGER IDs FOR EXISTING CHARACTERS --!")
-    except Exception as e:
-        db.session.rollback()
-        print(f"!-- ERROR BACKFILLING MANAGERS: {e} --!")
 
 #Global variables
 BATTLE_TIMER=180                            #3 minutes in seconds
@@ -381,6 +375,7 @@ def run_scheduled_battle():
     winner_obj.wins += 1
     loser_obj.losses += 1
 
+    total_payout = 0
     #Resolving wagers
     for bet in CURRENT_BETS:
         if bet['fighter_id'] == winner_obj.id:
@@ -388,8 +383,23 @@ def run_scheduled_battle():
             if user:
                 payout = int(bet['amount'] * MATCH_ODDS[winner_obj.id])
                 user.money += payout
+                total_payout += payout
                 print(f"$-- USER {user.username} HAS WON ${payout}! --$")
     
+    #Of the remaining money in the pool, the winners manager will bet 5%, the losers will get %1
+    remaining_pool = max(0, CURRENT_POOL - total_payout)
+    if remaining_pool > 0:
+        winner_cut = int(remaining_pool * .05)
+        loser_cut = int(remaining_pool * 0.01)
+    #payout to the winning manager
+    if winner_obj.manager_id and winner_obj.manager_id != "None":
+        winning_manager = User.query.get(winner_obj.manager_id)
+        if winning_manager: winning_manager.money += winner_cut
+    #payout to the losing manager
+    if loser_obj.manager_id and loser_obj.manager_id != "None":
+        losing_manager = User.query.get(loser_obj.manager_id)
+        if losing_manager: losing_manager.money += loser_cut
+    print(f"$-- MANAGER PAYOUTS: Win Mgr +${winner_cut} | Lose Mgr +${loser_cut} --$")
     DATA.commit() #save all DB changes
 
     #save the match to match history
