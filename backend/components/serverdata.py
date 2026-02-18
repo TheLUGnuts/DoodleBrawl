@@ -30,7 +30,7 @@ class ServerData:
     
     def get_queue(self):
         #returns all unapproved characters
-        return Character.query.filter_by(is_approved=False).all()
+        queue = Character.query.filter_by(is_approved=False).all()
         if os.path.exists(REJECTED_FILE):
             try:
                 with open(REJECTED_FILE, 'r') as f:
@@ -43,7 +43,7 @@ class ServerData:
 
     def get_candidates_for_match(self):
         #find fresh meat (fighters with 0 total fights)
-        fresh_meat = Character.query.filter_by(is_approved=True).filter(
+        fresh_meat = Character.query.filter_by(is_approved=True, status='active').filter(
             (Character.wins + Character.losses) == 0
         ).all()
 
@@ -55,7 +55,7 @@ class ServerData:
             print("!-- PRIORITY MATCH: 1 NEW FIGHTER FOUND --!")
             p1 = fresh_meat[0]
             #select two random characters
-            p2 = Character.query.filter_by(is_approved=True).filter(
+            p2 = Character.query.filter_by(is_approved=True, status='active').filter(
                 Character.id != p1.id
             ).order_by(func.random()).first()
             
@@ -63,11 +63,11 @@ class ServerData:
                 return [p1, p2]
         
         #fully random if theres no fresh meat
-        count = Character.query.filter_by(is_approved=True).count()
+        count = Character.query.filter_by(is_approved=True, status='active').count()
         if count < 2:
             return None
             
-        return Character.query.filter_by(is_approved=True).order_by(func.random()).limit(2).all()
+        return Character.query.filter_by(is_approved=True, status='active').order_by(func.random()).limit(2).all()
 
     #########################
     #      SAVING FUNCs     #
