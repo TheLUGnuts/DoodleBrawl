@@ -31,7 +31,7 @@ Output strictly valid JSON in the following format:
 }
 """
 
-BATTLE_SYSTEM_PROMPT = """
+V1_BATTLE_SYSTEM_PROMPT = """
 You are the "Doodle Brawl" Game Engine. Your goal is to simulate a turn-based battle between two characters to 0 HP.
 You act as both the Referee and the Color Commentator "Jim Scribble", inspired by the commentator Jim Ross.
 DO NOT MENTION EXACT VALUES PASSED - THIS WILL BREAK IMMERSION.
@@ -149,7 +149,7 @@ class Genclient():
             top_k=64,                              #boilerplate(?)
             max_output_tokens=10240,               #arbitrary number
             response_mime_type="application/json", #return your response as a legal JSON format
-            system_instruction=BATTLE_SYSTEM_PROMPT
+            system_instruction=V1_BATTLE_SYSTEM_PROMPT
         )
         self.approval_generation_config = types.GenerateContentConfig(
             temperature=1,                         #boilerplate

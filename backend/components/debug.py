@@ -43,6 +43,7 @@ def debug_update_character(char_id):
         if 'losses' in data: char.losses = int(data['losses'])
         if 'personality' in data: char.personality = data['personality']
         if 'is_approved' in data: char.is_approved = bool(data['is_approved'])
+        if 'team_name' in data: char.team_name = data['team_name']
         if 'status' in data: char.status = data['status']
         if 'creator_id' in data: char.creator_id = data['creator_id']
         if 'manager_id' in data: char.manager_id = data['manager_id']
@@ -111,7 +112,7 @@ def debug_update_match(match_id):
     if not match: return jsonify({"error": "Match not found"}), 404
     try:
         if 'summary' in data: match.summary = data['summary']
-        if 'winner_name' in data: m.atchwinner_name = data['winner_name']
+        if 'winner_name' in data: match.winner_name = data['winner_name']
         if 'winner_id' in data: match.winner_id = data['winner_id']
         if 'match_type' in data: match.match_type = data['match_type']
         if 'is_title_bout' in data: match.is_title_bout = bool(data['is_title_bout'])
@@ -119,7 +120,7 @@ def debug_update_match(match_id):
         
         if 'match_data' in data:
             match.match_data = data['match_data']
-            flag_modified(m, "match_data")
+            flag_modified(match, "match_data")
             
         db.session.commit()
         return jsonify({"status": "success", "message": f"Updated Match {match.id}"})
