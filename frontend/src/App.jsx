@@ -6,7 +6,7 @@ import ArenaView from './components/arena/ArenaView';
 import ProfileCard from './components/ProfileCard';
 import RosterView from './components/RosterView';
 import ArenaMini from './components/ArenaMini';
-import Account from './components/Account';
+import Account from './components/account/Account.jsx';
 import Debug from './components/Debug';
 
 
