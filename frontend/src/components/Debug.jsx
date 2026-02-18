@@ -207,6 +207,7 @@ export default function Debug({user}) {
                     <label>Wins: <input type="number" name="wins" value={formData.wins || 0} onChange={handleChange} /></label>
                     <label>Losses: <input type="number" name="losses" value={formData.losses || 0} onChange={handleChange} /></label>
                     <label>Status: <input type="text" name="status" value={formData.status || ""} onChange={handleChange} /></label>
+                    <label>Team: <input type="text" name="status" value={formData.team_name || ""} onChange={handleChange} /></label>
                     <label>Creator ID: <input type="text" name="creator_id" value={formData.creator_id || ""} onChange={handleChange} /></label>
                     <label>Manager ID: <input type="text" name="manager_id" value={formData.manager_id || ""} onChange={handleChange} /></label>
                     <label>Creation Time (Unix): <input type="number" step="0.01" name="creation_time" value={formData.creation_time || 0} onChange={handleChange} /></label>
