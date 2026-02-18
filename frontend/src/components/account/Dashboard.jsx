@@ -1,6 +1,6 @@
 // users dashboard they see while logged in
 import { useState } from 'react';
-import { decompressBase64Image, API_URL } from '../../socket';
+import { decompressBase64Image, API_URL, isProfane } from '../../socket';
 import './Dashboard.css';
 
 export default function Dashboard({ user, onLogin, onLogout }) {
@@ -11,6 +11,11 @@ export default function Dashboard({ user, onLogin, onLogout }) {
     if (actionType === 'retire' && !window.confirm("WARNING: Retiring a fighter is permanent! They will never fight again. Are you sure?")) return;
     if (actionType === 'release' && !window.confirm("WARNING: Releasing a fighter will give up your managerial rights to them! Are you sure?")) return;
 
+    if (actionType === 'team' && isProfane(teamName)) {
+        alert("Please choose a more appropriate team name.");
+        return;
+    }
+    
     try {
       const res = await fetch(`${API_URL}/api/account/manage_fighter`, {
         method: 'POST',

@@ -1,19 +1,26 @@
 // Initializes socket connection
 
-import { io } from 'socket.io-client';
-import { gzip, ungzip } from 'pako'; // gzip compression library
+import { io } from 'socket.io-client'; // socket.io client package
+import { gzip, ungzip } from 'pako';   // gzip compression package
+import Filter from 'bad-words';        // bad word filter package
 import { fromByteArray, toByteArray } from 'base64-js';
+
 
 // EDIT THIS TO CHANGE BETWEEN SERVER DEPLOYMENT AND LOCAL DEV ENVIRONMENT
 const API_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
-// --------------------------------------------------------
-
 const socket = io(
     API_URL,
     {
         transports: ['websocket', 'polling']
     }
 );
+
+//Profanity filter using the "bad-words" package
+const profanityFilter = new Filter();
+export const isProfane = (text) => {
+  if (!text) return false;
+  return profanityFilter.isProfane(text);
+};
 
 function encodeImageURL(dataURL) {
     // Takes an image file URL as input, encodes it to base64, compresses it, then converts that into base64 again.

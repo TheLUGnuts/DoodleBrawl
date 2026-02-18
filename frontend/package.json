@@ -13,6 +13,7 @@
     "@chakra-ui/react": "^3.31.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "bad-words": "^4.0.0",
     "base64-js": "^1.5.1",
     "framer-motion": "^12.29.2",
     "pako": "^2.1.0",

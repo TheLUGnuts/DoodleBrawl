@@ -1,6 +1,6 @@
 // registration screen with username input and portrait.
 import { useState } from 'react';
-import { API_URL } from '../../socket';
+import { API_URL, isProfane } from '../../socket';
 import DoodleCanvas from '../DoodleCanvas';
 
 export default function Register({ onBack }) {
@@ -14,7 +14,10 @@ export default function Register({ onBack }) {
       setError("Please draw a portrait and enter a username!");
       return;
     }
-
+    if (isProfane(username)) {
+      setError("Please choose a more appropriate username!");
+      return;
+    }
     try {
       const response = await fetch(`${API_URL}/api/account/create`, {
         method: 'POST',
