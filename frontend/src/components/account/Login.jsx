@@ -1,7 +1,6 @@
 // logging in functionality
 import { useState } from 'react';
 import { API_URL } from '../../socket';
-import './Login.css';
 
 export default function Login({ onLogin, onBack }) {
   const [inputID, setInputID] = useState("");

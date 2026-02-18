@@ -2,7 +2,7 @@
 
 import { io } from 'socket.io-client'; // socket.io client package
 import { gzip, ungzip } from 'pako';   // gzip compression package
-import Filter from 'bad-words';        // bad word filter package
+import { Filter } from 'bad-words';    // bad word filter package
 import { fromByteArray, toByteArray } from 'base64-js';
 
 
