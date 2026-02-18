@@ -12,6 +12,7 @@ export default function Account({user, onLogin, onLogout}) {
   const [portraitData, setPortraitData] = useState(null); 
   const [expandedFighter, setExpandedFighter] = useState(null);
   const [error, setError] = useState("");
+  const [teamInput, setTeamInput] = useState("");
 
   function ImageViewer({compressedBase64}) {
     // Decodes base64 image from server
@@ -24,6 +25,24 @@ export default function Account({user, onLogin, onLogout}) {
     );
   }
   
+  const executeManagementAction = async (fighterId, actionType, teamName = "") => {
+    if (actionType === 'retire' && !window.confirm("WARNING: Retiring a fighter is permanent! They will never fight again. Are you sure?")) return;
+    if (actionType === 'release' && !window.confirm("WARNING: Releasing a fighter will give up your managerial rights to them! Are you sure?")) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/account/manage_fighter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_id: user.id, fighter_id: fighterId, action: actionType, team_name: teamName })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+         alert("Action applied!");
+         onLogin(user); //onLogin forces App.jsx to re-fetch and refresh all user data. May be a bad idea?
+         setTeamInput("");
+      } else { alert(data.error); }
+    } catch (e) { alert("Network Error"); }
+  };
 
   //dashboard view
   if (user) {
@@ -84,14 +103,48 @@ export default function Account({user, onLogin, onLogout}) {
                    </div>
                    
                    {/* Hidden Stats that reveal on click */}
-                   {expandedFighter === fighter.id && fighter.stats && (
+                   {expandedFighter === fighter.id && (
                      <div className="secret-stats">
                         <hr/>
-                        <p><strong>HP:</strong> {fighter.stats.hp || "???"}</p>
-                        <p><strong>Power:</strong> {fighter.stats.power || "???"}</p>
-                        <p><strong>Agility:</strong> {fighter.stats.agility || "???"}</p>
-                        <p><strong>Popularity:</strong> {fighter.popularity}</p>
-                        <p><strong>Alignment:</strong> {fighter.alignment}</p>
+                        {/* Hidden stats*/}
+                        <div className="stat-grid">
+                            <p><strong>HP:</strong> {fighter.stats?.hp || "???"}</p>
+                            <p><strong>Power:</strong> {fighter.stats?.power || "???"}</p>
+                            <p><strong>Agility:</strong> {fighter.stats?.agility || "???"}</p>
+                            <p><strong>Popularity:</strong> {fighter.popularity}</p>
+                            <p><strong>Alignment:</strong> {fighter.alignment}</p>
+                        </div>
+                        
+                        {/* Management Panel */}
+                        <div className="management-panel" onClick={(e) => e.stopPropagation()}>
+                           <h5>Management Controls</h5>
+                           
+                           {/* Team Assigner */}
+                           {fighter.status !== 'retired' && (
+                             <div className="team-assigner">
+                               <input type="text" placeholder="Tag Team Name..." value={teamInput} onChange={(e) => setTeamInput(e.target.value)} maxLength={32} />
+                               <button onClick={() => executeManagementAction(fighter.id, 'team', teamInput)}>Set Team</button>
+                             </div>
+                           )}
+
+                           {/* Status Controls */}
+                           <div className="control-buttons">
+                             {fighter.status === 'active' && (
+                               <button className="ctrl-btn pull" onClick={() => executeManagementAction(fighter.id, 'pull')}>Pull from Roster (Inactive)</button>
+                             )}
+                             {fighter.status === 'inactive' && (
+                               <button className="ctrl-btn push" onClick={() => executeManagementAction(fighter.id, 'activate')}>Return to Roster (Active)</button>
+                             )}
+                             
+                             {fighter.status !== 'retired' && (
+                               <button className="ctrl-btn release" onClick={() => executeManagementAction(fighter.id, 'release')}>Release to Free Agency</button>
+                             )}
+                             
+                             {fighter.status !== 'retired' && (
+                               <button className="ctrl-btn retire" onClick={() => executeManagementAction(fighter.id, 'retire')}>Force Retirement</button>
+                             )}
+                           </div>
+                        </div>
                      </div>
                    )}
                 </div>

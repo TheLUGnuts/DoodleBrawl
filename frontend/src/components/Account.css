@@ -368,3 +368,99 @@
   0% { opacity: 0; transform: translateY(-10px); }
   100% { opacity: 1; transform: translateY(0); }
 }
+
+.close-expanded-btn {
+  display: none;
+  position: absolute;
+  top: 5px; right: 5px;
+  background: red; color: white;
+  border: none; border-radius: 50%;
+  width: 25px; height: 25px; cursor: pointer;
+}
+
+.managed-card { 
+    position: relative; 
+}
+
+.managed-card.expanded .close-expanded-btn { 
+    display: block; 
+}
+
+.team-badge {
+  font-size: 0.8em;
+  color: #f1c40f;
+  margin: 2px 0 0 0;
+  font-weight: bold;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-size: 0.9em;
+  gap: 5px;
+}
+
+.management-panel {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px dashed #555;
+}
+
+.management-panel h5 { 
+    margin: 0 0 10px 0; 
+    color: #e67e22; 
+    text-align: center; 
+}
+
+.team-assigner { 
+    display: flex; 
+    gap: 5px; 
+    margin-bottom: 10px; 
+}
+
+.team-assigner input { 
+    flex: 1; 
+    padding: 4px; 
+    font-size: 0.8em; 
+}
+
+.team-assigner button { 
+    font-size: 0.8em; 
+    cursor: pointer; 
+}
+
+.control-buttons { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 5px; 
+}
+
+.ctrl-btn { 
+    padding: 6px; 
+    font-weight: bold; 
+    font-size: 0.8em; 
+    cursor: pointer; 
+    border: 1px solid black; 
+    border-radius: 2px; 
+    color: rgb(0, 0, 0); 
+}
+
+.ctrl-btn.pull { 
+    background-color: #f39c12; 
+}
+
+.ctrl-btn.push { 
+    background-color: #bee4cd; 
+}
+
+.ctrl-btn.release { 
+    background-color: #acbac7; 
+}
+
+.ctrl-btn.retire { 
+    background-color: #c5857d; 
+}
+
+.ctrl-btn:hover { 
+    filter: brightness(1.2); 
+}
