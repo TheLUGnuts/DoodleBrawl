@@ -81,7 +81,7 @@ export default function Dashboard({ user, onLogin, onLogout }) {
           <p className="hint-text">Click a fighter to view their secret combat stats!</p>
           <div className="managed-roster-grid">
             {user.managed_characters && user.managed_characters.length > 0 ? (
-              user.managed_characters.map(fighter => (
+              user.managed_characters.map(fighter => (fighter.is_approved ? (
                 <div 
                   key={fighter.id} 
                   className={`managed-card ${expandedFighter === fighter.id ? 'expanded' : ''}`}
@@ -94,7 +94,7 @@ export default function Dashboard({ user, onLogin, onLogout }) {
                      {fighter.team_name && <p className="team-badge">Team: {fighter.team_name}</p>}
                    </div>
                    
-                   {expandedFighter === fighter.id && (
+                   {expandedFighter === fighter.id &&  (
                      <div className="secret-stats">
                         <div className="stat-grid">
                             <p><strong>HP:</strong> {fighter.stats?.hp || "???"}</p>
@@ -121,8 +121,8 @@ export default function Dashboard({ user, onLogin, onLogout }) {
                         </div>
                      </div>
                    )}
-                </div>
-              ))
+                </div>) : ("")
+                ))
             ) : (
               <p>You aren't managing any fighters yet!</p>
             )}
