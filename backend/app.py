@@ -59,13 +59,24 @@ with app.app_context():
 #Global variables
 BATTLE_TIMER=180                            #3 minutes in seconds
 CURRENT_TIMER = BATTLE_TIMER                #global time tracker
-NEXT_MATCH = None                           #holds the [char1, char2] for upcoming fight.
+NEXT_MATCH_TEAMS = []                       #holds the [char1, char2] for upcoming fight.
+TEAMS_DATA = []                             #hold specific team
+ALL_FIGHTERS = []                           #holds all current fighters
 CLIENT = Genclient(os.getenv('GEMINI_API')) #genclient class for API calling
 DATA = ServerData(CLIENT)                   #Data handling class
 FROZEN = False                              #For freezing the timer
 CURRENT_BETS = []                           #List of dicts like so: {'user_id': id, 'fighter_id': id, 'amount': int}
 MATCH_ODDS = {}                             #dict: {fighter_id: float_odds}
 CURRENT_POOL = 0                            #the betting pool for this match
+NEXT_MATCH_TYPE = "1v1"
+
+def get_matchup_names():
+    if not NEXT_MATCH_TEAMS:
+        return None
+    if NEXT_MATCH_TYPE == '1v1':
+        return [c.name for c in NEXT_MATCH_TEAMS]
+    else:
+        return [team[0].team_name for team in NEXT_MATCH_TEAMS]
 
 ##################################
 #         DEBUG HANDLERS         #
@@ -90,10 +101,16 @@ def debug_freeze_timer():
 
 @app.route('/api/debug/rematch', methods=['POST'])
 def debug_new_matchup():
+    global NEXT_MATCH_TYPE, NEXT_MATCH_TEAMS
     if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
-    #schedule a new match, instantly
     schedule_next_match()
-    return jsonify({"status": "rematched", "new_match": [c.name for c in NEXT_MATCH]})
+    names = []
+    if NEXT_MATCH_TEAMS:
+        if NEXT_MATCH_TYPE == '1v1':
+             names = [c.name for c in NEXT_MATCH_TEAMS]
+        else:
+             names = [t[0].team_name for t in NEXT_MATCH_TEAMS]
+    return jsonify({"status": "rematched", "new_match": names})
 
 @app.route('/api/debug/randomize_alignments', methods=['POST'])
 def debug_randomize_alignments():
@@ -126,6 +143,7 @@ def debug_test_actions():
     socketio.emit('match_result', {
         'fighters': [p1.to_dict_display(), p2.to_dict_display()],
         'log': test_log,
+        'teams': [],
         'winner': p2.name,
         'winner_id': p2.id,
         'summary': "This was a simulated debug showcase of all combat animations!",
@@ -254,60 +272,92 @@ def accept_new_character(data):
 #chooses two random characters for the next match and schedules them to fight
 #prioritizes new characters
 def schedule_next_match():
-    global NEXT_MATCH, CURRENT_POOL, MATCH_ODDS, CURRENT_BETS
-    candidates = DATA.get_candidates_for_match()
+    global NEXT_MATCH_TEAMS, NEXT_MATCH_TYPE, CURRENT_POOL, MATCH_ODDS, CURRENT_BETS, ALL_FIGHTERS, TEAMS_DATA
+    match_type = random.choices(['1v1', '2v2'], weights=[0.9, 0.1])[0]
+    candidates = DATA.get_candidates_for_match(match_type)
     
+    #fallback for 2v2s is handled in serverdata.
     if not candidates:
-        print("!-- NOT ENOUGH FIGHTERS --!")
-        NEXT_MATCH = None
-        return
+        match_type = '1v1' if match_type == '2v2' else '2v2'
+        candidates = DATA.get_candidates_for_match(match_type)
+        if not candidates:
+            print("!-- NO FIGHTERS AVAILABLE --!")
+            NEXT_MATCH_TEAMS = []
+            return
 
-    NEXT_MATCH = candidates
-    print(f"!-- NEXT MATCH: {NEXT_MATCH[0].name} vs {NEXT_MATCH[1].name} --!")
+    NEXT_MATCH_TYPE = match_type
+    NEXT_MATCH_TEAMS = candidates
 
-    p1 = DATA.get_character(NEXT_MATCH[0].id)
-    p2 = DATA.get_character(NEXT_MATCH[1].id)
+    #initialize the teams
     #calculate the odds of either fighter winning
     #this will be used in determining the *risk* of the bet
-    score1 = (p1.wins + 1.0) / (p1.losses + 1.0)
-    score2 = (p2.wins + 1.0) / (p2.losses + 1.0)
-    total_score = score1 + score2
-    odds1 = max(1.1, round(total_score / score1, 2))
-    odds2 = max(1.1, round(total_score / score2, 2))
-    MATCH_ODDS = {p1.id : odds1, p2.id : odds2}
-    
     #initialize a starting pool of money
-    #we're going to create the starting pool by summing their popularities, then multiplying it by 10.
-    p1_popularity = p1.popularity if p1.popularity else 1
-    p2_popularity = p2.popularity if p2.popularity else 1
-    total_popularity = p1_popularity + p2_popularity
-    CURRENT_POOL = total_popularity * 100
+    #we're going to create the starting pool by summing their popularities, then multiplying it by 100.
+    if match_type == "1v1":
+        p1, p2 = candidates[0], candidates[1]
+        ############################
+        team1_data = {"id": p1.id, "name": p1.name, "members": [p1.to_dict_display()]}
+        team2_data = {"id": p2.id, "name": p2.name, "members": [p2.to_dict_display()]}
+        #pool / betting calcs
+        ############################
+        score1 = (p1.wins + 1.0) / (p1.losses + 1.0)
+        score2 = (p2.wins + 1.0) / (p2.losses + 1.0)
+        total = score1 + score2
+        MATCH_ODDS = {p1.id: max(1.1, round(total/score1, 2)), p2.id: max(1.1, round(total/score2, 2))}
+        CURRENT_POOL = (p1.popularity + p2.popularity) * 100
+        ############################
+        combined_fighters = [p1, p2]
+    elif match_type == "2v2":
+        t1_group, t2_group = candidates[0], candidates[1]
+        t1_name, t2_name = t1_group[0].team_name, t2_group[0].team_name
+        ############################
+        team1_data = {"id": t1_name, "name": t1_name, "members": [c.to_dict_display() for c in t1_group]}
+        team2_data = {"id": t2_name, "name": t2_name, "members": [c.to_dict_display() for c in t2_group]}
+        #pool / betting calcs
+        ############################
+        score1 = sum([(f.wins+1.0)/(f.losses+1.0) for f in t1_group]) / len(t1_group)
+        score2 = sum([(f.wins+1.0)/(f.losses+1.0) for f in t2_group]) / len(t2_group)
+        total = score1 + score2
+        MATCH_ODDS = {t1_name: max(1.1, round(total/score1, 2)), t2_name: max(1.1, round(total/score2, 2))}
+        CURRENT_POOL = sum([f.popularity for f in t1_group + t2_group]) * 100
+        #############################
+        combined_fighters = t1_group + t2_group
+    TEAMS_DATA = [team1_data, team2_data]
+    ALL_FIGHTERS = [c.to_dict_display() for c in combined_fighters]
     CURRENT_BETS = []
-
+    #jsonify({"status": "rematched", "new_match": names})
     #emit the card to clients
     socketio.emit('match_scheduled', {
-        'fighters': [c.to_dict_display() for c in NEXT_MATCH],
+        'match_type': NEXT_MATCH_TYPE,
+        'teams': TEAMS_DATA,
+        'fighters': ALL_FIGHTERS,
         'starts_in': BATTLE_TIMER,
         'odds': MATCH_ODDS,
         'pool': CURRENT_POOL
     })
-
 #conduct the battle between the selected fighters. Uses the genclient for the api call
 def run_scheduled_battle():
-    global NEXT_MATCH
-    if not NEXT_MATCH:
+    global NEXT_MATCH_TEAMS, NEXT_MATCH_TYPE
+    if not NEXT_MATCH_TEAMS:
         return 0 
     
-    p1 = DATA.get_character(NEXT_MATCH[0].id)
-    p2 = DATA.get_character(NEXT_MATCH[1].id)
-    
-    if not p1 or not p2:
-        print("!-- ERROR: Fighters not in DB? --!")
-        return
-    live_match = [p1, p2]
+    if NEXT_MATCH_TYPE == '1v1':
+        p1 = DATA.get_character(NEXT_MATCH_TEAMS[0].id)
+        p2 = DATA.get_character(NEXT_MATCH_TEAMS[1].id)
+        live_teams = [[p1], [p2]]
+        
+        t1_id, t1_name = p1.id, p1.name
+        t2_id, t2_name = p2.id, p2.name
+    elif NEXT_MATCH_TYPE == '2v2':
+        team1 = [DATA.get_character(f.id) for f in NEXT_MATCH_TEAMS[0]]
+        team2 = [DATA.get_character(f.id) for f in NEXT_MATCH_TEAMS[1]]
+        live_teams = [team1, team2]
+        
+        t1_id, t1_name = team1[0].team_name, team1[0].team_name
+        t2_id, t2_name = team2[0].team_name, team2[0].team_name
 
     #run API call
-    result = CLIENT.run_match(live_match)
+    result = CLIENT.run_match(live_teams, NEXT_MATCH_TYPE)
     
     #initializing a new character
     if 'new_stats' in result and result['new_stats']:
@@ -340,101 +390,92 @@ def run_scheduled_battle():
                 if 'popularity' in char_data: target.popularity = char_data['popularity']
                 if 'personality' in char_data: target.personality = char_data['personality']
 
-    winner_id = result.get('winner_id')
-    if winner_id == p1.id:
-        winner_obj = p1
-        loser_obj = p2
+    winner_id_str = result.get('winner_id', '')
+    if winner_id_str == t1_id or (NEXT_MATCH_TYPE == '1v1' and winner_id_str == live_teams[0][0].id):
+        winner_team, loser_team = live_teams[0], live_teams[1]
+        winner_name, winner_id = t1_name, t1_id
     else:
-        winner_obj = p2
-        loser_obj = p1
+        winner_team, loser_team = live_teams[1], live_teams[0]
+        winner_name, winner_id = t2_name, t2_id
 
+    # Title Logic (1v1s ONLY)
     title_exchange_name = None
-    #does the loser have a title
-    loser_titles = list(loser_obj.titles) if loser_obj.titles else []
-    
-    if len(loser_titles) > 0:
-        #take the first title
-        title_on_line = loser_titles[0]
-        #remove from loser
-        loser_titles.remove(title_on_line)
-        loser_obj.titles = loser_titles
-        flag_modified(loser_obj, "titles")
-        #give to winner
-        winner_titles = list(winner_obj.titles) if winner_obj.titles else []
-        winner_titles.append(title_on_line)
-        winner_obj.titles = winner_titles
-        flag_modified(winner_obj, "titles")
-        #a title has been exchanged
+    if NEXT_MATCH_TYPE == '1v1' and loser_team[0].titles:
+        title_on_line = loser_team[0].titles[0]
+        loser_team[0].titles.remove(title_on_line)
+        flag_modified(loser_team[0], "titles")
+        winner_team[0].titles.append(title_on_line)
+        flag_modified(winner_team[0], "titles")
         title_exchange_name = title_on_line
-        print(f"!-- TITLE CHANGE: {winner_obj.name} won {title_on_line} --!")
-    
-    #winner retains
-    elif winner_obj.titles:
-        title_exchange_name = False 
-
-    winner_obj.wins += 1
-    loser_obj.losses += 1
-
+    #update win/loss records
+    for f in winner_team: f.wins += 1
+    for f in loser_team: f.losses += 1
+    #run payouts
     total_payout = 0
-    #Resolving wagers
     for bet in CURRENT_BETS:
-        if bet['fighter_id'] == winner_obj.id:
+        if bet['fighter_id'] == winner_id:
             user = User.query.get(bet['user_id'])
             if user:
-                payout = int(bet['amount'] * MATCH_ODDS[winner_obj.id])
+                payout = int(bet['amount'] * MATCH_ODDS[winner_id])
                 user.money += payout
                 total_payout += payout
-                print(f"$-- USER {user.username} HAS WON ${payout}! --$")
-    
-    #Of the remaining money in the pool, the winners manager will bet 5%, the losers will get %1
+
+    #distribute manager cuts
     remaining_pool = max(0, CURRENT_POOL - total_payout)
     if remaining_pool > 0:
-        winner_cut = int(remaining_pool * .05)
-        loser_cut = int(remaining_pool * 0.01)
-    #payout to the winning manager
-    if winner_obj.manager_id and winner_obj.manager_id != "None":
-        winning_manager = User.query.get(winner_obj.manager_id)
-        if winning_manager: winning_manager.money += winner_cut
-    #payout to the losing manager
-    if loser_obj.manager_id and loser_obj.manager_id != "None":
-        losing_manager = User.query.get(loser_obj.manager_id)
-        if losing_manager: losing_manager.money += loser_cut
-    print(f"$-- MANAGER PAYOUTS: Win Mgr +${winner_cut} | Lose Mgr +${loser_cut} --$")
-    DATA.commit() #save all DB changes
+        win_cut, lose_cut = int(remaining_pool * 0.10), int(remaining_pool * 0.05)
+        for f in winner_team:
+            if f.manager_id and f.manager_id != "None":
+                mgr = User.query.get(f.manager_id)
+                if mgr: mgr.money += win_cut
+        for f in loser_team:
+            if f.manager_id and f.manager_id != "None":
+                mgr = User.query.get(f.manager_id)
+                if mgr: mgr.money += lose_cut
 
-    #save the match to match history
-    bout_teams = [[p1], [p2]]
-    DATA.log_match_result(
-        teams=bout_teams,
-        winner=winner_obj,
-        summary=result.get('summary', "Match Concluded."),
-        match_type="1v1",
-        title_change=title_exchange_name
-    )
-    #emit the result to clients
+    DATA.commit()
+    DATA.log_match_result(live_teams, winner_team[0], result.get('summary', ''), NEXT_MATCH_TYPE, title_exchange_name)
+
+    teams_data = [
+        {"id": t1_id, "name": t1_name, "members": [c.to_dict_display() for c in live_teams[0]]},
+        {"id": t2_id, "name": t2_name, "members": [c.to_dict_display() for c in live_teams[1]]}
+    ]
+    
+    flat_fighters = [c.to_dict_display() for sublist in live_teams for c in sublist]
+
     socketio.emit('match_result', {
-        'fighters': [c.to_dict_display() for c in live_match],
+        'match_type': NEXT_MATCH_TYPE,
+        'teams': teams_data,
+        'fighters': flat_fighters,
         'log': result.get('battle_log', []),
-        'winner': winner_obj.name,
-        'winner_id': winner_obj.id,
+        'winner': winner_name,
+        'winner_id': winner_id,
         'summary': result.get('summary', ''),
         'introduction': result.get('introduction', '')
     })
     
-    print(f"$-- MATCH FINISHED - WINNER {winner_obj.name} --$")
-    NEXT_MATCH = None
-    #return the number of logs to the server so we can allocate enough time for the match to play out.
+    NEXT_MATCH_TEAMS = []
     return len(result.get('battle_log', []))
 
 ##################################
 #        SERVER HANDLERS         #
 ##################################
 
+#socketio.emit('match_scheduled', {
+#        'match_type': NEXT_MATCH_TYPE,
+#        'teams': [team1_data, team2_data],
+#        'fighters': [c.to_dict_display() for c in combined_fighters],
+#        'starts_in': BATTLE_TIMER,
+#        'odds': MATCH_ODDS,
+#        'pool': CURRENT_POOL
+#    })
 #Grabs the current card info
+#jsonify({"status": "rematched", "new_match": names})
 @app.route('/api/card')
 def return_current_card():
-    global NEXT_MATCH, MATCH_ODDS, CURRENT_POOL, CURRENT_TIMER
-    current_match = NEXT_MATCH
+    global NEXT_MATCH_TEAMS, MATCH_ODDS, CURRENT_POOL, CURRENT_TIMER, TEAMS_DATA, ALL_FIGHTERS
+    current_match = NEXT_MATCH_TEAMS
+
     if current_match is None:
         return jsonify({
             'fighters': [],
@@ -444,11 +485,12 @@ def return_current_card():
             'pool': 0
         })
     try:
-        fighters_data = [c.to_dict_display() for c in current_match]
         return jsonify({
-            'fighters': fighters_data,
-            'starts_in': BATTLE_TIMER,
+            'match_type': NEXT_MATCH_TYPE,
+            'teams': TEAMS_DATA,
+            'fighters': ALL_FIGHTERS,
             'status': 'scheduled',
+            'starts_in': BATTLE_TIMER,
             'odds': MATCH_ODDS,
             'pool': CURRENT_POOL
         })
@@ -463,7 +505,7 @@ def index():
 
 #Main server loop. Timer counts down, when it hits zero
 def server_loop():
-    global CURRENT_TIMER, NEXT_MATCH, FROZEN
+    global CURRENT_TIMER, NEXT_MATCH_TEAMS, FROZEN
     with app.app_context():
         schedule_next_match()
 
@@ -475,18 +517,21 @@ def server_loop():
         if not FROZEN:
             CURRENT_TIMER -= 1
             #emit the timer for clients
-            socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
+            next_names = get_matchup_names()
+            socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': next_names})
             if CURRENT_TIMER <= 0:
                 with app.app_context():
                     CURRENT_TIMER = 0
-                    socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
+                    next_names = get_matchup_names()
+                    socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': next_names})
                     log_count = run_scheduled_battle() #run the match
                     if log_count is None: log_count = 0
                     #7 is for the duration of the introduction, three seconds for each log in the match, then 30 seconds to see the result.
                     animation_duration = 7 + (log_count * 3) + 30
                     socketio.sleep(animation_duration)     #so we see the throbber for one minute
                     CURRENT_TIMER = -1
-                    socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': [c.name for c in NEXT_MATCH] if NEXT_MATCH else None})
+                    next_names = get_matchup_names
+                    socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': next_names})
                     socketio.sleep(10)     #then scheduling announcement
                     schedule_next_match()  #schedule the next match
                 CURRENT_TIMER = BATTLE_TIMER

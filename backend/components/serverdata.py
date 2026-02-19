@@ -41,33 +41,57 @@ class ServerData:
                 print(f"!-- ERROR READING REJECTED LIST: {e} --!")
         return queue
 
-    def get_candidates_for_match(self):
-        #find fresh meat (fighters with 0 total fights)
-        fresh_meat = Character.query.filter_by(is_approved=True, status='active').filter(
-            (Character.wins + Character.losses) == 0
-        ).all()
+    def get_candidates_for_match(self, match_type="1v1"):
+        if match_type == "1v1":
+            print("$-- SCHEDULING A 1v1 --$")
+            #find fresh meat (fighters with 0 total fights)
+            fresh_meat = Character.query.filter_by(is_approved=True, status='active').filter(
+                (Character.wins + Character.losses) == 0
+            ).all()
 
-        if len(fresh_meat) >= 2:
-            print(f"!-- PRIORITY MATCH: FOUND {len(fresh_meat)} NEW FIGHTERS --!")
-            return random.sample(fresh_meat, 2)
-        
-        elif len(fresh_meat) == 1:
-            print("!-- PRIORITY MATCH: 1 NEW FIGHTER FOUND --!")
-            p1 = fresh_meat[0]
-            #select two random characters
-            p2 = Character.query.filter_by(is_approved=True, status='active').filter(
-                Character.id != p1.id
-            ).order_by(func.random()).first()
+            if len(fresh_meat) >= 2:
+                print(f"!-- PRIORITY MATCH: FOUND {len(fresh_meat)} NEW FIGHTERS --!")
+                return random.sample(fresh_meat, 2)
             
-            if p2:
-                return [p1, p2]
-        
-        #fully random if theres no fresh meat
-        count = Character.query.filter_by(is_approved=True, status='active').count()
-        if count < 2:
-            return None
+            elif len(fresh_meat) == 1:
+                print("!-- PRIORITY MATCH: 1 NEW FIGHTER FOUND --!")
+                p1 = fresh_meat[0]
+                #select two random characters
+                p2 = Character.query.filter_by(is_approved=True, status='active').filter(
+                    Character.id != p1.id
+                ).order_by(func.random()).first()
+                
+                if p2:
+                    return [p1, p2]
             
-        return Character.query.filter_by(is_approved=True, status='active').order_by(func.random()).limit(2).all()
+            #fully random if theres no fresh meat
+            count = Character.query.filter_by(is_approved=True, status='active').count()
+            if count < 2:
+                return None
+            return Character.query.filter_by(is_approved=True, status='active').order_by(func.random()).limit(2).all()
+        
+        elif match_type == "2v2":
+            print("$-- SCHEDULING A 2v2 --$")
+            all_team_fighters = Character.query.filter(
+                Character.is_approved==True,
+                Character.status=='active',
+                Character.team_name != '',
+                Character.team_name.isnot(None)
+            ).all()
+
+            teams_dict = {}
+            for f in all_team_fighters:
+                teams_dict.setdefault(f.team_name, []).append(f)
+            valid_teams = [name for name, members in teams_dict.items() if len(members) >= 2]
+            if len(valid_teams) < 2:
+                print("!-- NOT ENOUGH TAG TEAMS, FALLING BACK TO 1v1 --!")
+                return None
+            # Pick 2 random teams, and 2 random members from each team!
+            t1_name, t2_name = random.sample(valid_teams, 2)
+            t1_roster = random.sample(teams_dict[t1_name], 2)
+            t2_roster = random.sample(teams_dict[t2_name], 2)
+
+            return [t1_roster, t2_roster]
 
     #########################
     #      SAVING FUNCs     #

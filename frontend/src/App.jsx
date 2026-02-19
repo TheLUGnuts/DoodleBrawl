@@ -34,24 +34,7 @@ function App() {
   const handleResult = (data) => {
     //takes data from a fight and places it in the correct places
     setIntroState(data.introduction);
-    console.log("RESULT ------")
-    //in order to preview the new character name and description we used a mixed battle state
-    //the mixed battle state retains all the information of the previous battle state but includes the new name and description
-    //this is only used temporarily, until the complete battle state will overwrite this inside of processFightLogs
-    setBattleState(prev => {
-      const mixedState = {...data, fighters: [...data.fighters]};
-      mixedState.fighters = data.fighters.map((newFighter, index) => {
-        const oldFighter = prev.fighters[index];
-        return {
-          ...newFighter,
-          wins: oldFighter ? oldFighter.wins : newFighter.wins,
-          losses: oldFighter ? oldFighter.losses : newFighter.losses,
-          titles: oldFighter ? oldFighter.titles : newFighter.titles,
-          alignment: oldFighter ? oldFighter.alignment : newFighter.alignment
-        };
-      });
-      return mixedState;
-    });
+    console.log("RESULT ------");
     processFightLogs(data);
   }
 

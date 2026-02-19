@@ -50,7 +50,7 @@ export default function Betting({ user, setUser, matchOdds, currentPool, myBet, 
               className="bet-btn p1-bet"
             >
               {myBet?.fighterId === battleState.fighters[0].id ? `Add to Bet ($${myBet.totalWagered} total)` : `Bet on ${battleState.fighters[0].name}`} <br/>
-              <small>Pays {matchOdds[battleState.fighters[0].id]}x</small>
+              <small>Pays {matchOdds[battleState.teams?.[0].id] || 1.0}x</small>
             </button>
             
             <button 
@@ -59,7 +59,7 @@ export default function Betting({ user, setUser, matchOdds, currentPool, myBet, 
               className="bet-btn p2-bet"
             >
               {myBet?.fighterId === battleState.fighters[1].id ? `Add to Bet ($${myBet.totalWagered} total)` : `Bet on ${battleState.fighters[1].name}`} <br/>
-              <small>Pays {matchOdds[battleState.fighters[1].id]}x</small>
+              <small>Pays {matchOdds[battleState.teams?.[1].id] || 1.0}x</small>
             </button>
           </div>
         </div>

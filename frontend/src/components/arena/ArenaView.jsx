@@ -11,7 +11,10 @@ import '../../text_decor.css';
 const ManagerPortrait = memo(function ManagerPortrait({ fighter, align, onProfileClick }) {
   console.log(fighter.manager_name);
   //unknown has no portrait
-  if (!fighter.manager_name || fighter.manager_name === "Unknown" || !fighter.manager_portrait) return null;
+  if (!fighter.manager_name || fighter.manager_name === "Unknown" || !fighter.manager_portrait) {
+    console.log("Null hit in manager portrait.");
+    return null;
+  } 
 
   return (
     <div 
@@ -33,6 +36,7 @@ const ManagerPortrait = memo(function ManagerPortrait({ fighter, align, onProfil
 
 const ImageViewer = memo(function ImageViewer({ compressedBase64, titles }) {
   const base64 = decompressBase64Image(compressedBase64);
+  console.log(base64);
   return (
     <div className="image-wrapper">
       <img className="fighter-wrap" src={`data:image/webp;base64,${base64}`} alt="Fighter Image" />
@@ -44,11 +48,10 @@ const ImageViewer = memo(function ImageViewer({ compressedBase64, titles }) {
 });
 
 export default function ArenaView({ battleState, timer, logState, lastWinner, summaryState, introState, user, setUser, matchOdds, currentPool, myBet, setMyBet, payoutWon, onProfileClick}) {
-  //controls the collapsable logs
   const [showAllLogs, setShowAllLogs] = useState(false);
 
-  //Match timer display
-  if (!battleState || !battleState.fighters || battleState.fighters.length === 0) { return (
+  // Match timer display (Check for teams OR fighters)
+  if (!battleState || (!battleState.fighters && !battleState.teams)) { return (
       <div className='root waiting-screen'>
           <img className="throbber" src="./RatJohnson.gif"></img>
           <h1>Waiting for Next Match...</h1>
@@ -57,12 +60,8 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
     );
   }
 
-  // Determine who is currently acting for animations
   const latestLog = logState.length > 0 ? logState[logState.length - 1] : null;
-  const p0Acting = latestLog && latestLog.actor === battleState.fighters[0].name;
-  const p1Acting = latestLog && latestLog.actor === battleState.fighters[1].name;
 
-  //what action are they taking?
   const getActionClass = (isActing) => {
     if (lastWinner) return ''; 
     if (!isActing || !latestLog || !latestLog.action) return '';
@@ -79,7 +78,12 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
     }
   };
 
-  //applies winner or loser css
+  const getIsActing = (team) => {
+      if (!latestLog || !latestLog.actor) return false;
+      if (latestLog.actor.includes(team.name)) return true; // Team combo attack
+      return team.members.some(m => latestLog.actor.includes(m.name)); // Individual attack
+  };
+
   const getMatchStatusClass = (fighterName) => {
     if (!lastWinner) return '';
     return lastWinner === fighterName ? 'winner-img' : 'loser-img';
@@ -90,51 +94,55 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
       <h2 className="next-match">Next match in: {timer}</h2>
       <div className='arena-floor'>
         <div className='row'>
-          {/* FIGHTER 1 (LEFT) */}
-          <div className='column'>
-            <ManagerPortrait fighter={battleState.fighters[0]} align="left" onProfileClick={onProfileClick} />
-            <div className='stats-header'>
-              <p className='fighter-name fighter-1'>{battleState.fighters[0].name}</p>
-              <p className={(battleState.fighters[0].alignment.toLowerCase())}>
-                {battleState.fighters[0].titles.length !== 0 ? battleState.fighters[0].titles.join(", ") : battleState.fighters[0].alignment}
-              </p>
-            </div>
+          
+          {/* DYNAMICALLY RENDER COLUMNS FOR TEAM 1 AND TEAM 2 */}
+          {battleState.teams?.map((team, index) => {
+              const isTeamActing = getIsActing(team);
+              const isWinner = lastWinner === team.name;
+              const isLoser = lastWinner && !isWinner;
 
-            <div 
-              className={`fighter-img ${getActionClass(p0Acting)} ${getMatchStatusClass(battleState.fighters[0].name)}`} 
-              key={p0Acting && !lastWinner ? latestLog.description : 'idle-1'}
-              style={{ position: 'relative' }}
-            >
-              {battleState && <ImageViewer compressedBase64={battleState.fighters[0].image_file} titles={battleState.fighters[0].titles} />} 
-            </div>
+              return (
+                 <div className='column' key={team.id}>
+                    
+                    {/* Render Team Name for 2v2s */}
+                    {battleState.match_type === '2v2' && <h2 className="team-display-name">{team.name}</h2>}
+                    
+                    <div className={battleState.match_type === '2v2' ? 'tag-team-container' : ''}>
+                       {team.members.map((fighter) => {
+                           // Ensure individual fighters animate if they are specifically called out in the log
+                           const isFighterActing = latestLog?.actor?.includes(fighter.name) || isTeamActing;
+                           
+                           return (
+                               <div className="fighter-card" key={fighter.id}>
+                                   <ManagerPortrait fighter={fighter} align={index === 0 ? "left" : "right"} onProfileClick={onProfileClick} />
+                                   
+                                   <div className='stats-header'>
+                                     <p className={`fighter-name fighter-${index+1}`}>{fighter.name}</p>
+                                     <p className={(fighter.alignment.toLowerCase())}>
+                                       {fighter.titles.length !== 0 ? fighter.titles.join(", ") : fighter.alignment}
+                                     </p>
+                                   </div>
 
-            <div className='stats-footer'>
-              <p>Wins: {battleState.fighters[0].wins} | Losses: {battleState.fighters[0].losses}</p>
-            </div>
-          </div>
+                                   <div 
+                                     className={`fighter-img ${getActionClass(isFighterActing)} ${isWinner ? 'winner-img' : isLoser ? 'loser-img' : ''}`} 
+                                     key={isFighterActing && !lastWinner ? latestLog.description : `idle-${fighter.id}`}
+                                     style={{ position: 'relative' }}
+                                   >
+                                     <ImageViewer compressedBase64={fighter.image_file} titles={fighter.titles} />
+                                   </div>
 
-          {/* FIGHTER 2 (RIGHT) */}
-          <div className='column'>
-            <ManagerPortrait fighter={battleState.fighters[1]} align="right" onProfileClick={onProfileClick} />
-            <div className='stats-header'>
-              <p className='fighter-name fighter-2'>{battleState.fighters[1].name}</p>
-              <p className={(battleState.fighters[1].alignment.toLowerCase())}>
-                {battleState.fighters[1].titles.length !== 0 ? battleState.fighters[1].titles.join(", ") : battleState.fighters[1].alignment}
-              </p>
-            </div>
+                                   <div className='stats-footer'>
+                                     <p>Wins: {fighter.wins} | Losses: {fighter.losses}</p>
+                                   </div>
+                               </div>
+                           );
+                       })}
+                    </div>
 
-            <div 
-              className={`fighter-img ${getActionClass(p1Acting)} ${getMatchStatusClass(battleState.fighters[1].name)}`} 
-              key={p1Acting && !lastWinner ? latestLog.description : 'idle-2'}
-              style={{ position: 'relative' }}
-            >
-              {battleState && <ImageViewer compressedBase64={battleState.fighters[1].image_file} titles={battleState.fighters[1].titles} />} 
-            </div>
+                 </div>
+              )
+          })}
 
-            <div className='stats-footer'>
-              <p>Wins: {battleState.fighters[1].wins} | Losses: {battleState.fighters[1].losses}</p>
-            </div>
-          </div>
         </div>
       </div>
 

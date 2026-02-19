@@ -119,6 +119,39 @@ Colors: red, blue, green, yellow, purple, pink, orange, brown, black, rainbow (U
 }
 """
 
+TAG_TEAM_SYSTEM_PROMPT = """
+You are the "Doodle Brawl" Game Engine. Simulate a 2v2 Tag Team battle to 0 HP per team.
+You act as both the Referee and the Color Commentator "Jim Scribble" based on the real life commentator Jim Ross.
+DO NOT MENTION EXACT VALUES PASSED. 
+Focus heavily on how well fighters' visual appearances and personalities synergize! Their stats influence the match, but visual/personality compatibility is key!
+
+### PHASE 1: DATA ANALYSIS
+You will receive data for Team 1 and Team 2 (2 fighters each).
+Update `alignment` and `popularity` based on teamwork and performance.
+
+### PHASE 2: COMBAT SIMULATION
+Simulate a turn-based 2v2 match. Each team shares a combined HP pool, or narrate them fighting individually until the team is defeated.
+Moves MUST emphasize teamwork! Use Combos, complementary attacks (e.g. water boosting lightning), or betrayals if alignments clash.
+Wrap key verbs in `<span class="action-(color)">verb</span>`.
+
+### PHASE 3: SUMMARY
+Declare a winner. The `winner_id` MUST be the EXACT Team Name provided for the winning team.
+
+JSON STRUCTURE EXAMPLE:
+{
+    "updated_stats": {
+        "CHAR_ID_1": { "alignment": "good", "popularity": 7 }
+    },
+    "introduction": "It's a tornado tag team match! ...",
+    "battle_log": [
+        { "actor": "Team 1 Name", "action": "ATTACK", "description": "Fighter A throws Fighter B into a <span class='action-red'>clothesline</span>!" }
+    ],
+    "winner_id": "EXACT_WINNING_TEAM_NAME",
+    "summary": "Team 1 dominated thanks to their incredible synergy!..."
+}
+"""
+
+
 #converts a base64 string into Gemini API parts (necessary for API generation)
 #Now does Base64 -> Gzip -> Base64(WebP) -> WebP Bytes
 def get_image_part_from_base64(base64_string):
@@ -195,50 +228,77 @@ class Genclient():
             return {}
 
     #run the match by setting up the api submission content
-    def run_match(self, matchup):
-        p1, p2 = matchup
+    def run_match(self, teams, match_type="1v1"):
+        t1, t2 = teams
         favorability = random.randint(1,100) #add some randomness to outcome
         temperature = random.randint(1,100)  #add some randomness to outcome
-        print(f"!-- RUNNING BATTLE: {p1.name} vs {p2.name} WITH FAVORABILITY, TEMPERATURE: {favorability}, {temperature} --!")
+        print(f"!-- FAVORABILITY: {favorability} | TEMPERATURE: {temperature} --!")
         #battle information to be sent to gemini API
-        request_content = [
-            f"FAVORABILITY: {favorability} (1=Favors P1, 100=Favors P2)",
-            f"TEMPERATURE: {temperature}",
-            f"""
-            FIGHTER 1:
-            ID: {p1.id}
-            Name: {p1.name}
-            Description: {p1.description}
-            Popularity: {p1.popularity}
-            Current Stats: {p1.stats} (If empty, generate them based on attached image)
-            Fight Count: {p1.wins + p1.losses}
-            Personality: {p1.personality if p1.personality or p1.personality == " " else "Unknown"}
-            Alignment: {p1.alignment}
-            Titles Held: {p1.titles}
-            """,
-            get_image_part_from_base64(p1.image_file), #fighter 1 drawing
-            
-            f"""
-            FIGHTER 2:
-            ID: {p2.id}
-            Name: {p2.name}
-            Description: {p2.description}
-            Popularity: {p2.popularity}
-            Current Stats: {p2.stats} (If empty, generate them based on attached image)
-            Fight Count: {p2.wins + p2.losses}
-            Personality: {p2.personality if p2.personality or p2.personality == " " else "Unknown"}
-            Alignment: {p2.alignment}
-            Titles Held: {p2.titles}
-            """,
-            get_image_part_from_base64(p2.image_file)  #fighter 2 drawing
-        ]
+        if match_type == "1v1":
+            print(f"!-- RUNNING 1V1: {t1[0].name} vs {t2[0].name} --!")
+            sys_prompt = V1_BATTLE_SYSTEM_PROMPT
+            request_content = [
+                f"FAVORABILITY: {favorability} (1=Favors P1, 100=Favors P2)",
+                f"TEMPERATURE: {temperature}",
+                f"""
+                FIGHTER 1:
+                ID: {t1[0].id}
+                Name: {t1[0].name}
+                Description: {t1[0].description}
+                Popularity: {t1[0].popularity}
+                Current Stats: {t1[0].stats} (If empty, generate them based on attached image)
+                Fight Count: {t1[0].wins + t1[0].losses}
+                Personality: {t1[0].personality if t1[0].personality or t1[0].personality == " " else "Unknown"}
+                Alignment: {t1[0].alignment}
+                Titles Held: {t1[0].titles}
+                """,
+                get_image_part_from_base64(t1[0].image_file), #fighter 1 drawing
+                
+                f"""
+                FIGHTER 2:
+                ID: {t2[0].id}
+                Name: {t2[0].name}
+                Description: {t2[0].description}
+                Popularity: {t2[0].popularity}
+                Current Stats: {t2[0].stats} (If empty, generate them based on attached image)
+                Fight Count: {t2[0].wins + t2[0].losses}
+                Personality: {t2[0].personality if t2[0].personality or t2[0].personality == " " else "Unknown"}
+                Alignment: {t2[0].alignment}
+                Titles Held: {t2[0].titles}
+                """,
+                get_image_part_from_base64(t2[0].image_file)  #fighter 2 drawing
+            ]
+        elif match_type == "2v2":
+            print(f"!-- RUNNING TAG TEAM: {t1[0].team_name} vs {t2[0].team_name} --!")
+            sys_prompt = TAG_TEAM_SYSTEM_PROMPT
+            request_content = [
+                f"FAVORABILITY: {favorability} (1=Favors Team 1, 100=Favors Team 2)",
+                f"TEMPERATURE: {temperature}",
+                f"TEAM 1 NAME: {t1[0].team_name}",
+                f"FIGHTER 1A:\nID: {t1[0].id}\nName: {t1[0].name}\nDescription: {t1[0].description}\nPersonality: {t1[0].personality}\nAlignment: {t1[0].alignment}",
+                get_image_part_from_base64(t1[0].image_file),
+                f"FIGHTER 1B:\nID: {t1[1].id}\nName: {t1[1].name}\nDescription: {t1[1].description}\nPersonality: {t1[1].personality}\nAlignment: {t1[1].alignment}",
+                get_image_part_from_base64(t1[1].image_file),
+                f"TEAM 2 NAME: {t2[0].team_name}",
+                f"FIGHTER 2A:\nID: {t2[0].id}\nName: {t2[0].name}\nDescription: {t2[0].description}\nPersonality: {t2[0].personality}\nAlignment: {t2[0].alignment}",
+                get_image_part_from_base64(t2[0].image_file),
+                f"FIGHTER 2B:\nID: {t2[1].id}\nName: {t2[1].name}\nDescription: {t2[1].description}\nPersonality: {t2[1].personality}\nAlignment: {t2[1].alignment}",
+                get_image_part_from_base64(t2[1].image_file)
+            ]
+
+        config = types.GenerateContentConfig(
+            temperature=1, top_p=0.95, top_k=64, max_output_tokens=10240,
+            response_mime_type="application/json",
+            system_instruction=sys_prompt
+        )
+
         try:
             for attempt in Retrying(stop=stop_after_attempt(5), wait=wait_fixed(5)):
                 with attempt:
                     response = self.client.models.generate_content(
                         model='gemini-2.0-flash', #NOTE - This model should suffice
                         contents=request_content,
-                        config=self.battle_generation_config
+                        config=config
                     )
                     result = json.loads(response.text)
                     with open(OUTPUT_FILE, 'w') as file:
