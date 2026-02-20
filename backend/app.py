@@ -522,7 +522,6 @@ def server_loop():
             if CURRENT_TIMER <= 0:
                 with app.app_context():
                     CURRENT_TIMER = 0
-                    next_names = get_matchup_names()
                     socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': next_names})
                     log_count = run_scheduled_battle() #run the match
                     if log_count is None: log_count = 0
@@ -530,7 +529,6 @@ def server_loop():
                     animation_duration = 7 + (log_count * 3) + 30
                     socketio.sleep(animation_duration)     #so we see the throbber for one minute
                     CURRENT_TIMER = -1
-                    next_names = get_matchup_names
                     socketio.emit('timer_update', {'time_left': CURRENT_TIMER,'next_match': next_names})
                     socketio.sleep(10)     #then scheduling announcement
                     schedule_next_match()  #schedule the next match
