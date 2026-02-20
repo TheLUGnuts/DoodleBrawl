@@ -70,7 +70,7 @@ export default function ProfileCard({ username, onClose }) {
             <p className="join-date">Joined: {new Date(profileData.creation_time * 1000).toLocaleDateString()}</p>
           </div>
         
-        <h3>Created Fighters ({profileData.characters.length})</h3>
+        <h3>Managed Fighters ({profileData.characters.length})</h3>
         <div className="profile-roster">
           {profileData.characters.length > 0 ? (
             profileData.characters.map(c => (

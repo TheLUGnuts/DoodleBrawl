@@ -90,7 +90,7 @@ def get_public_profile(username):
         return jsonify({"error": "User not found"}), 404
         
     #only return approved characters
-    public_chars = Character.query.filter_by(creator_id=user.id, is_approved=True).all()
+    public_chars = Character.query.filter_by(manager_id=user.id, is_approved=True).all()
     
     return jsonify({
         "status": "success",
