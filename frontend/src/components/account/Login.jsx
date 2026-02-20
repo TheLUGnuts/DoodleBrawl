@@ -1,6 +1,7 @@
 // logging in functionality
 import { useState } from 'react';
 import { API_URL } from '../../socket';
+import { useAlert } from '../Alert';
 
 export default function Login({ onLogin, onBack }) {
   const [inputID, setInputID] = useState("");
@@ -19,7 +20,7 @@ export default function Login({ onLogin, onBack }) {
       });
       const data = await response.json();
       if (data.status === 'success') {
-        if (data.bonus_awarded) alert("Daily Login Bonus! You received $200!");
+        if (data.bonus_awarded) useAlert("Daily Login Bonus! You received $200!");
         onLogin(data); 
       } else {
         setError(data.error || "Login Failed");

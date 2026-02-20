@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { socket } from '../../socket';
+import { useAlert } from '../Alert';
 import './Betting.css';
 
 export default function Betting({ user, setUser, matchOdds, currentPool, myBet, setMyBet, battleState }) {
@@ -7,8 +8,8 @@ export default function Betting({ user, setUser, matchOdds, currentPool, myBet, 
   const [isBetting, setIsBetting] = useState(false);
 
   const handleBet = (fighterId, fighterName) => {
-    if (!user) { alert("You must be logged in to place a bet!"); return; }
-    if (betAmount > user.money) { alert("You don't have enough money for that bet!"); return; }
+    if (!user) { useAlert("You must be logged in to place a bet!"); return; }
+    if (betAmount > user.money) { useAlert("You don't have enough money for that bet!"); return; }
     
     setIsBetting(true);
     socket.emit('place_bet', {
@@ -27,7 +28,7 @@ export default function Betting({ user, setUser, matchOdds, currentPool, myBet, 
               totalWagered: response.total_wagered,
               payout: Math.floor(response.total_wagered * odds) 
             });
-        } else { alert(response.message); }
+        } else { useAlert(response.message); }
     });
   };
 
