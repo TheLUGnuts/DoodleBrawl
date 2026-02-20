@@ -88,7 +88,7 @@ def debug_update_user(user_id):
         if 'money' in data: user.money = int(data['money'])
         if 'creation_time' in data: user.creation_time = float(data['creation_time'])
         if 'last_submission' in data: user.last_submission = float(data['last_submission'])
-        if 'last_login_bonus' in data: user.last_login_bnus = float(data['last_login_bonus'])
+        if 'last_login_bonus' in data: user.last_login_bonus = float(data['last_login_bonus'])
         if 'portrait' in data: user.portrait = data['portrait']
         db.session.commit()
         print(f"!-- DEBUG: UPDATED USER {user.username} --!")

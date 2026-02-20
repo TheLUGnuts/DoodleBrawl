@@ -12,7 +12,6 @@ export default function Debug({user}) {
   const [message, setMessage] = useState("");
   const [showPreview, setShowPreview] = useState("");
 
-  // Helper map to route plural tabs to singular backend API paths
   const typeMap = { characters: 'character', users: 'user', matches: 'match' };
 
   useEffect(() => {
@@ -103,7 +102,7 @@ export default function Debug({user}) {
       const data = await res.json();
       if (data.status === 'success'){
         setMessage("Row deleted.");
-        setSelectedItem(null); // Clear the editor
+        setSelectedItem(null);
         if (editorTab === 'characters') fetchCharacters();
         if (editorTab === 'users') fetchUsers();
         if (editorTab === 'matches') fetchMatches();
@@ -111,11 +110,11 @@ export default function Debug({user}) {
     } catch (e) { setMessage("Error deleting row."); }
   };
 
-  const triggerAction = async (endpoint) => { /* [Keep exactly the same] */ 
+  const triggerAction = async (endpoint) => {
     await fetch(`${API_URL}/api/debug/${endpoint}`, { method: 'POST', headers: { 'X-User-ID': user?.id || '' }});
   };
 
-  const getPreviewSource = (base64Str) => { /* [Keep exactly the same] */ 
+  const getPreviewSource = (base64Str) => {
     if (!base64Str) return null;
     try { return `data:image/webp;base64,${decompressBase64Image(base64Str)}`; } catch (e) { return null; }
   };
@@ -126,7 +125,6 @@ export default function Debug({user}) {
       
       {/* SERVER CONTROLS */}
       <div className="debug-server-controls">
-        {/* ... [Keep server control buttons same] ... */}
         <h3>Server Actions</h3>
         <div className="button-group">
             <button onClick={() => triggerAction('skip')}>Skip Timer to 5s</button>
@@ -148,7 +146,6 @@ export default function Debug({user}) {
           <div className="editor-tabs">
             <button className={editorTab === 'characters' ? 'active' : ''} onClick={() => {setEditorTab('characters'); setSelectedItem(null);}}>Characters</button>
             <button className={editorTab === 'users' ? 'active' : ''} onClick={() => {setEditorTab('users'); setSelectedItem(null);}}>Users</button>
-            {/* NEW TAB */}
             <button className={editorTab === 'matches' ? 'active' : ''} onClick={() => {setEditorTab('matches'); setSelectedItem(null);}}>Matches</button>
           </div>
           <ul>
@@ -162,7 +159,6 @@ export default function Debug({user}) {
                 {u.username}
               </li>
             ))}
-            {/* NEW LIST MAPPING */}
             {editorTab === 'matches' && matches.map(m => (
               <li key={m.id} className={selectedItem?.id === m.id ? 'selected' : ''} onClick={() => handleSelect(m)}>
                 Match #{m.id} ({m.winner_name} wins)
@@ -235,6 +231,7 @@ export default function Debug({user}) {
                     <label>Username: <input type="text" name="username" value={formData.username || ""} onChange={handleChange} /></label>
                     <label>Money: <input type="number" name="money" value={formData.money || 0} onChange={handleChange} /></label>
                     <label>Creation Time (Unix): <input type="number" step="0.01" name="creation_time" value={formData.creation_time || 0} onChange={handleChange} /></label>
+                    <label>Last Bonus (Unix): <input type="number" step="0.01" name="last_login_bonus" value={formData.last_login_bonus || 0} onChange={handleChange} /></label>
                     <label>Last Submission (Unix): <input type="number" step="0.01" name="last_submission" value={formData.last_submission || 0} onChange={handleChange} /></label>
                   </div>
                 </>

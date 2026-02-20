@@ -36,7 +36,7 @@ const ManagerPortrait = memo(function ManagerPortrait({ fighter, align, onProfil
 
 const ImageViewer = memo(function ImageViewer({ compressedBase64, titles }) {
   const base64 = decompressBase64Image(compressedBase64);
-  console.log(base64);
+  //console.log(base64);
   return (
     <div className="image-wrapper">
       <img className="fighter-wrap" src={`data:image/webp;base64,${base64}`} alt="Fighter Image" />

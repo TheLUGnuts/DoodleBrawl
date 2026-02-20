@@ -6,6 +6,7 @@ import { useAlert } from '../Alert';
 export default function Login({ onLogin, onBack }) {
   const [inputID, setInputID] = useState("");
   const [error, setError] = useState("");
+  const showAlert = useAlert();
 
   const submitLogin = async () => {
     if (!inputID || inputID.length < 16) {
@@ -20,8 +21,10 @@ export default function Login({ onLogin, onBack }) {
       });
       const data = await response.json();
       if (data.status === 'success') {
-        if (data.bonus_awarded) useAlert("Daily Login Bonus! You received $200!");
-        onLogin(data); 
+        onLogin(data);
+        if (data.bonus_awarded) {
+          showAlert("$200 Daily Login Bonus Awarded!")
+        }
       } else {
         setError(data.error || "Login Failed");
       }
