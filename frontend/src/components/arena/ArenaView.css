@@ -15,9 +15,7 @@
   justify-content: center;
   align-items: flex-end;
   flex-wrap: wrap;
-  /* for wrapping in case of teams later on*/
   gap: 60px;
-  /* space between each fighter */
   padding-left: 30px;
   padding-right: 30px;
   padding-bottom: 20px;
@@ -25,6 +23,10 @@
 
 .row::after {
   display: none;
+}
+
+.tag-team-container {
+  transform: scale(0.85);
 }
 
 .fighter-name {
@@ -71,6 +73,7 @@
   border-radius: 20px;
   padding-bottom: 10px;
 }
+
 
 .one-log {
   margin-bottom: 20px;
@@ -300,7 +303,7 @@
 }
 
 .action-ultimate {
-  animation: 
+  animation:
     actionUltimate 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards,
     prismaticGlow 2.5s linear infinite;
   z-index: 100 !important;
@@ -308,20 +311,62 @@
 }
 
 @keyframes actionUltimate {
-  0%   { transform: scale(1); filter: brightness(1); }
-  75%  { transform: scale(1.4) translateY(-15px); filter: brightness(1.3); } 
-  90%  { transform: scale(1.45) translateY(-20px); filter: brightness(1.5); } 
-  100% { transform: scale(1) translateY(0); filter: brightness(1); }
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  75% {
+    transform: scale(1.4) translateY(-15px);
+    filter: brightness(1.3);
+  }
+
+  90% {
+    transform: scale(1.45) translateY(-20px);
+    filter: brightness(1.5);
+  }
+
+  100% {
+    transform: scale(1) translateY(0);
+    filter: brightness(1);
+  }
 }
 
 @keyframes prismaticGlow {
-  0%   { border-color: #ff0000 !important; box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.7); }
-  16%  { border-color: #ff7f00 !important; box-shadow: 0 0 25px 10px rgba(255, 127, 0, 0.9); }
-  33%  { border-color: #ffff00 !important; box-shadow: 0 0 15px 5px rgba(255, 255, 0, 0.7); }
-  50%  { border-color: #00ff00 !important; box-shadow: 0 0 25px 10px rgba(0, 255, 0, 0.9); }
-  66%  { border-color: #0000ff !important; box-shadow: 0 0 15px 5px rgba(0, 0, 255, 0.7); }
-  83%  { border-color: #8b00ff !important; box-shadow: 0 0 25px 10px rgba(139, 0, 255, 0.9); }
-  100% { border-color: #ff0000 !important; box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.7); }
+  0% {
+    border-color: #ff0000 !important;
+    box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.7);
+  }
+
+  16% {
+    border-color: #ff7f00 !important;
+    box-shadow: 0 0 25px 10px rgba(255, 127, 0, 0.9);
+  }
+
+  33% {
+    border-color: #ffff00 !important;
+    box-shadow: 0 0 15px 5px rgba(255, 255, 0, 0.7);
+  }
+
+  50% {
+    border-color: #00ff00 !important;
+    box-shadow: 0 0 25px 10px rgba(0, 255, 0, 0.9);
+  }
+
+  66% {
+    border-color: #0000ff !important;
+    box-shadow: 0 0 15px 5px rgba(0, 0, 255, 0.7);
+  }
+
+  83% {
+    border-color: #8b00ff !important;
+    box-shadow: 0 0 25px 10px rgba(139, 0, 255, 0.9);
+  }
+
+  100% {
+    border-color: #ff0000 !important;
+    box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.7);
+  }
 }
 
 .action-dodge {

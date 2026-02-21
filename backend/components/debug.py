@@ -4,7 +4,7 @@
 import os
 from flask import Blueprint, request, jsonify, current_app
 from sqlalchemy.orm.attributes import flag_modified
-from components.dbmodel import db, User, Character, Match
+from components.dbmodel import db, User, Character, Match, Team
 
 ##################################
 #         DEBUG HANDLERS         #
@@ -27,6 +27,38 @@ def debug_get_characters():
     characters = Character.query.all()
     return jsonify([character.to_dict_debug() for character in characters])
 
+#grabs all the teams
+@debug_bp.route('/teams', methods=['GET'])
+def debug_get_teams():
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403 
+    teams = Team.query.all()
+    print(f"{teams[0].to_dict()}")
+    return jsonify([team.to_dict() for team in teams])
+
+@debug_bp.route('/team/<team_id>', methods=['POST'])
+def debug_update_team(team_id):
+    if not is_admin_authorized(): return jsonify({"error": "Unauthorized"}), 403
+    data = request.get_json()
+    team = Team.query.get(team_id)
+    if not team: return jsonify({"error": "Team not found"}), 404
+    try:
+        if 'name' in data: team.name = data['name']
+        if 'description' in data: team.description = data['description']
+        if 'manager_id' in data: team.manager_id = data['manager_id']
+        if 'wins' in data: team.wins = int(data['wins'])
+        if 'losses' in data: team.losses = int(data['losses'])
+        if 'popularity' in data: team.popularity = int(data['popularity'])
+        if 'member_ids' in data:
+            team.member_ids = data['member_ids']
+            flag_modified(team, "member_ids")
+            
+        db.session.commit()
+        print(f"!-- DEBUG: UPDATED TEAM {team.id} --!")
+        return jsonify({"status": "success", "message": f"Updated Team {team.id}"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+    
 #updates a characters database entry
 @debug_bp.route('/character/<char_id>', methods=['POST'])
 def debug_update_character(char_id):
@@ -44,6 +76,7 @@ def debug_update_character(char_id):
         if 'personality' in data: char.personality = data['personality']
         if 'is_approved' in data: char.is_approved = bool(data['is_approved'])
         if 'team_name' in data: char.team_name = data['team_name']
+        if 'team_id' in data: char.team_name = data['team_id']
         if 'status' in data: char.status = data['status']
         if 'creator_id' in data: char.creator_id = data['creator_id']
         if 'manager_id' in data: char.manager_id = data['manager_id']
@@ -137,6 +170,7 @@ def debug_delete_item(table_type, item_id):
         if table_type == 'character': item = Character.query.get(item_id)
         elif table_type == 'user': item = User.query.get(item_id)
         elif table_type == 'match': item = Match.query.get(item_id)
+        elif table_type == 'team': item = Team.query.get(item_id)
         else: return jsonify({"error": "Invalid table type"}), 400
         if not item: return jsonify({"error": "Item not found"}), 404
         db.session.delete(item)

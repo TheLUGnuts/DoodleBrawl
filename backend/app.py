@@ -1,45 +1,46 @@
 #jfr, cwf, tjc
 #Created for the 2026 VCU 24HR Hackathon
 
-import os, re, time, random
-from flask_cors                                                    import CORS
-from components.genclient                                     import Genclient
-from components.public                                        import public_bp
-from components.account                                      import account_bp
-from components.serverdata                                   import ServerData
-from sqlalchemy                                              import case, text
-from components.account                                      import account_bp
-from components.serverdata                                   import ServerData
-from dotenv                                                 import load_dotenv
-from sqlalchemy.orm.attributes                            import flag_modified
-from flask_socketio                                      import SocketIO, emit
-from components.dbmodel                      import db, Character, User, Match
-from components.debug                     import debug_bp, is_admin_authorized
-from flask                     import Flask, render_template, jsonify, request
+import os, time, random
+from flask_cors                                           import CORS
+from sqlalchemy                                           import text
+from components.genclient                            import Genclient
+from components.public                               import public_bp
+from components.account                             import account_bp
+from components.serverdata                          import ServerData
+from components.account                             import account_bp
+from components.serverdata                          import ServerData
+from dotenv                                        import load_dotenv
+from sqlalchemy.orm.attributes                   import flag_modified
+from flask_socketio                             import SocketIO, emit
+from components.dbmodel                    import db, Character, User
+from components.debug            import debug_bp, is_admin_authorized
+from flask                     import Flask, render_template, jsonify
 
 
 #################################
 #          DOODLE BRAWL         #
 #################################
-
-load_dotenv()                                                           #load the env variables
-API_URL = os.getenv('VITE_SOCKET_URL')
-app = Flask(__name__,                                                   #launch the flask app
-    static_folder="../Frontend/dist/assets",
-    template_folder="../Frontend/dist",
-    static_url_path="/assets")
-app.config['SECRET_KEYS'] = os.getenv('SECRET_KEY')                     #secret key for CORS prevention, taken from .env file
-CORS(app)                                                               #Apply the CORS prevention onto the flask app
-socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", f"{API_URL}"]) #begin sockets for listening and sending out info
-
-#SQLite database initialitzation
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///doodlebrawl.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-#Initialize our flask blueprints for API decomposition
-app.register_blueprint(account_bp, url_prefix='/api/account')
-app.register_blueprint(debug_bp, url_prefix='/api/debug')
-app.register_blueprint(public_bp, url_prefix='/api')
-db.init_app(app)
+try:
+    load_dotenv()                                                                          #load the env variables
+    API_URL = os.getenv('VITE_SOCKET_URL')
+    app = Flask(__name__,                                                                  #launch the flask app
+        static_folder="../Frontend/dist/assets",
+        template_folder="../Frontend/dist",
+        static_url_path="/assets")
+    app.config['SECRET_KEYS'] = os.getenv('SECRET_KEY')                                    #secret key for CORS prevention, taken from .env file
+    CORS(app)                                                                              #Apply the CORS prevention onto the flask app
+    socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", f"{API_URL}"]) #begin sockets for listening and sending out info
+    #SQLite database initialitzation
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///doodlebrawl.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    #Initialize our flask blueprints for API decomposition
+    app.register_blueprint(account_bp, url_prefix='/api/account')
+    app.register_blueprint(debug_bp, url_prefix='/api/debug')
+    app.register_blueprint(public_bp, url_prefix='/api')
+    db.init_app(app)
+except Exception as e:
+    print(f"Error encountered - {e}")
 
 #this is to add a new column to the user table.
 #this is used for safe migration of rows into the updated database.
@@ -47,6 +48,7 @@ with app.app_context():
     db.create_all()
     try:
         #NOTE - Whenever a new column is added make sure it GOES ON TOP! Otherwise it'll throw a normally harmless "duplicate column" error and never add the next ones.
+        db.session.execute(text("ALTER TABLE character ADD COLUMN team_id INTEGER DEFAULT NULL"))
         db.session.execute(text("ALTER TABLE character ADD COLUMN team_name VARCHAR(32) DEFAULT ''"))
         db.session.execute(text("ALTER TABLE character ADD COLUMN status VARCHAR(16) DEFAULT 'active'"))
         db.session.execute(text("ALTER TABLE user ADD COLUMN last_login_bonus FLOAT DEFAULT 0.0"))
@@ -223,7 +225,6 @@ def handle_bet(data):
 @socketio.on('submit_character')
 def accept_new_character(data):
     if not data: return
-    
     #log in
     creator_id = data.get('creator_id')
     if not creator_id or creator_id == "Unknown":
@@ -358,7 +359,6 @@ def run_scheduled_battle():
 
     #run API call
     result = CLIENT.run_match(live_teams, NEXT_MATCH_TYPE)
-    
     #initializing a new character
     if 'new_stats' in result and result['new_stats']:
         for char_id, stats_data in result['new_stats'].items():
@@ -397,6 +397,7 @@ def run_scheduled_battle():
     else:
         winner_team, loser_team = live_teams[1], live_teams[0]
         winner_name, winner_id = t2_name, t2_id
+    print(f"!-- WINNER: {winner_name} --!")
 
     # Title Logic (1v1s ONLY)
     title_exchange_name = None
@@ -442,7 +443,6 @@ def run_scheduled_battle():
     ]
     
     flat_fighters = [c.to_dict_display() for sublist in live_teams for c in sublist]
-
     socketio.emit('match_result', {
         'match_type': NEXT_MATCH_TYPE,
         'teams': teams_data,
@@ -539,6 +539,7 @@ def server_loop():
 print("!-- SERVER STARTING UP: LOADING CHARACTERS... --!")
 print("!-- STARTING BATTLE LOOP... --!")
 socketio.start_background_task(server_loop)
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, port=5000, use_reloader=False)

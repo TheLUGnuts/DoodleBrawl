@@ -95,7 +95,6 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
       <div className='arena-floor'>
         <div className='row'>
           
-          {/* DYNAMICALLY RENDER COLUMNS FOR TEAM 1 AND TEAM 2 */}
           {battleState.teams?.map((team, index) => {
               const isTeamActing = getIsActing(team);
               const isWinner = lastWinner === team.name;
@@ -103,26 +102,21 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
 
               return (
                  <div className='column' key={team.id}>
-                    
                     {/* Render Team Name for 2v2s */}
                     {battleState.match_type === '2v2' && <h2 className="team-display-name">{team.name}</h2>}
-                    
+                    <ManagerPortrait fighter={team.members[0]} align={index === 0 ? "left" : "right"} onProfileClick={onProfileClick} />
                     <div className={battleState.match_type === '2v2' ? 'tag-team-container' : ''}>
                        {team.members.map((fighter) => {
-                           // Ensure individual fighters animate if they are specifically called out in the log
+                           //ensure individual fighters animate if they are specifically called out in the log
                            const isFighterActing = latestLog?.actor?.includes(fighter.name) || isTeamActing;
-                           
                            return (
                                <div className="fighter-card" key={fighter.id}>
-                                   <ManagerPortrait fighter={fighter} align={index === 0 ? "left" : "right"} onProfileClick={onProfileClick} />
-                                   
                                    <div className='stats-header'>
                                      <p className={`fighter-name fighter-${index+1}`}>{fighter.name}</p>
                                      <p className={(fighter.alignment.toLowerCase())}>
                                        {fighter.titles.length !== 0 ? fighter.titles.join(", ") : fighter.alignment}
                                      </p>
                                    </div>
-
                                    <div 
                                      className={`fighter-img ${getActionClass(isFighterActing)} ${isWinner ? 'winner-img' : isLoser ? 'loser-img' : ''}`} 
                                      key={isFighterActing && !lastWinner ? latestLog.description : `idle-${fighter.id}`}
@@ -130,7 +124,6 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
                                    >
                                      <ImageViewer compressedBase64={fighter.image_file} titles={fighter.titles} />
                                    </div>
-
                                    <div className='stats-footer'>
                                      <p>Wins: {fighter.wins} | Losses: {fighter.losses}</p>
                                    </div>
@@ -138,11 +131,8 @@ export default function ArenaView({ battleState, timer, logState, lastWinner, su
                            );
                        })}
                     </div>
-
                  </div>
-              )
-          })}
-
+              )})}
         </div>
       </div>
 
